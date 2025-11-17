@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<Sdk Name="Aspire.AppHost.Sdk" Version="9.5.0" />
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UserSecretsId>b7d673e6-5638-466f-8280-329d83c1ae5a</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.2" />
+		<PackageReference Include="Aspire.Hosting.Keycloak" Version="9.5.2-preview.1.25522.3" />
+		<PackageReference Include="Aspire.Hosting.MongoDB" Version="9.5.2" />
+		<PackageReference Include="Aspire.Hosting.Redis" Version="9.5.2" />
+		<PackageReference Include="Aspire.Hosting.Yarp" Version="9.5.2-preview.1.25522.3" />
+		<PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.8.1-beta.424" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\SongService\SongService.csproj" />
+		<ProjectReference Include="..\BandService\BandService.csproj" />
+	</ItemGroup>
+
+</Project>
