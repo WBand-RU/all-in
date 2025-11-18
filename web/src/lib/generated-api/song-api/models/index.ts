@@ -5,3 +5,32 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './apiCodes';
+export * from './apiResponseOfSong';
+export * from './apiResponseOfSongValue';
+export * from './apiResponseOfTableResponseOfSong';
+export * from './apiResponseOfTableResponseOfSongValue';
+export * from './apiResponseOfboolean';
+export * from './createSongRequest';
+export * from './createSongRequestAuthor';
+export * from './createSongRequestBpm';
+export * from './createSongRequestChords';
+export * from './createSongRequestKey';
+export * from './createSongRequestLyrics';
+export * from './getListOfSongsParams';
+export * from './song';
+export * from './songAuthor';
+export * from './songBpm';
+export * from './songChords';
+export * from './songKey';
+export * from './songLyrics';
+export * from './songUpdatedAt';
+export * from './songUpdatedBy';
+export * from './tableResponseOfSong';
+export * from './tableResponseOfSongTotal';
+export * from './updateSongRequest';
+export * from './updateSongRequestAuthor';
+export * from './updateSongRequestBpm';
+export * from './updateSongRequestChords';
+export * from './updateSongRequestKey';
+export * from './updateSongRequestLyrics';

@@ -1,11 +1,22 @@
 <Solution>
-  <Project Path="Auth/Auth.csproj" />
-  <Project Path="BandService/BandService.csproj" />
-  <Project Path="Shared/Shared.csproj" />
-  <Project Path="SongService/SongService.csproj" />
-  <Project Path="WBand.AppHost/WBand.AppHost.csproj" />
-  <Project Path="WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
-  <Project Path="WBand.Tests/WBand.Tests.csproj" />
+  <Folder Name="/API/">
+    <Project Path="BandService/BandService.csproj" />
+    <Project Path="ChatService/ChatService.csproj" />
+    <Project Path="NotificationService/NotificationService.csproj" />
+    <Project Path="PlaybackService/PlaybackService.csproj" />
+    <Project Path="PlaylistService/PlaylistService.csproj" />
+    <Project Path="SongService/SongService.csproj" />
+  </Folder>
+  <Folder Name="/App/">
+    <Project Path="WBand.AgentPlayer/WBand.AgentPlayer.csproj" />
+    <Project Path="WBand.AppHost/WBand.AppHost.csproj" />
+    <Project Path="WBand.Tests/WBand.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Common/">
+    <Project Path="Auth/Auth.csproj" />
+    <Project Path="Shared/Shared.csproj" />
+    <Project Path="WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
+  </Folder>
   <Project Path="web/" Type="Website" DisplayName="web">
     <BuildType Project="Debug" />
     <Build Solution="Debug|*" Project="false" />

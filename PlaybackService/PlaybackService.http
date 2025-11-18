@@ -1,0 +1,6 @@
+@PlaybackService_HostAddress = http://localhost:5147
+
+GET {{PlaybackService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

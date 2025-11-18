@@ -1,5 +1,6 @@
 ﻿import {
     type ColumnDef,
+    type Row,
     getCoreRowModel,
     getFacetedRowModel,
     getFacetedUniqueValues,
@@ -8,6 +9,7 @@
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
+import { useQueryClient } from "@tanstack/react-query";
 import { MoreVerticalIcon } from "lucide-react";
 import { z } from "zod";
 
@@ -29,11 +31,13 @@ import {
 } from "@/shared/ui/table";
 import { AddBand } from "../widgets/bands/ui/AddBand";
 import { EditBand } from "../widgets/bands/ui/EditBand";
+import { useNavigator } from "@/services/navigator";
 import { useState } from "react";
 import {
     useDeleteBand,
     useGetListOfBands,
-} from "@/lib/generated-api/band-api/bands/bands";
+    getGetListOfBandsQueryKey,
+} from "@/lib/generated-api/band-api/bands";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 
@@ -80,15 +84,17 @@ const columns: ColumnDef<Model>[] = [
 ];
 
 export function BandListPage() {
-    const { data, refetch } = useGetListOfBands();
+    const queryClient = useQueryClient();
+    const { data } = useGetListOfBands();
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editableBandId, setEditableBandId] = useState("");
     const deleteBandMutator = useDeleteBand();
+    const { go } = useNavigator();
 
     const table = useReactTable({
-        data: data || [],
+        data: data?.value || [],
         columns,
-        getRowId: (row) => row.id.toString(),
+        getRowId: (row: Model) => row.id.toString(),
         enableRowSelection: true,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
@@ -115,7 +121,9 @@ export function BandListPage() {
                     },
                 },
             );
-            await refetch();
+            queryClient.invalidateQueries({
+                queryKey: getGetListOfBandsQueryKey(),
+            });
         } catch (e) {
             console.error(e);
             if (e instanceof AxiosError) {
@@ -130,7 +138,9 @@ export function BandListPage() {
         <div className="flex flex-col gap-4">
             <AddBand
                 onChange={async () => {
-                    await refetch();
+                    queryClient.invalidateQueries({
+                        queryKey: getGetListOfBandsQueryKey(),
+                    });
                 }}
             />
 
@@ -144,8 +154,12 @@ export function BandListPage() {
                 </TableHeader>
                 <TableBody className="**:data-[slot=table-cell]:first:w-8">
                     {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
-                            <TableRow key={row.id}>
+                        table.getRowModel().rows.map((row: Row<Model>) => (
+                            <TableRow
+                                key={row.id}
+                                className="cursor-pointer"
+                                onClick={() => go(row.id)}
+                            >
                                 <TableCell>{row.id}</TableCell>
                                 <TableCell>{row.original.name}</TableCell>
                                 <TableCell>
@@ -164,7 +178,8 @@ export function BandListPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem
-                                                onSelect={() => {
+                                                onSelect={(e) => {
+                                                    e.stopPropagation();
                                                     setIsEditorOpen(true);
                                                     setEditableBandId(row.id);
                                                 }}
@@ -173,7 +188,8 @@ export function BandListPage() {
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem
-                                                onSelect={() => {
+                                                onSelect={(e) => {
+                                                    e.stopPropagation();
                                                     handleDelete(row.id);
                                                 }}
                                             >
@@ -191,7 +207,10 @@ export function BandListPage() {
                                         bandId={row.id}
                                         onClose={async ({ needForRefetch }) => {
                                             if (needForRefetch) {
-                                                await refetch();
+                                                queryClient.invalidateQueries({
+                                                    queryKey:
+                                                        getGetListOfBandsQueryKey(),
+                                                });
                                             }
 
                                             setIsEditorOpen(false);

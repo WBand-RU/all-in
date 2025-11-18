@@ -12,4 +12,9 @@ public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICur
     public string Role =>
         httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role)
         ?? throw new InvalidOperationException("Role not found");
+
+    public string GetUserEmail =>
+        httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email)
+        ?? throw new InvalidOperationException("Email not found");
+
 }

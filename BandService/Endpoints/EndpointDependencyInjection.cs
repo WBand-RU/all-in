@@ -1,12 +1,12 @@
 namespace BandService.Endpoints;
 
-using BandService.Endpoints.Bands;
-
 public static class EndpointDependencyInjection
 {
     public static WebApplication MapEndpoints(this WebApplication application)
     {
-        new BandMapper().Register(application);
+        new Bands.BandMapper().Register(application);
+        new User.UserMapper().Register(application);
+
         return application;
     }
 }

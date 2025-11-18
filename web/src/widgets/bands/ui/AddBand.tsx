@@ -23,7 +23,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/shared/ui/dialog";
-import { useCreateBand } from "@/lib/generated-api/band-api/bands/bands";
+import { useCreateBand } from "@/lib/generated-api/band-api/bands";
 import { toast } from "sonner";
 import { ApiCodes } from "@/lib/generated-api/band-api/models";
 

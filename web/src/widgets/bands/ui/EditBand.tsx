@@ -22,10 +22,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/shared/ui/dialog";
-import {
-    useGetBand,
-    useUpdateBand,
-} from "@/lib/generated-api/band-api/bands/bands";
+import { useGetBand, useUpdateBand } from "@/lib/generated-api/band-api/bands";
 import { ApiCodes } from "@/lib/generated-api/band-api/models";
 import { toast } from "sonner";
 
@@ -60,7 +57,7 @@ export function EditBand({ open, bandId, onClose }: Props) {
         }
 
         form.reset({
-            name: loadedData.value.name,
+            name: loadedData.value!.name,
         });
     }, [loadedData, open]);
 

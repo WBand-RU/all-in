@@ -18,6 +18,8 @@ var assembly = typeof(Program).Assembly;
 builder.AddShared(assembly);
 
 builder.Services.AddScoped<Repository>();
+builder.Services.AddScoped<PermissionService>();
+builder.Services.AddScoped<KeycloakAdminClient>();
 
 var app = builder.Build();
 

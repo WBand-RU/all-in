@@ -29,9 +29,10 @@ import type {
   ApiResponseOfListOfBand,
   CreateBandRequest,
   UpdateBandRequest
-} from '.././models';
+} from './models';
 
-import { customInstance } from '../../../axios-instance';
+import { customInstance } from '../../axios-instance';
+
 
 
 

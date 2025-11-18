@@ -24,10 +24,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/shared/ui/dialog";
-import {
-    useGetBand,
-    useUpdateBand,
-} from "@/lib/generated-api/band-api/bands/bands";
+import { useGetBand, useUpdateBand } from "@/lib/generated-api/band-api/bands";
+import { ApiCodes } from "@/lib/generated-api/band-api/models";
 
 const validationSchema = z.object({
     name: z.string().min(3).max(100),
@@ -55,12 +53,12 @@ export function EditBand({ open, bandId, onClose }: Props) {
     const updateBandMutator = useUpdateBand();
 
     useEffect(() => {
-        if (!loadedData) {
+        if (!loadedData || loadedData.code !== ApiCodes.Success) {
             return;
         }
 
         form.reset({
-            name: loadedData.name,
+            name: loadedData.value!.name,
         });
     }, [loadedData, open]);
 

@@ -1,65 +1,108 @@
-﻿import { MailIcon, PlusCircleIcon, UsersIcon } from "lucide-react";
+﻿import {
+    UsersIcon,
+    Music,
+    ListMusic,
+    Play,
+    Maximize2,
+    MessageSquare,
+    Search,
+    LayoutDashboard,
+    MailIcon,
+} from "lucide-react";
 
-import { Button } from "@/shared/ui/button";
 import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
 } from "@/shared/ui/sidebar";
 import { SidebarSiteMenuItem } from "@/shared/SidebarSiteMenuItem";
 import { useAuthContext } from "@/providers/auth/AuthorizationProviderContext";
 import { useEffect, useState } from "react";
 import type { MenuItem } from "@/shared/MenuItem";
 import { Segments } from "../routes";
+// import { useGetMyInvitationsCount } from "@/lib/generated-api/band-api/user";
+import { ApiCodes } from "@/lib/generated-api/band-api/models";
+import { useQuery } from "@tanstack/react-query";
+import { customInstance } from "@/lib/axios-instance";
+// import type { ApiResponse } from "@/lib/generated-api/band-api/models";
+
+interface CountResponse {
+    code: ApiCodes;
+    value: number;
+}
 
 export function NavMain() {
     const { role } = useAuthContext();
     const [items, setItems] = useState<MenuItem[]>([]);
 
+    // Get pending invitations count
+    const { data: countData } = useQuery<CountResponse>({
+        queryKey: ["getMyInvitationsCount"],
+        queryFn: () =>
+            customInstance({
+                url: "/band-api/user/invitations/count",
+                method: "GET",
+            }),
+    });
+    const pendingInvitationsCount =
+        countData?.code === ApiCodes.Success ? countData.value : 0;
+
     useEffect(() => {
-        if (role === "admin") {
-            setItems([
-                // {
-                //     title: "Moderators",
-                //     url: Segments.moderators,
-                //     icon: UsersIcon,
-                // },
-            ]);
-        } else if (role === "user") {
+        if (role === "user") {
             setItems([
                 {
+                    title: "Dashboard",
+                    url: `/app`,
+                    icon: LayoutDashboard,
+                },
+                {
+                    title: "My Invitations",
+                    url: `/app/${Segments.invitations}`,
+                    icon: MailIcon,
+                    badge: pendingInvitationsCount,
+                },
+                {
+                    title: "Songs",
+                    url: `/app/${Segments.songs}`,
+                    icon: Music,
+                },
+                {
+                    title: "Playlists",
+                    url: `/app/${Segments.playlists}`,
+                    icon: ListMusic,
+                },
+                {
+                    title: "Playback",
+                    url: `/app/${Segments.playback}/1`,
+                    icon: Play,
+                },
+                {
+                    title: "Stage Mode",
+                    url: `/app/${Segments.stage}`,
+                    icon: Maximize2,
+                },
+                {
+                    title: "Chat",
+                    url: `/app/${Segments.chat}`,
+                    icon: MessageSquare,
+                },
+                {
+                    title: "Search",
+                    url: `/app/${Segments.search}`,
+                    icon: Search,
+                },
+                {
                     title: "Bands",
-                    url: Segments.bands,
+                    url: `/app/${Segments.bands}`,
                     icon: UsersIcon,
                 },
             ]);
         }
-    }, [role]);
+    }, [role, pendingInvitationsCount]);
 
     return (
         <SidebarGroup>
-            <SidebarGroupContent className="flex flex-col gap-2">
-                <SidebarMenu>
-                    <SidebarMenuItem className="flex items-center gap-2">
-                        <SidebarMenuButton
-                            tooltip="Quick Create"
-                            className="bg-primary text-primary-foreground min-w-8 duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-                        >
-                            <PlusCircleIcon />
-                            <span>Quick Create</span>
-                        </SidebarMenuButton>
-                        <Button
-                            size="icon"
-                            className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
-                            variant="outline"
-                        >
-                            <MailIcon />
-                            <span className="sr-only">Inbox</span>
-                        </Button>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+            <SidebarGroupContent>
                 <SidebarMenu>
                     {items.map((item) => (
                         <SidebarSiteMenuItem item={item} key={item.url} />

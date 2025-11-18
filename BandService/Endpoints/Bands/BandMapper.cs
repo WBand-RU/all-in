@@ -5,7 +5,7 @@ public sealed class BandMapper
     public void Register(IEndpointRouteBuilder builder)
     {
         var group = builder
-            .MapGroup("/bands")
+            .MapGroup("bands")
             .WithTags("Bands")
             .WithDisplayName("Bands")
             .RequireAuthorization();
@@ -15,5 +15,10 @@ public sealed class BandMapper
         DeleteBand.DeleteBandEndpoint.Build(group);
         GetBand.GetBandEndpoint.Build(group);
         GetListOfBands.GetListOfBandsEndpoint.Build(group);
+
+        var bandCardGroup = group.MapGroup("{bandId}");
+        new Members.BandMemberMapper().Register(bandCardGroup);
+
+        new Invitations.BandInvitationMapper().Register(bandCardGroup);
     }
 }

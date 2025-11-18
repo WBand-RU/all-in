@@ -63,8 +63,11 @@ internal sealed class CreateBandEndpoint
             {
                 Id = ObjectId.GenerateNewId().ToString(),
                 UserId = currentUser.GetUserId,
+                Email = currentUser.GetUserEmail,
                 BandId = band.Id,
                 Role = MemberRole.Owner,
+                JoinedAt = DateTime.UtcNow,
+                Permissions = PermissionService.GetDefaultPermissions(MemberRole.Owner),
             },
             cancellationToken: cancellationToken
         );
