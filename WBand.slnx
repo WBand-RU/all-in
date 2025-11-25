@@ -1,42 +1,43 @@
 <Solution>
-  <Folder Name="/API/">
-    <Project Path="BandService/BandService.csproj" />
-    <Project Path="ChatService/ChatService.csproj" />
-    <Project Path="NotificationService/NotificationService.csproj" />
-    <Project Path="PlaybackService/PlaybackService.csproj" />
-    <Project Path="PlaylistService/PlaylistService.csproj" />
-    <Project Path="SongService/SongService.csproj" />
+  <Folder Name="/Services/">
+    <Project Path="Services/BandService/BandService.csproj" />
+    <Project Path="Services/ChatService/ChatService.csproj" />
+    <Project Path="Services/NotificationService/NotificationService.csproj" />
+    <Project Path="Services/PlaybackService/PlaybackService.csproj" />
+    <Project Path="Services/PlaylistService/PlaylistService.csproj" />
+    <Project Path="Services/SongService/SongService.csproj" />
   </Folder>
   <Folder Name="/App/">
-    <Project Path="WBand.AgentPlayer/WBand.AgentPlayer.csproj" />
-    <Project Path="WBand.AppHost/WBand.AppHost.csproj" />
-    <Project Path="WBand.Tests/WBand.Tests.csproj" />
+    <Project Path="App/WBand.AgentPlayer/WBand.AgentPlayer.csproj" />
+    <Project Path="App/WBand.AppHost/WBand.AppHost.csproj" />
+    <Project Path="App/WBand.Tests/WBand.Tests.csproj" />
+    <Project Path="App/web/" Type="Website" DisplayName="web">
+      <BuildType Project="Debug" />
+      <Build Solution="Debug|*" Project="false" />
+      <Properties Name="WebsiteProperties">
+        <Property Name="Debug.AspNetCompiler.Debug" Value="&quot;True&quot;" />
+        <Property Name="Debug.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
+        <Property Name="Debug.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
+        <Property Name="Debug.AspNetCompiler.PhysicalPath" Value="&quot;web\&quot;" />
+        <Property Name="Debug.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_62008\&quot;" />
+        <Property Name="Debug.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
+        <Property Name="Debug.AspNetCompiler.VirtualPath" Value="&quot;/localhost_62008&quot;" />
+        <Property Name="Release.AspNetCompiler.Debug" Value="&quot;False&quot;" />
+        <Property Name="Release.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
+        <Property Name="Release.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
+        <Property Name="Release.AspNetCompiler.PhysicalPath" Value="&quot;web\&quot;" />
+        <Property Name="Release.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_62008\&quot;" />
+        <Property Name="Release.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
+        <Property Name="Release.AspNetCompiler.VirtualPath" Value="&quot;/localhost_62008&quot;" />
+        <Property Name="TargetFrameworkMoniker" Value="&quot;.NETFramework,Version%3Dv4.8&quot;" />
+        <Property Name="VWDPort" Value="&quot;62008&quot;" />
+      </Properties>
+    </Project>
   </Folder>
   <Folder Name="/Common/">
-    <Project Path="Auth/Auth.csproj" />
-    <Project Path="Shared/Shared.csproj" />
-    <Project Path="WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
+    <Project Path="Common/Auth/Auth.csproj" />
+    <Project Path="Common/MessagesCommon/MessagesCommon.csproj" />
+    <Project Path="Common/Shared/Shared.csproj" />
+    <Project Path="Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
   </Folder>
-  <Project Path="web/" Type="Website" DisplayName="web">
-    <BuildType Project="Debug" />
-    <Build Solution="Debug|*" Project="false" />
-    <Properties Name="WebsiteProperties">
-      <Property Name="Debug.AspNetCompiler.Debug" Value="&quot;True&quot;" />
-      <Property Name="Debug.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
-      <Property Name="Debug.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
-      <Property Name="Debug.AspNetCompiler.PhysicalPath" Value="&quot;web\&quot;" />
-      <Property Name="Debug.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_62008\&quot;" />
-      <Property Name="Debug.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
-      <Property Name="Debug.AspNetCompiler.VirtualPath" Value="&quot;/localhost_62008&quot;" />
-      <Property Name="Release.AspNetCompiler.Debug" Value="&quot;False&quot;" />
-      <Property Name="Release.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
-      <Property Name="Release.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
-      <Property Name="Release.AspNetCompiler.PhysicalPath" Value="&quot;web\&quot;" />
-      <Property Name="Release.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_62008\&quot;" />
-      <Property Name="Release.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
-      <Property Name="Release.AspNetCompiler.VirtualPath" Value="&quot;/localhost_62008&quot;" />
-      <Property Name="TargetFrameworkMoniker" Value="&quot;.NETFramework,Version%3Dv4.8&quot;" />
-      <Property Name="VWDPort" Value="&quot;62008&quot;" />
-    </Properties>
-  </Project>
 </Solution>

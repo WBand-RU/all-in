@@ -1,0 +1,30 @@
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.0.0">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>b7d673e6-5638-466f-8280-329d83c1ae5a</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Keycloak" Version="13.0.0-preview.1.25560.3" />
+    <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.0.0" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="13.0.0" />
+    <PackageReference Include="Aspire.Hosting.Redis" Version="13.0.0" />
+    <PackageReference Include="Aspire.Hosting.Yarp" Version="13.0.0" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Minio" Version="13.0.0-beta.444" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.9.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../../Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj"
+      IsAspireProjectResource="false"
+    />
+    <ProjectReference Include="../../Services/BandService/BandService.csproj" />
+    <ProjectReference Include="../../Services/ChatService/ChatService.csproj" />
+    <ProjectReference Include="../../Services/NotificationService/NotificationService.csproj" />
+    <ProjectReference Include="../../Services/PlaybackService/PlaybackService.csproj" />
+    <ProjectReference Include="../../Services/PlaylistService/PlaylistService.csproj" />
+    <ProjectReference Include="../../Services/SongService/SongService.csproj" />
+  </ItemGroup>
+</Project>
