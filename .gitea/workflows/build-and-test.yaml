@@ -1,0 +1,48 @@
+name: Сборка и тестирование на любую ветку
+
+on:
+  push:
+    # Отсутствие секции branches означает запуск на все пуши
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore WBand.slnx
+
+      - name: Build Solution
+        run: dotnet build WBand.slnx --no-restore
+
+      - name: Test Solution
+        run: dotnet test WBand.slnx --no-build --verbosity normal
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Web Dependencies
+        working-directory: ./App/web
+        run: pnpm install
+
+      - name: Build Web
+        working-directory: ./App/web
+        run: pnpm build
+
+      - name: Lint Web
+        working-directory: ./App/web
+        run: pnpm lint
