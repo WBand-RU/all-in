@@ -4,3 +4,6 @@ obj
 .vscode
 .windsurf
 node_modules
+
+*.pyc
+*.pyo
