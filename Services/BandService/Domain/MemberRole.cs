@@ -1,6 +1,6 @@
-namespace BandService.Domain;
-
 using System.Text.Json.Serialization;
+
+namespace BandService.Domain;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum MemberRole

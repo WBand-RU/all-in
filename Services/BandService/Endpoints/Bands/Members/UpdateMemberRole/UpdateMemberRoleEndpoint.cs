@@ -1,8 +1,8 @@
 using BandService.Domain;
 using BandService.Services;
 using FluentValidation;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.Bands.Members.UpdateMemberRole;
 
@@ -13,7 +13,7 @@ internal sealed class UpdateMemberRoleEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints
+        _ = endpoints
             .MapPut("{memberId}/role", Handle)
             .WithName("UpdateMemberRole")
             .RequireAuthorization();

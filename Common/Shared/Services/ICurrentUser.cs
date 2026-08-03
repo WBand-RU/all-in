@@ -1,8 +1,8 @@
-namespace Shared;
+namespace Shared.Services;
 
 public interface ICurrentUser
 {
-    string GetUserId { get; }
+    Guid GetUserId { get; }
     string Role { get; }
     string GetUserEmail { get; }
 }

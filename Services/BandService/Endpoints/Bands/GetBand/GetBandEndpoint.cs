@@ -1,11 +1,8 @@
 using BandService.Domain;
-using BandService.Endpoints.Bands.CreateBand;
 using BandService.Services;
 using FluentValidation;
-using FluentValidation.Results;
-using MongoDB.Bson;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.Bands.GetBand;
 
@@ -13,7 +10,7 @@ internal sealed class GetBandEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/bands/{bandId}", Handle).WithName("GetBand").WithTags("Bands");
+        _ = endpoints.MapGet("/bands/{bandId}", Handle).WithName("GetBand").WithTags("Bands");
     }
 
     public static async Task<ApiResponse<Band>> Handle(

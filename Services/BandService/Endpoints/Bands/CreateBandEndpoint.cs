@@ -1,23 +1,33 @@
+using BandEvents;
 using BandService.Domain;
 using BandService.Services;
 using CSharpFunctionalExtensions;
 using FluentValidation;
-using FluentValidation.Results;
-using MongoDB.Bson;
-using MongoDB.Driver;
 using Shared;
-using IResult = Microsoft.AspNetCore.Http.IResult;
+using Shared.Services;
+using Wolverine.Http;
 
-namespace BandService.Endpoints.Bands.CreateBand;
+namespace BandService.Endpoints.Bands;
 
 internal sealed class CreateBandEndpoint
 {
-    public static void Build(IEndpointRouteBuilder endpoints)
+    public sealed record CreateBandRequest(string Name);
+
+    public sealed class CreateBandValidator : AbstractValidator<CreateBandRequest>
     {
-        endpoints.MapPost("/bands", Handle).WithName("CreateBand").WithTags("Bands");
+        public CreateBandValidator()
+        {
+            _ = this.RuleFor(x => x.Name).NotEmpty().NotNull();
+        }
     }
 
-    public static async Task<ApiResponse<Band>> Handle(
+    public static void Build(IEndpointRouteBuilder endpoints)
+    {
+        _ = endpoints.MapPost("/bands", Handle).WithName("CreateBand").WithTags("Bands");
+    }
+
+    [WolverinePost("/bands", Name = "CreateBand", OperationId = "CreateBand")]
+    public static async Task<(Guid, BandCreated)> Handle(
         CreateBandRequest request,
         IValidator<CreateBandRequest> validator,
         ICurrentUser currentUser,

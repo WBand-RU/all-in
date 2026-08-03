@@ -1,11 +1,8 @@
 using BandService.Domain;
-using BandService.Endpoints.Bands.CreateBand;
 using BandService.Services;
 using FluentValidation;
-using FluentValidation.Results;
-using MongoDB.Bson;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.Bands.DeleteBand;
 
@@ -13,7 +10,7 @@ internal sealed class DeleteBandEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapDelete("/bands/{bandId}", Handle).WithName("DeleteBand").WithTags("Bands");
+        _ = endpoints.MapDelete("/bands/{bandId}", Handle).WithName("DeleteBand").WithTags("Bands");
     }
 
     public static async Task<ApiResponse> Handle(

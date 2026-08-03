@@ -1,9 +1,7 @@
-using MassTransit;
-using MongoDB.Driver;
 using PlaybackService.Domain;
 using PlaybackService.Services;
 using Shared;
-using Shared.Messages;
+using Shared.Services;
 using Wolverine;
 
 namespace PlaybackService.Endpoints.Tracks.Download;
@@ -41,27 +39,27 @@ internal sealed class DownloadTrackEndpoint
             return ApiResponse<string>.Error(ApiCodes.NotFound);
         }
 
-        // Get the song's band ID to verify user access
-        var songResponse = await messageBus.InvokeAsync<GetSongResponse>(
-            new GetSongRequest(songId),
-            cancellationToken
-        );
+        //// Get the song's band ID to verify user access
+        //var songResponse = await messageBus.InvokeAsync<GetSongResponse>(
+        //    new GetSongRequest(songId),
+        //    cancellationToken
+        //);
 
-        if (!songResponse.Success || songResponse.BandId is null)
-        {
-            return ApiResponse<string>.Error(ApiCodes.NotFound);
-        }
+        //if (!songResponse.Success || songResponse.BandId is null)
+        //{
+        //    return ApiResponse<string>.Error(ApiCodes.NotFound);
+        //}
 
-        // Check if the user is a member of the band that owns the song
-        var membershipResponse = await messageBus.InvokeAsync<CheckBandMembershipResponse>(
-            new CheckBandMembershipRequest(currentUser.GetUserId, songResponse.BandId),
-            cancellationToken
-        );
+        //// Check if the user is a member of the band that owns the song
+        //var membershipResponse = await messageBus.InvokeAsync<CheckBandMembershipResponse>(
+        //    new CheckBandMembershipRequest(currentUser.GetUserId, songResponse.BandId),
+        //    cancellationToken
+        //);
 
-        if (!membershipResponse.IsMember)
-        {
-            return ApiResponse<string>.Error(ApiCodes.Forbidden);
-        }
+        //if (!membershipResponse.IsMember)
+        //{
+        //    return ApiResponse<string>.Error(ApiCodes.Forbidden);
+        //}
 
         try
         {

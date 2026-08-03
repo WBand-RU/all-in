@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="WolverineFx" Version="5.2.0" />
-    <PackageReference Include="WolverineFx.RabbitMQ" Version="5.2.0" />
+    <PackageReference Include="WolverineFx" Version="5.39.1" />
+    <PackageReference Include="WolverineFx.RabbitMQ" Version="5.39.1" />
   </ItemGroup>
 </Project>

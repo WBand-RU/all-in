@@ -1,4 +1,4 @@
-﻿import {
+import {
 	BellIcon,
 	CreditCardIcon,
 	LogOutIcon,
@@ -40,7 +40,7 @@ export function NavUser() {
 		["moderator", "Moderator"],
 	]);
 
-	if (!user.email || !user.role) {
+	if (!user.email) {
 		return null;
 	}
 

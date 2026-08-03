@@ -1,9 +1,8 @@
 using BandService.Domain;
 using BandService.Services;
 using FluentValidation;
-using MongoDB.Bson;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.Bands.Invitations.CreateInvitation;
 
@@ -14,7 +13,7 @@ internal sealed class CreateInvitationEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("", Handle).WithName("CreateBandInvitation").RequireAuthorization();
+        _ = endpoints.MapPost("", Handle).WithName("CreateBandInvitation").RequireAuthorization();
     }
 
     public static async Task<ApiResponse<Invitation>> Handle(

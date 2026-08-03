@@ -1,8 +1,8 @@
 using BandService.Domain;
 using BandService.Services;
 using FluentValidation;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.User.Invitations.GetMyInvitations;
 
@@ -13,7 +13,10 @@ internal sealed class GetMyInvitationsEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("invitations", Handle).WithName("GetMyInvitations").RequireAuthorization();
+        _ = endpoints
+            .MapGet("invitations", Handle)
+            .WithName("GetMyInvitations")
+            .RequireAuthorization();
     }
 
     public static async Task<ApiResponse<List<GetMyInvitationsResponse>>> Handle(

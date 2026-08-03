@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using BandService.Configuration;
 using BandService.Contracts;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Options;
@@ -22,31 +21,31 @@ public sealed class KeycloakAdminClient(
 
     private async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default)
     {
-        if (accessToken != null && DateTime.UtcNow < tokenExpiry)
+        if (this.accessToken != null && DateTime.UtcNow < this.tokenExpiry)
         {
-            return accessToken;
+            return this.accessToken;
         }
 
-        var tokenUrl = $"{baseUrl}/realms/{realm}/protocol/openid-connect/token";
+        var tokenUrl = $"{this.baseUrl}/realms/{this.realm}/protocol/openid-connect/token";
         var content = new FormUrlEncodedContent(
             new Dictionary<string, string>
             {
-                { "client_id", clientId },
-                { "client_secret", clientSecret },
+                { "client_id", this.clientId },
+                { "client_secret", this.clientSecret },
                 { "grant_type", "client_credentials" },
             }
         );
 
-        var response = await httpClient.PostAsync(tokenUrl, content, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        var response = await this.httpClient.PostAsync(tokenUrl, content, cancellationToken);
+        _ = response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         using var doc = JsonDocument.Parse(json);
-        accessToken = doc.RootElement.GetProperty("access_token").GetString()!;
+        this.accessToken = doc.RootElement.GetProperty("access_token").GetString()!;
         var expiresIn = doc.RootElement.GetProperty("expires_in").GetInt32();
-        tokenExpiry = DateTime.UtcNow.AddSeconds(expiresIn - 60);
+        this.tokenExpiry = DateTime.UtcNow.AddSeconds(expiresIn - 60);
 
-        return accessToken;
+        return this.accessToken;
     }
 
     private async Task<HttpResponseMessage> RequestAsync(
@@ -56,8 +55,8 @@ public sealed class KeycloakAdminClient(
         CancellationToken cancellationToken = default
     )
     {
-        var token = await GetAdminTokenAsync(cancellationToken);
-        var url = $"{baseUrl}/admin/realms/{realm}{endpoint}";
+        var token = await this.GetAdminTokenAsync(cancellationToken);
+        var url = $"{this.baseUrl}/admin/realms/{this.realm}{endpoint}";
 
         var request = new HttpRequestMessage(method, url);
         request.Headers.Add("Authorization", $"Bearer {token}");
@@ -68,7 +67,7 @@ public sealed class KeycloakAdminClient(
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
 
-        return await httpClient.SendAsync(request, cancellationToken);
+        return await this.httpClient.SendAsync(request, cancellationToken);
     }
 
     public async Task<List<KeycloakUser>> GetUsersByRoleAsync(
@@ -76,12 +75,12 @@ public sealed class KeycloakAdminClient(
         CancellationToken cancellationToken = default
     )
     {
-        var response = await RequestAsync(
+        var response = await this.RequestAsync(
             $"/roles/{roleName}/users",
             HttpMethod.Get,
             cancellationToken: cancellationToken
         );
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         logger.LogInformation("Keyclock users: {Users}", json);
@@ -93,12 +92,12 @@ public sealed class KeycloakAdminClient(
         CancellationToken cancellationToken = default
     )
     {
-        var response = await RequestAsync(
+        var response = await this.RequestAsync(
             $"/users/{userId}",
             HttpMethod.Get,
             cancellationToken: cancellationToken
         );
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<KeycloakUser>(json)!;
@@ -109,7 +108,7 @@ public sealed class KeycloakAdminClient(
         CancellationToken cancellationToken = default
     )
     {
-        var response = await RequestAsync("/users", HttpMethod.Post, user, cancellationToken);
+        var response = await this.RequestAsync("/users", HttpMethod.Post, user, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -131,35 +130,35 @@ public sealed class KeycloakAdminClient(
         CancellationToken cancellationToken = default
     )
     {
-        var response = await RequestAsync(
+        var response = await this.RequestAsync(
             $"/users/{userId}",
             HttpMethod.Put,
             user,
             cancellationToken
         );
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
     }
 
     public async Task DeleteUserAsync(string userId, CancellationToken cancellationToken = default)
     {
-        var response = await RequestAsync(
+        var response = await this.RequestAsync(
             $"/users/{userId}",
             HttpMethod.Delete,
             cancellationToken: cancellationToken
         );
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
     }
 
     public async Task<List<KeycloakRole>> GetAvailableRolesAsync(
         CancellationToken cancellationToken = default
     )
     {
-        var response = await RequestAsync(
+        var response = await this.RequestAsync(
             "/roles",
             HttpMethod.Get,
             cancellationToken: cancellationToken
         );
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<List<KeycloakRole>>(json) ?? [];
@@ -171,13 +170,13 @@ public sealed class KeycloakAdminClient(
         CancellationToken cancellationToken = default
     )
     {
-        var response = await RequestAsync(
+        var response = await this.RequestAsync(
             $"/users/{userId}/role-mappings/realm",
             HttpMethod.Post,
             roles,
             cancellationToken
         );
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
     }
 
     public async Task ResetPasswordAsync(
@@ -194,12 +193,12 @@ public sealed class KeycloakAdminClient(
             temporary,
         };
 
-        var response = await RequestAsync(
+        var response = await this.RequestAsync(
             $"/users/{userId}/reset-password",
             HttpMethod.Put,
             credential,
             cancellationToken
         );
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
     }
 }

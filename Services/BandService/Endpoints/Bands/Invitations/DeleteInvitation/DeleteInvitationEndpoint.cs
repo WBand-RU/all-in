@@ -1,8 +1,8 @@
 using BandService.Domain;
 using BandService.Services;
 using FluentValidation;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.Bands.Invitations.DeleteInvitation;
 
@@ -13,7 +13,7 @@ internal sealed class DeleteInvitationEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints
+        _ = endpoints
             .MapDelete("/{invitationId}", Handle)
             .WithName("DeleteBandInvitation")
             .RequireAuthorization();

@@ -1,13 +1,15 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 
-namespace Shared;
+namespace Shared.Services;
 
 public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICurrentUser
 {
-    public string GetUserId =>
-        httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-        ?? throw new InvalidOperationException("User not found");
+    public Guid GetUserId =>
+        Guid.Parse(
+            httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? throw new InvalidOperationException("User not found")
+        );
 
     public string Role =>
         httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role)
@@ -16,5 +18,4 @@ public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICur
     public string GetUserEmail =>
         httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email)
         ?? throw new InvalidOperationException("Email not found");
-
 }

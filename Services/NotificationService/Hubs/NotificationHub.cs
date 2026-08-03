@@ -4,7 +4,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using NotificationService.Domain;
 using NotificationService.Services;
-using Shared;
+using Shared.Services;
 
 namespace NotificationService.Hubs;
 

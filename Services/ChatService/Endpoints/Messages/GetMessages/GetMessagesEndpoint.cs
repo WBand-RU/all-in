@@ -1,9 +1,8 @@
 using ChatService.Domain;
 using ChatService.Services;
-
 using MongoDB.Driver;
-
 using Shared;
+using Shared.Services;
 
 namespace ChatService.Endpoints.Messages.GetMessages;
 

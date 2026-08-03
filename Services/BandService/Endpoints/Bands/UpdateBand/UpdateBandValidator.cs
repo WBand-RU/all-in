@@ -1,11 +1,11 @@
-namespace BandService.Endpoints.Bands.UpdateBand;
-
 using FluentValidation;
+
+namespace BandService.Endpoints.Bands.UpdateBand;
 
 public sealed class UpdateBandValidator : AbstractValidator<UpdateBandRequest>
 {
     public UpdateBandValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().NotNull();
+        _ = this.RuleFor(x => x.Name).NotEmpty().NotNull();
     }
 }

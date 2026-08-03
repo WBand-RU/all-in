@@ -1,8 +1,4 @@
-using System.Reflection;
 using Auth;
-using MassTransit;
-using MessagesCommon;
-using Minio;
 using PlaybackService.Configuration;
 using PlaybackService.Endpoints;
 using PlaybackService.Services;
@@ -27,11 +23,14 @@ builder.AddKeycloakAuthentication();
 builder.AddMinioClient("minio");
 builder.Services.AddScoped<MinioStorageService>();
 
-builder.AddMessaging(
-    appSettings.MessageQueueUrl,
-    int.Parse(appSettings.MessageQueuePort),
+builder.AddEventDriven(
+    appSettings.MessageQueueHost,
+    ushort.Parse(appSettings.MessageQueuePort),
     appSettings.MessageQueueUsername,
-    appSettings.MessageQueuePassword
+    appSettings.MessageQueuePassword,
+    appSettings.MartenDatabaseConnectionString,
+    appSettings.MartenDatabaseSchemaName,
+    [typeof(Program).Assembly]
 );
 
 var assembly = typeof(Program).Assembly;

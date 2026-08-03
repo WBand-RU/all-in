@@ -1,9 +1,9 @@
-namespace BandService.Endpoints.User.Invitations.GetMyInvitationsCount;
-
 using BandService.Domain;
 using BandService.Services;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
+
+namespace BandService.Endpoints.User.Invitations.GetMyInvitationsCount;
 
 /// <summary>
 /// Endpoint for getting the count of pending invitations for the current user
@@ -12,7 +12,7 @@ internal sealed class GetMyInvitationsCountEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints
+        _ = endpoints
             .MapGet("invitations/count", Handle)
             .WithName("GetMyInvitationsCount")
             .RequireAuthorization();

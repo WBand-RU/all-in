@@ -3,6 +3,7 @@ using MongoDB.Bson;
 using PlaylistService.Domain;
 using PlaylistService.Services;
 using Shared;
+using Shared.Services;
 
 namespace PlaylistService.Endpoints.Playlists.CreatePlaylist;
 

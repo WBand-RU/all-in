@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using PlaybackService.Services;
 using Shared;
+using Shared.Services;
 
 namespace PlaybackService.Endpoints.MixerPresets.DeleteMixerPreset;
 

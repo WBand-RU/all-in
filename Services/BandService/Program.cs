@@ -1,32 +1,23 @@
 using Auth;
-using BandService.Configuration;
-using BandService.Endpoints;
 using BandService.Services;
-using MessagesCommon;
 using Shared;
-using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.Configure<AppSettings>(builder.Configuration);
-var appSettings =
-    builder.Configuration.Get<AppSettings>()
-    ?? throw new InvalidOperationException("AppSettings not found");
 
 builder.AddServiceDefaults();
 
 builder.Services.AddOpenApi();
 
-builder.AddMongoDBClient(connectionName: "bands");
-
 builder.AddKeycloakAuthentication();
 
-// Configure MassTransit
-builder.AddMessaging(
-    appSettings.MessageQueueUrl,
-    int.Parse(appSettings.MessageQueuePort),
-    appSettings.MessageQueueUsername,
-    appSettings.MessageQueuePassword
+builder.AddEventDriven(
+    EnvironmentVariable.Get("MESSAGING_HOST"),
+    ushort.Parse(EnvironmentVariable.Get("MESSAGING_PORT")),
+    EnvironmentVariable.Get("MESSAGING_USERNAME"),
+    EnvironmentVariable.Get("MESSAGING_PASSWORD"),
+    EnvironmentVariable.Get("POSTGRESDB_URI"),
+    EnvironmentVariable.Get("MARTEN_DATABASE_SCHEMA_NAME"),
+    typeof(Program).Assembly
 );
 
 var assembly = typeof(Program).Assembly;
@@ -43,9 +34,9 @@ app.MapDefaultEndpoints();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    _ = app.MapOpenApi();
 }
 
-app.MapEndpoints();
+app.UseWolverineEndpoints();
 
 await app.RunAsync();

@@ -1,11 +1,8 @@
 using BandService.Domain;
-using BandService.Endpoints.Bands.CreateBand;
 using BandService.Services;
 using FluentValidation;
-using FluentValidation.Results;
-using MongoDB.Bson;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.Bands.UpdateBand;
 
@@ -13,7 +10,7 @@ internal sealed class UpdateBandEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPut("/bands/{bandId}", Handle).WithName("UpdateBand").WithTags("Bands");
+        _ = endpoints.MapPut("/bands/{bandId}", Handle).WithName("UpdateBand").WithTags("Bands");
     }
 
     public static async Task<ApiResponse> Handle(

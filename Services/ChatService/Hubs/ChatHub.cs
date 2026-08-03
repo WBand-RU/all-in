@@ -1,13 +1,10 @@
 using ChatService.Domain;
 using ChatService.Services;
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-
 using MongoDB.Bson;
 using MongoDB.Driver;
-
-using Shared;
+using Shared.Services;
 
 namespace ChatService.Hubs;
 

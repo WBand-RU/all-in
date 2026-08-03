@@ -1,20 +1,20 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+using Shared;
 
 namespace BandService.Domain;
 
-public sealed class Band
+public class Band
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public required string Id { get; set; }
+    public required BandId Id { get; init; }
+    public BandName Name { get; private set; }
+    public DateTime CreatedAt { get; } = DateTime.UtcNow;
+    public required UserId CreatedBy { get; init; }
+    public DateTime? UpdateAt { get; private set; }
+    public UserId? UpdateBy { get; private set; }
 
-    [BsonElement("name")]
-    public required string Name { get; set; }
-
-    [BsonElement("created_at")]
-    public required DateTime CreatedAt { get; set; }
-
-    [BsonElement("created_by")]
-    public required string CreatedBy { get; set; }
+    public void SetName(BandName newName, UserId userId)
+    {
+        Name = newName;
+        UpdateAt = DateTime.UtcNow;
+        UpdateBy = userId;
+    }
 }

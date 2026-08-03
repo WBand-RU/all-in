@@ -2,6 +2,7 @@ using MongoDB.Driver;
 using PlaylistService.Domain;
 using PlaylistService.Services;
 using Shared;
+using Shared.Services;
 
 namespace PlaylistService.Endpoints.Playlists.GetPlaylist;
 

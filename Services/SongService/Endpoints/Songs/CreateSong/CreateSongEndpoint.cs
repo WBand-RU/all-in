@@ -2,6 +2,7 @@ using FluentValidation;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 using SongService.Domain;
 using SongService.Services;
 

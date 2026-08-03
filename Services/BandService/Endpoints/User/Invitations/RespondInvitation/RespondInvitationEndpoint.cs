@@ -1,9 +1,8 @@
 using BandService.Domain;
 using BandService.Services;
 using FluentValidation;
-using MongoDB.Bson;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.User.Invitations.RespondInvitation;
 
@@ -14,7 +13,7 @@ internal sealed class RespondInvitationEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints
+        _ = endpoints
             .MapPut("invitations/{invitationId}", Handle)
             .WithName("RespondInvitation")
             .RequireAuthorization();

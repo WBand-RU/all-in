@@ -1,5 +1,4 @@
 using BandService.Domain;
-using MongoDB.Driver;
 
 namespace BandService.Services;
 
@@ -41,11 +40,15 @@ public sealed class PermissionService(Repository repository)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (member == null)
+        {
             return false;
+        }
 
         // Owner always has all permissions
         if (member.Role == MemberRole.Owner)
+        {
             return true;
+        }
 
         // Check if member has the specific permission
         return (member.Permissions & permission) == permission;

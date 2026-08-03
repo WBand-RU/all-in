@@ -1,16 +1,35 @@
 <Solution>
   <Folder Name="/Services/">
+    <Project Path="BandEvents/BandEvents.csproj" Id="4e4c45e3-5656-4b7a-a011-85114d2d52d6" />
+    <Project Path="Services/BandService.Tests/BandService.Tests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
     <Project Path="Services/BandService/BandService.csproj" />
-    <Project Path="Services/ChatService/ChatService.csproj" />
-    <Project Path="Services/NotificationService/NotificationService.csproj" />
-    <Project Path="Services/PlaybackService/PlaybackService.csproj" />
-    <Project Path="Services/PlaylistService/PlaylistService.csproj" />
-    <Project Path="Services/SongService/SongService.csproj" />
+    <Project Path="Services/ChatService/ChatService.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="Services/NotificationService/NotificationService.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="Services/PlaybackService/PlaybackService.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="Services/PlaylistService/PlaylistService.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="Services/SongService/SongService.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="Services/UserService/UserService.csproj" />
   </Folder>
   <Folder Name="/App/">
-    <Project Path="App/WBand.AgentPlayer/WBand.AgentPlayer.csproj" />
+    <Project Path="App/WBand.AgentPlayer/WBand.AgentPlayer.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
     <Project Path="App/WBand.AppHost/WBand.AppHost.csproj" />
-    <Project Path="App/WBand.Tests/WBand.Tests.csproj" />
+    <Project Path="App/WBand.Tests/WBand.Tests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
     <Project Path="App/web/" Type="Website" DisplayName="web">
       <BuildType Project="Debug" />
       <Build Solution="Debug|*" Project="false" />
@@ -36,7 +55,6 @@
   </Folder>
   <Folder Name="/Common/">
     <Project Path="Common/Auth/Auth.csproj" />
-    <Project Path="Common/MessagesCommon/MessagesCommon.csproj" />
     <Project Path="Common/Shared/Shared.csproj" />
     <Project Path="Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
   </Folder>

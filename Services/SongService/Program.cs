@@ -1,5 +1,4 @@
 using Auth;
-using MessagesCommon;
 using Shared;
 using SongService.Configuration;
 using SongService.Endpoints;
@@ -16,15 +15,18 @@ builder.AddServiceDefaults();
 
 builder.Services.AddOpenApi();
 
-builder.AddMongoDBClient(connectionName: "songs");
+//builder.AddMongoDBClient(connectionName: "songs");
 
 builder.AddKeycloakAuthentication();
 
-builder.AddMessaging(
-    appSettings.MessageQueueUrl,
-    int.Parse(appSettings.MessageQueuePort),
+builder.AddEventDriven(
+    appSettings.MessageQueueHost,
+    ushort.Parse(appSettings.MessageQueuePort),
     appSettings.MessageQueueUsername,
-    appSettings.MessageQueuePassword
+    appSettings.MessageQueuePassword,
+    appSettings.MartenDatabaseConnectionString,
+    appSettings.MartenDatabaseSchemaName,
+    [typeof(Program).Assembly]
 );
 
 var assembly = typeof(Program).Assembly;

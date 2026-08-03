@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 using SongService.Domain;
 using SongService.Services;
 

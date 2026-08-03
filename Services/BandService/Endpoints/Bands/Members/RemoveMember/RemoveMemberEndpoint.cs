@@ -1,8 +1,8 @@
 using BandService.Domain;
 using BandService.Services;
 using FluentValidation;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.Bands.Members.RemoveMember;
 
@@ -13,7 +13,10 @@ internal sealed class RemoveMemberEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapDelete("{memberId}", Handle).WithName("RemoveMember").RequireAuthorization();
+        _ = endpoints
+            .MapDelete("{memberId}", Handle)
+            .WithName("RemoveMember")
+            .RequireAuthorization();
     }
 
     public static async Task<ApiResponse<bool>> Handle(

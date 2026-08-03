@@ -2,6 +2,7 @@ using MongoDB.Driver;
 using PlaybackService.Domain;
 using PlaybackService.Services;
 using Shared;
+using Shared.Services;
 
 namespace PlaybackService.Endpoints.Tracks.GetTracks;
 

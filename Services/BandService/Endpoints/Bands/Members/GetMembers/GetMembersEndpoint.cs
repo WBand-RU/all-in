@@ -1,8 +1,8 @@
 using BandService.Domain;
 using BandService.Services;
 using FluentValidation;
-using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 
 namespace BandService.Endpoints.Bands.Members.GetMembers;
 
@@ -13,7 +13,7 @@ internal sealed class GetMembersEndpoint
 {
     public static void Build(IEndpointRouteBuilder endpoints)
     {
-        endpoints
+        _ = endpoints
             .MapGet("", Handle)
             .WithName("GetMembers")
             .RequireAuthorization(x => x.RequireRole(Roles.User));

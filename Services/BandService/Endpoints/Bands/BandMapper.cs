@@ -10,7 +10,7 @@ public sealed class BandMapper
             .WithDisplayName("Bands")
             .RequireAuthorization();
 
-        CreateBand.CreateBandEndpoint.Build(group);
+        CreateBandEndpoint.Build(group);
         UpdateBand.UpdateBandEndpoint.Build(group);
         DeleteBand.DeleteBandEndpoint.Build(group);
         GetBand.GetBandEndpoint.Build(group);

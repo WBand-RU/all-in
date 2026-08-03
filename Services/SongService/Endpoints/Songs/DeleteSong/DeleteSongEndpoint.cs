@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using Shared;
+using Shared.Services;
 using SongService.Services;
 
 namespace SongService.Endpoints.Songs.DeleteSong;

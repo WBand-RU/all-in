@@ -16,8 +16,8 @@ public sealed class AppSettings
     [ConfigurationKeyName("KEYCLOAK_REALM")]
     public required string KeycloakRealm { get; init; }
 
-    [ConfigurationKeyName(EnvironmentVariablesConstants.MessageQueueUrl)]
-    public required string MessageQueueUrl { get; init; }
+    [ConfigurationKeyName(EnvironmentVariablesConstants.MessageQueueHost)]
+    public required string MessageQueueHost { get; init; }
 
     [ConfigurationKeyName(EnvironmentVariablesConstants.MessageQueuePort)]
     public required string MessageQueuePort { get; init; }
@@ -27,4 +27,10 @@ public sealed class AppSettings
 
     [ConfigurationKeyName(EnvironmentVariablesConstants.MessageQueuePassword)]
     public required string MessageQueuePassword { get; init; }
+
+    [ConfigurationKeyName(EnvironmentVariablesConstants.MartenDatabaseConnectionString)]
+    public required string MartenDatabaseConnectionString { get; init; }
+
+    [ConfigurationKeyName(EnvironmentVariablesConstants.MartenDatabaseSchemaName)]
+    public required string MartenDatabaseSchemaName { get; init; }
 }
