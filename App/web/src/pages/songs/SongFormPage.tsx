@@ -21,11 +21,14 @@ import {
     SelectValue,
 } from "@/shared/ui/select";
 import { useToast } from "@/shared/ui/use-toast";
+import { useTranslation } from "react-i18next";
 import {
     useCreateSong,
     useUpdateSong,
     useGetSong,
 } from "@/lib/generated-api/song-api/songs";
+import { useGetListOfBands } from "@/lib/generated-api/band-api/bands";
+import { useBandAccess } from "@/hooks/use-band-access";
 
 const musicalKeys = [
     "Ab",
@@ -71,19 +74,23 @@ interface SongForm {
     chords: string;
     key: string;
     bpm: number | null;
+    timeSignature: string;
+    countInBars: number;
+    sections: string;
 }
 
 export function SongFormPage() {
     const navigator = useNavigator();
     const { id } = useParams();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const isEditing = !!id;
     const createSong = useCreateSong({
         mutation: {
             onSuccess: (response) => {
                 toast({
-                    title: "Success",
-                    description: "Song created successfully",
+                    title: t("common.success"),
+                    description: t("songActions.created"),
                 });
                 // Navigate to the created song view
                 if (response.value?.id) {
@@ -94,8 +101,8 @@ export function SongFormPage() {
             },
             onError: () => {
                 toast({
-                    title: "Error",
-                    description: "Failed to create song",
+                    title: t("common.error"),
+                    description: t("songActions.createFailed"),
                     variant: "destructive",
                 });
             },
@@ -106,15 +113,15 @@ export function SongFormPage() {
         mutation: {
             onSuccess: () => {
                 toast({
-                    title: "Success",
-                    description: "Song updated successfully",
+                    title: t("common.success"),
+                    description: t("songActions.updated"),
                 });
                 navigator.go("/songs");
             },
             onError: () => {
                 toast({
-                    title: "Error",
-                    description: "Failed to update song",
+                    title: t("common.error"),
+                    description: t("songActions.updateFailed"),
                     variant: "destructive",
                 });
             },
@@ -127,8 +134,21 @@ export function SongFormPage() {
         chords: "",
         key: "",
         bpm: null,
+        timeSignature: "4/4",
+        countInBars: 2,
+        sections: "",
     });
-    const [currentBandId] = useState("default"); // TODO: Get from context
+    const [currentBandId, setCurrentBandId] = useState("");
+    const { data: bandsData } = useGetListOfBands();
+    const bands = bandsData?.value ?? [];
+    const { access, canEditBand, isLoading: accessLoading } = useBandAccess();
+    const editableBands = bands.filter(band =>
+        access.some(item => item.bandId === band.id && item.canEditContent),
+    );
+
+    useEffect(() => {
+        if (!currentBandId && editableBands.length > 0) setCurrentBandId(editableBands[0].id);
+    }, [editableBands, currentBandId]);
 
     const {
         data: songData,
@@ -143,6 +163,16 @@ export function SongFormPage() {
     useEffect(() => {
         if (songData?.value) {
             const song = songData.value;
+            if (accessLoading) return;
+            if (!access.some(item => item.bandId === song.bandId && item.canEditContent)) {
+                toast({
+                    title: t("songs.insufficient"),
+                    description: t("songs.memberReadOnly"),
+                    variant: "destructive",
+                });
+                navigator.go(`/songs/${song.id}`);
+                return;
+            }
             setForm({
                 title: song.title,
                 author: song.author || "",
@@ -154,15 +184,21 @@ export function SongFormPage() {
                         ? parseInt(song.bpm)
                         : song.bpm
                     : null,
+                timeSignature: song.timeSignatureTrack?.[0]
+                    ? `${song.timeSignatureTrack[0].beats}/${song.timeSignatureTrack[0].beatUnit}`
+                    : "4/4",
+                countInBars: song.countInBars ?? 2,
+                sections: (song.sections ?? []).map((x) => `${x.name}:${x.startBar}-${x.endBar}`).join("\n"),
             });
+            setCurrentBandId(song.bandId);
         }
-    }, [songData]);
+    }, [songData, access, accessLoading]);
 
     useEffect(() => {
         if (songError) {
             toast({
-                title: "Error",
-                description: "Failed to load song",
+                title: t("common.error"),
+                description: t("songs.loadSongFailed"),
                 variant: "destructive",
             });
             navigator.go("/songs");
@@ -174,14 +210,24 @@ export function SongFormPage() {
 
         if (!form.title.trim()) {
             toast({
-                title: "Validation Error",
-                description: "Song title is required",
+                title: t("songActions.validationError"),
+                description: t("songActions.titleRequired"),
                 variant: "destructive",
             });
             return;
         }
 
         if (isEditing && id) {
+            if (!songData?.value || !canEditBand(songData.value.bandId)) {
+                toast({ title: t("songs.insufficient"), variant: "destructive" });
+                return;
+            }
+            const [beats, beatUnit] = form.timeSignature.split("/").map(Number);
+            const sections = form.sections.split("\n").map((line) => {
+                const [name, range] = line.split(":");
+                const [startBar, endBar] = (range ?? "").split("-").map(Number);
+                return { name: name?.trim(), startBar, endBar };
+            }).filter((x) => x.name && x.startBar > 0 && x.endBar >= x.startBar);
             updateSong.mutate({
                 songId: id,
                 data: {
@@ -191,9 +237,26 @@ export function SongFormPage() {
                     chords: form.chords || null,
                     key: form.key || null,
                     bpm: form.bpm,
+                    authors: form.author ? [form.author] : [],
+                    tempoTrack: form.bpm ? [{ bar: 1, bpm: form.bpm }] : [],
+                    timeSignatureTrack: [{ bar: 1, beats, beatUnit }],
+                    countInBars: form.countInBars,
+                    sections,
+                    status: songData?.value?.status ?? 0,
+                    expectedContentVersion: songData?.value?.contentVersion ?? 0,
                 },
             });
         } else {
+            if (!currentBandId) {
+                toast({ title: t("songs.noBand"), description: t("songs.createBandFirst"), variant: "destructive" });
+                return;
+            }
+            const [beats, beatUnit] = form.timeSignature.split("/").map(Number);
+            const sections = form.sections.split("\n").map((line) => {
+                const [name, range] = line.split(":");
+                const [startBar, endBar] = (range ?? "").split("-").map(Number);
+                return { name: name?.trim(), startBar, endBar };
+            }).filter((x) => x.name && x.startBar > 0 && x.endBar >= x.startBar);
             createSong.mutate({
                 data: {
                     bandId: currentBandId,
@@ -203,6 +266,11 @@ export function SongFormPage() {
                     chords: form.chords || null,
                     key: form.key || null,
                     bpm: form.bpm,
+                    authors: form.author ? [form.author] : [],
+                    tempoTrack: form.bpm ? [{ bar: 1, bpm: form.bpm }] : [],
+                    timeSignatureTrack: [{ bar: 1, beats, beatUnit }],
+                    countInBars: form.countInBars,
+                    sections,
                 },
             });
         }
@@ -222,12 +290,12 @@ export function SongFormPage() {
                         </Button>
                         <div>
                             <CardTitle>
-                                {isEditing ? "Edit Song" : "New Song"}
+                                {isEditing ? t("songs.editSong") : t("songs.createSong")}
                             </CardTitle>
                             <CardDescription>
                                 {isEditing
-                                    ? "Update song details"
-                                    : "Add a new worship song to your collection"}
+                                    ? t("songActions.updateHint")
+                                    : t("songActions.createHint")}
                             </CardDescription>
                         </div>
                     </div>
@@ -235,8 +303,15 @@ export function SongFormPage() {
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {!isEditing && <div className="space-y-2 md:col-span-2">
+                                <Label>{t("common.band")} *</Label>
+                                <Select value={currentBandId} onValueChange={setCurrentBandId}>
+                                    <SelectTrigger><SelectValue placeholder={t("common.selectBand")} /></SelectTrigger>
+                                    <SelectContent>{editableBands.map((band) => <SelectItem key={band.id} value={band.id}>{band.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>}
                             <div className="space-y-2">
-                                <Label htmlFor="title">Title *</Label>
+                                <Label htmlFor="title">{t("songs.fields.title")} *</Label>
                                 <Input
                                     id="title"
                                     value={form.title}
@@ -252,7 +327,7 @@ export function SongFormPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="author">Author/Artist</Label>
+                                <Label htmlFor="author">{t("songActions.authorArtist")}</Label>
                                 <Input
                                     id="author"
                                     value={form.author}
@@ -267,24 +342,17 @@ export function SongFormPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="key">Key</Label>
-                                <Select
+                                <Label htmlFor="key">{t("songs.fields.key")}</Label>
+                                <Input
+                                    id="key"
                                     value={form.key}
-                                    onValueChange={(value) =>
-                                        setForm({ ...form, key: value })
-                                    }
-                                >
-                                    <SelectTrigger id="key">
-                                        <SelectValue placeholder="Select key" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {musicalKeys.map((key) => (
-                                            <SelectItem key={key} value={key}>
-                                                {key}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    onChange={(event) => setForm({ ...form, key: event.target.value })}
+                                    list="musical-keys"
+                                    placeholder="C, F#m, Bb"
+                                />
+                                <datalist id="musical-keys">
+                                    {musicalKeys.map((key) => <option key={key} value={key} />)}
+                                </datalist>
                             </div>
 
                             <div className="space-y-2">
@@ -306,30 +374,43 @@ export function SongFormPage() {
                                     max="300"
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="timeSignature">{t("songs.fields.signature")}</Label>
+                                <Input id="timeSignature" value={form.timeSignature} onChange={(e) => setForm({ ...form, timeSignature: e.target.value })} placeholder="4/4" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="countInBars">{t("songs.fields.countIn")}</Label>
+                                <Input id="countInBars" type="number" min="0" max="8" value={form.countInBars} onChange={(e) => setForm({ ...form, countInBars: Number(e.target.value) })} />
+                            </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="lyrics">Lyrics</Label>
+                            <Label htmlFor="sections">{t("songs.fields.sections")}</Label>
+                            <Textarea id="sections" value={form.sections} onChange={(e) => setForm({ ...form, sections: e.target.value })} placeholder={t("songs.sectionsPlaceholder")} rows={4} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="lyrics">{t("songs.fields.lyrics")}</Label>
                             <Textarea
                                 id="lyrics"
                                 value={form.lyrics}
                                 onChange={(e) =>
                                     setForm({ ...form, lyrics: e.target.value })
                                 }
-                                placeholder="Enter song lyrics..."
+                                placeholder={t("songActions.lyricsPlaceholder")}
                                 rows={10}
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="chords">Chords</Label>
+                            <Label htmlFor="chords">{t("songs.fields.chords")}</Label>
                             <Textarea
                                 id="chords"
                                 value={form.chords}
                                 onChange={(e) =>
                                     setForm({ ...form, chords: e.target.value })
                                 }
-                                placeholder="Enter chord progression..."
+                                placeholder={t("songActions.chordsPlaceholder")}
                                 rows={6}
                             />
                         </div>
@@ -340,7 +421,7 @@ export function SongFormPage() {
                                 variant="outline"
                                 onClick={() => navigator.go("/songs")}
                             >
-                                Cancel
+                                {t("common.cancel")}
                             </Button>
                             <Button
                                 type="submit"
@@ -351,7 +432,7 @@ export function SongFormPage() {
                                 }
                             >
                                 <Save className="mr-2 h-4 w-4" />
-                                {isEditing ? "Update" : "Create"} Song
+                                {t(isEditing ? "songActions.update" : "songActions.create")}
                             </Button>
                         </div>
                     </form>

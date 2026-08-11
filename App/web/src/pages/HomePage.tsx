@@ -15,68 +15,63 @@ import {
     MessageSquare,
     Mic2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const stats = [
     {
         title: "100+",
-        description: "групп используют приложение",
+        description: "home.stats.0",
     },
     {
         title: "10K+",
-        description: "песен в базе данных",
+        description: "home.stats.1",
     },
     {
         title: "24/7",
-        description: "доступ к вашему репертуару",
+        description: "home.stats.2",
     },
 ];
 
 const features = [
     {
         icon: ListMusic,
-        title: "База песен и плейбеков",
-        description:
-            "Храните весь репертуар в одном месте. Добавляйте треки, тексты песен, аккорды, плейбеки и нотные материалы.",
+        title: "home.features.0.title",
+        description: "home.features.0.text",
     },
     {
         icon: Calendar,
-        title: "Планирование мероприятий",
-        description:
-            "Организуйте выступления, репетиции и концерты. Управляйте расписанием группы и отслеживайте важные даты.",
+        title: "home.features.1.title",
+        description: "home.features.1.text",
     },
     {
         icon: MessageSquare,
-        title: "Общение и координация",
-        description:
-            "Обсуждайте сет-листы, договаривайтесь о деталях выступлений и делитесь идеями прямо в приложении.",
+        title: "home.features.2.title",
+        description: "home.features.2.text",
     },
     {
         icon: Mic2,
-        title: "Управление составом",
-        description:
-            "Добавляйте участников группы, распределяйте роли, отслеживайте доступность музыкантов для мероприятий.",
+        title: "home.features.3.title",
+        description: "home.features.3.text",
     },
 ];
 
 const steps = [
     {
-        title: "Создайте группу",
-        description:
-            "Зарегистрируйтесь, создайте свою группу и пригласите участников для совместной работы.",
+        title: "home.steps.0.title",
+        description: "home.steps.0.text",
     },
     {
-        title: "Наполните базу",
-        description:
-            "Добавьте песни, плейбеки, тексты и ноты. Организуйте репертуар по альбомам, жанрам или сет-листам.",
+        title: "home.steps.1.title",
+        description: "home.steps.1.text",
     },
     {
-        title: "Планируйте выступления",
-        description:
-            "Создавайте мероприятия, формируйте программу выступления, координируйте подготовку и репетиции.",
+        title: "home.steps.2.title",
+        description: "home.steps.2.text",
     },
 ];
 
 export function HomePage() {
+    const { t } = useTranslation();
     return (
         <main className="flex flex-col gap-20 bg-gradient-to-b from-slate-50 via-white to-white">
             <section className="relative overflow-hidden">
@@ -85,18 +80,14 @@ export function HomePage() {
                         <div className="flex max-w-3xl flex-col gap-8">
                             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-sm font-medium backdrop-blur">
                                 <Music className="h-4 w-4" />
-                                Цифровой помощник музыкантов
+                                {t("home.badge")}
                             </div>
                             <div className="space-y-4">
                                 <h1 className="text-4xl font-semibold leading-tight sm:text-5xl md:text-6xl">
-                                    WBand: всё для подготовки и выступлений
-                                    вашей группы
+                                    {t("home.title")}
                                 </h1>
                                 <p className="text-lg text-white/85">
-                                    Управляйте репертуаром, планируйте
-                                    мероприятия, храните плейбеки и тексты
-                                    песен, координируйте работу группы в одном
-                                    приложении.
+                                    {t("home.subtitle")}
                                 </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-4">
@@ -104,14 +95,14 @@ export function HomePage() {
                                     to="/app"
                                     className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 hover:bg-gray-600"
                                 >
-                                    Начать работу
+                                    {t("home.start")}
                                 </Link>
 
                                 <Link
                                     to="/about"
                                     className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-blue-600 transition-transform hover:-translate-y-0.5 hover:bg-blue-50"
                                 >
-                                    Подробнее о возможностях
+                                    {t("home.learn")}
                                     <ArrowRight className="h-4 w-4" />
                                 </Link>
                             </div>
@@ -132,7 +123,7 @@ export function HomePage() {
                                     {stat.title}
                                 </CardTitle>
                                 <CardDescription className="text-base text-slate-600">
-                                    {stat.description}
+                                    {t(stat.description)}
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -144,11 +135,10 @@ export function HomePage() {
                 <div className="flex flex-col gap-12">
                     <div className="space-y-3 text-center">
                         <h2 className="text-4xl font-semibold">
-                            Возможности приложения
+                            {t("home.featuresTitle")}
                         </h2>
                         <p className="text-base text-slate-600">
-                            Комплексное решение для организации работы
-                            музыкальной группы и подготовки к выступлениям
+                            {t("home.featuresSubtitle")}
                         </p>
                     </div>
                     <div className="grid gap-6 md:grid-cols-2">
@@ -161,10 +151,10 @@ export function HomePage() {
                                     <feature.icon className="h-10 w-10 text-blue-600" />
                                     <div className="space-y-2">
                                         <CardTitle className="text-xl font-semibold">
-                                            {feature.title}
+                                            {t(feature.title)}
                                         </CardTitle>
                                         <CardDescription className="text-sm text-slate-600">
-                                            {feature.description}
+                                            {t(feature.description)}
                                         </CardDescription>
                                     </div>
                                 </CardHeader>
@@ -186,10 +176,10 @@ export function HomePage() {
                                     {index + 1}
                                 </div>
                                 <CardTitle className="text-xl font-semibold">
-                                    {step.title}
+                                    {t(step.title)}
                                 </CardTitle>
                                 <CardDescription className="text-sm text-slate-600">
-                                    {step.description}
+                                    {t(step.description)}
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -202,18 +192,17 @@ export function HomePage() {
                     <CardContent className="flex flex-col gap-6 p-10 md:flex-row md:items-center md:justify-between">
                         <div className="space-y-3">
                             <h3 className="text-3xl font-semibold">
-                                Готовы вывести вашу группу на новый уровень?
+                                {t("home.ctaTitle")}
                             </h3>
                             <p className="text-white/80">
-                                Присоединяйтесь к WBand и управляйте всеми
-                                аспектами работы группы в одном месте.
+                                {t("home.ctaText")}
                             </p>
                         </div>
                         <Link
                             to="/bands"
                             className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 transition-transform hover:-translate-y-0.5 hover:bg-blue-50"
                         >
-                            Создать группу
+                            {t("home.createBand")}
                             <ArrowRight className="h-4 w-4" />
                         </Link>
                     </CardContent>

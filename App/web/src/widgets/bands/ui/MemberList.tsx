@@ -3,6 +3,7 @@ import {
     ShieldIcon,
     UserIcon,
     TrashIcon,
+    LogOutIcon,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
@@ -24,6 +25,12 @@ import {
 import type { Member } from "@/lib/generated-api/band-api/models";
 import { useAuthContext } from "@/providers/auth/AuthorizationProviderContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios-instance";
+import { getGetListOfBandsQueryKey } from "@/lib/generated-api/band-api/bands";
+import { useNavigator } from "@/services/navigator";
+import { useToast } from "@/shared/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface MemberCardProps {
     member: Member;
@@ -38,6 +45,7 @@ export function MemberCard({
     onRemove,
     canManage,
 }: MemberCardProps) {
+    const { t } = useTranslation();
     const canRemove = canManage && member.role !== "Owner";
 
     const getRoleBadgeVariant = (role: string) => {
@@ -83,16 +91,11 @@ export function MemberCard({
                         >
                             {getRoleIcon(member.role)}
                             <span className="ml-1">
-                                {member.role === "Owner"
-                                    ? "Собственник"
-                                    : member.role === "Admin"
-                                      ? "Администратор"
-                                      : "Участник"}
+                                {t(`band.roles.${member.role}`)}
                             </span>
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                            Joined{" "}
-                            {new Date(member.joinedAt).toLocaleDateString()}
+                            {t("band.joined", { date: new Date(member.joinedAt).toLocaleDateString() })}
                         </span>
                     </div>
                 </div>
@@ -115,7 +118,7 @@ export function MemberCard({
                                         }
                                     >
                                         <ShieldIcon className="h-4 w-4 mr-2" />
-                                        Make Admin
+                                        {t("band.makeAdmin")}
                                     </DropdownMenuItem>
                                 )}
                                 {member.role === "Admin" && (
@@ -125,7 +128,7 @@ export function MemberCard({
                                         }
                                     >
                                         <UserIcon className="h-4 w-4 mr-2" />
-                                        Make Member
+                                        {t("band.makeMember")}
                                     </DropdownMenuItem>
                                 )}
                             </>
@@ -138,7 +141,7 @@ export function MemberCard({
                                     className="text-destructive"
                                 >
                                     <TrashIcon className="h-4 w-4 mr-2" />
-                                    Remove Member
+                                    {t("band.removeMember")}
                                 </DropdownMenuItem>
                             </>
                         )}
@@ -156,6 +159,22 @@ export function MemberList({ bandId }: { bandId: string }) {
     const updateRole = useUpdateMemberRole();
     const removeMember = useRemoveMember();
     const queryClient = useQueryClient();
+    const { go } = useNavigator();
+    const { toast } = useToast();
+    const { t } = useTranslation();
+    const leaveBand = useMutation({
+        mutationFn: () => apiClient.delete(`/band-api/bands/${bandId}/membership`),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: getGetListOfBandsQueryKey() });
+            toast({ title: t("band.left") });
+            go("/bands");
+        },
+        onError: () => toast({
+            title: t("band.leaveFailed"),
+            description: t("errors.owner_cannot_leave"),
+            variant: "destructive",
+        }),
+    });
 
     if (isLoading) {
         return (
@@ -182,14 +201,17 @@ export function MemberList({ bandId }: { bandId: string }) {
     if (error || !data) {
         return (
             <div className="p-4 border rounded-lg text-center text-muted-foreground">
-                Failed to load members or no permission to view them.
+                {t("band.loadMembersFailed")}
             </div>
         );
     }
 
     const members = data?.value || [];
     const canManage = members.some(
-        member => member.email === email && member.role === "Owner",
+        member => member.email.toLowerCase() === email?.toLowerCase() && member.role === "Owner",
+    );
+    const currentMember = members.find(
+        member => member.email.toLowerCase() === email?.toLowerCase(),
     );
 
     const handleRoleChange = (
@@ -200,9 +222,10 @@ export function MemberList({ bandId }: { bandId: string }) {
             bandId,
             memberId,
             data: { newRole },
-        }).then(() => queryClient.invalidateQueries({
-            queryKey: getGetMembersQueryKey(bandId),
-        }));
+        }).then(async () => {
+            await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey(bandId) });
+            toast({ title: t(newRole === "Admin" ? "band.roleAdminSet" : "band.roleMemberSet") });
+        }).catch(() => toast({ title: t("band.roleChangeFailed"), variant: "destructive" }));
     };
 
     const handleRemove = (memberId: string) => {
@@ -216,7 +239,7 @@ export function MemberList({ bandId }: { bandId: string }) {
     if (members.length === 0) {
         return (
             <div className="p-4 border rounded-lg text-center text-muted-foreground">
-                No members found.
+                {t("band.noMembers")}
             </div>
         );
     }
@@ -232,6 +255,21 @@ export function MemberList({ bandId }: { bandId: string }) {
                     canManage={canManage}
                 />
             ))}
+            {currentMember && currentMember.role !== "Owner" && (
+                <div className="flex justify-end pt-3">
+                    <Button
+                        variant="destructive"
+                        disabled={leaveBand.isPending}
+                        onClick={() => {
+                            if (window.confirm(t("band.leaveConfirm")))
+                                leaveBand.mutate();
+                        }}
+                    >
+                        <LogOutIcon className="mr-2 h-4 w-4" />
+                        {t("band.leave")}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

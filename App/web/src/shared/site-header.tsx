@@ -1,5 +1,6 @@
 ﻿import { Separator } from "@/shared/ui/separator";
 import { SidebarTrigger } from "@/shared/ui/sidebar";
+import { LanguageSwitcher } from "@/shared/language-switcher";
 //import { BreadcrumpsView } from "../features/BreadcrumpsView";
 
 export function SiteHeader() {
@@ -13,6 +14,7 @@ export function SiteHeader() {
                 />
 
                 {/*<BreadcrumpsView />*/}
+                <div className="ml-auto"><LanguageSwitcher /></div>
             </div>
         </header>
     );

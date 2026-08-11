@@ -17,6 +17,7 @@ import {
     ApiCodes,
     type GetMyInvitationsResponse,
 } from "@/lib/generated-api/band-api/models";
+import { useTranslation } from "react-i18next";
 
 interface InvitationCardProps {
     invitation: GetMyInvitationsResponse;
@@ -29,6 +30,7 @@ export function InvitationCard({
     onAccept,
     onDecline,
 }: InvitationCardProps) {
+    const { t } = useTranslation();
     const getStatusIcon = (status: string) => {
         switch (status) {
             case "Pending":
@@ -49,16 +51,16 @@ export function InvitationCard({
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <MailIcon className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">Band Invitation</span>
+                            <span className="font-medium">{t("invitations.bandInvitation")}</span>
                             <Badge variant="outline" className="text-xs">
-                                {invitation.role}
+                                {t(`band.roles.${invitation.role}`)}
                             </Badge>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Invited by {invitation.inviterEmail}</span>
+                            <span>{t("invitations.invitedBy", { email: invitation.inviterEmail })}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Band: {invitation.bandName}</span>
+                            <span>{t("invitations.band", { name: invitation.bandName })}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -71,7 +73,7 @@ export function InvitationCard({
                             className="flex items-center gap-1"
                         >
                             {getStatusIcon(invitation.status)}
-                            {invitation.status}
+                            {t(`invitations.${invitation.status.toLowerCase()}`)}
                         </Badge>
                         {invitation.status === "Pending" && (
                             <div className="flex gap-1">
@@ -82,6 +84,7 @@ export function InvitationCard({
                                     className="h-8 px-2"
                                 >
                                     <CheckIcon className="h-3 w-3" />
+                                    <span className="sr-only">{t("invitations.accept")}</span>
                                 </Button>
                                 <Button
                                     size="sm"
@@ -90,6 +93,7 @@ export function InvitationCard({
                                     className="h-8 px-2 text-destructive hover:text-destructive"
                                 >
                                     <XIcon className="h-3 w-3" />
+                                    <span className="sr-only">{t("invitations.decline")}</span>
                                 </Button>
                             </div>
                         )}
@@ -101,6 +105,7 @@ export function InvitationCard({
 }
 
 export function MyInvitations() {
+    const { t } = useTranslation();
     const { data, isLoading, error } = useGetMyInvitations();
     const respondInvitation = useRespondInvitation();
     const queryClient = useQueryClient();
@@ -137,8 +142,7 @@ export function MyInvitations() {
             <Card>
                 <CardContent className="pt-6">
                     <p className="text-muted-foreground text-center">
-                        Failed to load invitations or no permission to view
-                        them.
+                        {t("invitations.loadFailed")}
                     </p>
                 </CardContent>
             </Card>
@@ -231,7 +235,7 @@ export function MyInvitations() {
             {pendingInvitations.length > 0 && (
                 <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                        Pending Invitations
+                        {t("invitations.pendingTitle")}
                     </h4>
                     {pendingInvitations.map((invitation: any) => (
                         <InvitationCard
@@ -247,7 +251,7 @@ export function MyInvitations() {
             {otherInvitations.length > 0 && (
                 <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                        Recent Invitations
+                        {t("invitations.recentTitle")}
                     </h4>
                     {otherInvitations.map((invitation: any) => (
                         <InvitationCard
@@ -264,7 +268,7 @@ export function MyInvitations() {
                 <Card>
                     <CardContent className="pt-6">
                         <p className="text-muted-foreground text-center">
-                            No invitations found.
+                            {t("invitations.empty")}
                         </p>
                     </CardContent>
                 </Card>

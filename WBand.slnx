@@ -3,6 +3,7 @@
     <Project Path="WBand.Modules.FileModule/WBand.Modules.FileModule.csproj" />
     <Project Path="WBand.Modules.BandModule/WBand.Modules.BandModule.csproj" />
     <Project Path="WBand.Modules.UserModule/WBand.Modules.UserModule.csproj" />
+    <Project Path="WBand.Modules.SongModule/WBand.Modules.SongModule.csproj" />
   </Folder>
   <Folder Name="/App/">
     <Project Path="App/WBand.AgentPlayer/WBand.AgentPlayer.csproj">

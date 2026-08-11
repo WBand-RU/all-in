@@ -17,11 +17,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { InviteMember } from "../widgets/bands/ui/InviteMember";
 import { MemberList } from "../widgets/bands/ui/MemberList";
 import { InvitationList } from "../widgets/bands/ui/InvitationList";
+import { useBandAccess } from "@/hooks/use-band-access";
+import { useTranslation } from "react-i18next";
 
 export function BandViewPage() {
     const { id } = useParams<{ id: string }>();
     const { data, isLoading } = useGetBand(id!);
     const { go } = useNavigator();
+    const { access } = useBandAccess();
+    const { t, i18n } = useTranslation();
 
     if (isLoading) {
         return (
@@ -55,13 +59,12 @@ export function BandViewPage() {
                     >
                         <ArrowLeftIcon className="h-4 w-4" />
                     </Button>
-                    <h1 className="text-2xl font-bold">Band not found</h1>
+                    <h1 className="text-2xl font-bold">{t("band.notFound")}</h1>
                 </div>
                 <Card>
                     <CardContent className="pt-6">
                         <p className="text-muted-foreground">
-                            The band you're looking for doesn't exist or you
-                            don't have permission to view it.
+                            {t("band.notFoundHint")}
                         </p>
                     </CardContent>
                 </Card>
@@ -70,6 +73,7 @@ export function BandViewPage() {
     }
 
     const band = data.value!;
+    const isOwner = access.some(item => item.bandId === band.id && item.role === "Owner");
 
     return (
         <div className="space-y-6">
@@ -78,7 +82,7 @@ export function BandViewPage() {
                     <ArrowLeftIcon className="h-4 w-4" />
                 </Button>
                 <h1 className="text-2xl font-bold">{band.name}</h1>
-                <Badge variant="outline">Band</Badge>
+                <Badge variant="outline">{t("common.band")}</Badge>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -86,13 +90,13 @@ export function BandViewPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <UserIcon className="h-5 w-5" />
-                            Band Information
+                            {t("band.information")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex justify-between">
                             <span className="text-sm font-medium text-muted-foreground">
-                                Name
+                                {t("common.name")}
                             </span>
                             <span>{band.name}</span>
                         </div>
@@ -109,21 +113,21 @@ export function BandViewPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <CalendarIcon className="h-5 w-5" />
-                            Creation Details
+                            {t("band.creationDetails")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex justify-between">
                             <span className="text-sm font-medium text-muted-foreground">
-                                Created
+                                {t("band.createdAt")}
                             </span>
                             <span>
-                                {new Date(band.createdAt).toLocaleDateString()}
+                                {new Date(band.createdAt).toLocaleDateString(i18n.resolvedLanguage)}
                             </span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-sm font-medium text-muted-foreground">
-                                Created By
+                                {t("band.createdBy")}
                             </span>
                             <span className="font-mono text-sm">
                                 {band.createdBy}
@@ -141,26 +145,26 @@ export function BandViewPage() {
                         className="flex items-center gap-2"
                     >
                         <UsersIcon className="h-4 w-4" />
-                        Members
+                        {t("band.members")}
                     </TabsTrigger>
                     <TabsTrigger
                         value="invitations"
                         className="flex items-center gap-2"
                     >
                         <MailIcon className="h-4 w-4" />
-                        Invitations
+                        {t("band.invitations")}
                     </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="members" className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">Band Members</h3>
-                        <InviteMember
+                        <h3 className="text-lg font-semibold">{t("band.bandMembers")}</h3>
+                        {isOwner && <InviteMember
                             bandId={band.id}
                             onSuccess={() => {
                                 // TODO: Refresh member list
                             }}
-                        />
+                        />}
                     </div>
                     <MemberList bandId={band.id} />
                 </TabsContent>

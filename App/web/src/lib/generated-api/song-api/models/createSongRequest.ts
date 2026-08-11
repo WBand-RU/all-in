@@ -19,4 +19,9 @@ export interface CreateSongRequest {
   key: CreateSongRequestKey;
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   bpm: CreateSongRequestBpm;
+  authors?: string[];
+  tempoTrack?: { bar: number; bpm: number }[];
+  timeSignatureTrack?: { bar: number; beats: number; beatUnit: number }[];
+  countInBars?: number;
+  sections?: { name: string; startBar: number; endBar: number }[];
 }

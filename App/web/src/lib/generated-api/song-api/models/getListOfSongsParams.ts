@@ -6,7 +6,7 @@
  */
 
 export type GetListOfSongsParams = {
-bandId: string;
+bandId?: string;
 /**
  * @pattern ^-?(?:0|[1-9]\d*)$
  */

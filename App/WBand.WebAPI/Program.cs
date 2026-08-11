@@ -5,10 +5,11 @@ using Shared.Modules;
 using WBand.Modules.FileModule;
 using WBand.Modules.BandModule;
 using WBand.Modules.UserModule;
+using WBand.Modules.SongModule;
 
 var builder = WebApplication.CreateBuilder(args).ApplyWBandConfiguration();
 
-var modules = new ModuleCatalog(new UserModule(), new BandModule(), new FileModule());
+var modules = new ModuleCatalog(new UserModule(), new BandModule(), new SongModule(), new FileModule());
 modules.AddServices(builder);
 
 builder.AddKeycloakAuthentication();

@@ -17,6 +17,7 @@ public sealed record CreateInvitationRequest(
     BandMemberRole Role = BandMemberRole.Member
 );
 public sealed record RespondInvitationRequest(bool Accept);
+public sealed record InvitationConflictResponse(string Code);
 public sealed record MyInvitationResponse(
     Guid Id,
     string InviteeEmail,
@@ -64,9 +65,21 @@ public static class BandInvitationsEndpoint
         if (!await BandAccess.IsOwner(session, bandId, user.GetUserId, ct)) return Results.Forbid();
         var email = request.InviteeEmail.Trim().ToLowerInvariant();
         var existingMember = await session.Query<BandMember>().FirstOrDefaultAsync(x => x.BandId == bandId && x.Email == email, ct);
-        var existingInvitation = await session.Query<BandInvitation>().FirstOrDefaultAsync(x => x.BandId == bandId && x.InviteeEmail == email && x.Status == InvitationStatus.Pending, ct);
-        if (existingMember is not null || existingInvitation is not null)
-            return Results.Conflict(ApiResponse<BandInvitation>.Error(ApiCodes.Conflict));
+        if (existingMember is not null)
+            return Results.Conflict(new InvitationConflictResponse("member_already_exists"));
+
+        var now = DateTimeOffset.UtcNow;
+        var existingInvitation = await session.Query<BandInvitation>().FirstOrDefaultAsync(
+            x => x.BandId == bandId && x.InviteeEmail == email,
+            ct);
+        if (existingInvitation is not null)
+        {
+            var isPending = existingInvitation.Status == InvitationStatus.Pending
+                && existingInvitation.ExpiresAt > now;
+            return Results.Conflict(new InvitationConflictResponse(
+                isPending ? "invitation_already_pending" : "invitation_already_created"));
+        }
+
         var invitation = new BandInvitation
         {
             Id = Guid.CreateVersion7(),
@@ -76,8 +89,8 @@ public static class BandInvitationsEndpoint
             InviteeEmail = email,
             Role = request.Role,
             Status = InvitationStatus.Pending,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
+            CreatedAt = now,
+            ExpiresAt = now.AddDays(7),
         };
         session.Store(invitation);
         await session.SaveChangesAsync(ct);

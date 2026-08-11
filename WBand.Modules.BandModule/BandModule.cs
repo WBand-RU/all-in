@@ -22,5 +22,6 @@ public sealed class BandModule : IWBandModule
         options.Schema.For<Band>().DatabaseSchemaName(MartenSchemaName);
         options.Schema.For<BandMember>().DatabaseSchemaName(MartenSchemaName);
         options.Schema.For<BandInvitation>().DatabaseSchemaName(MartenSchemaName);
+        options.Schema.For<BandDeparture>().DatabaseSchemaName(MartenSchemaName);
     }
 }

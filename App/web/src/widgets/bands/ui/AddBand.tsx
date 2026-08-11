@@ -26,6 +26,7 @@ import {
 import { useCreateBand } from "@/lib/generated-api/band-api/bands";
 import { toast } from "sonner";
 import { ApiCodes } from "@/lib/generated-api/band-api/models";
+import { useTranslation } from "react-i18next";
 
 const validationSchema = z.object({
     name: z.string().min(3).max(100),
@@ -42,6 +43,7 @@ type Props = {
 };
 
 export function AddBand({ onChange }: Props) {
+    const { t } = useTranslation();
     const form = useForm({
         defaultValues,
         resolver: zodResolver(validationSchema),
@@ -61,25 +63,25 @@ export function AddBand({ onChange }: Props) {
                 {
                     onSuccess: async (response) => {
                         if (response.code === ApiCodes.Success) {
-                            toast.success("Band created successfully");
+                            toast.success(t("band.created"));
                             form.reset(defaultValues);
                             setOpen(false);
                             await onChange();
                         } else if (response.code === ApiCodes.Forbidden) {
                             toast.warning(
-                                "You are not authorized to create a band",
+                                t("band.createForbidden"),
                             );
                         } else if (response.code === ApiCodes.Conflict) {
-                            toast.warning("Band already exists");
+                            toast.warning(t("band.exists"));
                         } else {
-                            toast.error("Something went wrong");
+                            toast.error(t("errors.generic"));
                         }
                     },
                 },
             );
         } catch (e) {
             console.error(e);
-            toast("Something went wrong");
+            toast(t("errors.generic"));
         }
     }
 
@@ -87,15 +89,14 @@ export function AddBand({ onChange }: Props) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" type="button">
-                    Add new band
+                    {t("band.addBand")}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Add new band</DialogTitle>
+                    <DialogTitle>{t("band.addBand")}</DialogTitle>
                     <DialogDescription>
-                        Bands are groups of musicians who perform music
-                        together.
+                        {t("band.addHint")}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -110,7 +111,7 @@ export function AddBand({ onChange }: Props) {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>{t("common.name")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="text"
@@ -125,7 +126,7 @@ export function AddBand({ onChange }: Props) {
 
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button variant="outline">Cancel</Button>
+                                <Button variant="outline">{t("common.cancel")}</Button>
                             </DialogClose>
 
                             <Button
@@ -137,8 +138,8 @@ export function AddBand({ onChange }: Props) {
                                 }
                             >
                                 {form.formState.isSubmitting
-                                    ? "Adding..."
-                                    : "Add"}
+                                    ? t("common.adding")
+                                    : t("common.add")}
                             </Button>
                         </DialogFooter>
                     </form>

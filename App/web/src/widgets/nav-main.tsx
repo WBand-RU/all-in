@@ -24,6 +24,7 @@ import { Segments } from "../routes";
 import { ApiCodes } from "@/lib/generated-api/band-api/models";
 import { useQuery } from "@tanstack/react-query";
 import { customInstance } from "@/lib/axios-instance";
+import { useTranslation } from "react-i18next";
 // import type { ApiResponse } from "@/lib/generated-api/band-api/models";
 
 interface CountResponse {
@@ -32,6 +33,7 @@ interface CountResponse {
 }
 
 export function NavMain() {
+    const { t, i18n } = useTranslation();
     useAuthContext();
     const [items, setItems] = useState<MenuItem[]>([]);
 
@@ -50,53 +52,53 @@ export function NavMain() {
     useEffect(() => {
         setItems([
                 {
-                    title: "Dashboard",
+                    title: t("nav.dashboard"),
                     url: `/app`,
                     icon: LayoutDashboard,
                 },
                 {
-                    title: "My Invitations",
+                    title: t("nav.invitations"),
                     url: `/app/${Segments.invitations}`,
                     icon: MailIcon,
                     badge: pendingInvitationsCount,
                 },
                 {
-                    title: "Songs",
+                    title: t("nav.songs"),
                     url: `/app/${Segments.songs}`,
                     icon: Music,
                 },
                 {
-                    title: "Playlists",
+                    title: t("nav.playlists"),
                     url: `/app/${Segments.playlists}`,
                     icon: ListMusic,
                 },
                 {
-                    title: "Playback",
+                    title: t("nav.playback"),
                     url: `/app/${Segments.playback}/1`,
                     icon: Play,
                 },
                 {
-                    title: "Stage Mode",
+                    title: t("nav.stage"),
                     url: `/app/${Segments.stage}`,
                     icon: Maximize2,
                 },
                 {
-                    title: "Chat",
+                    title: t("nav.chat"),
                     url: `/app/${Segments.chat}`,
                     icon: MessageSquare,
                 },
                 {
-                    title: "Search",
+                    title: t("nav.search"),
                     url: `/app/${Segments.search}`,
                     icon: Search,
                 },
                 {
-                    title: "Bands",
+                    title: t("nav.bands"),
                     url: `/app/${Segments.bands}`,
                     icon: UsersIcon,
                 },
         ]);
-    }, [pendingInvitationsCount]);
+    }, [pendingInvitationsCount, i18n.resolvedLanguage, t]);
 
     return (
         <SidebarGroup>

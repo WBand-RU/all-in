@@ -11,6 +11,7 @@ internal static class BandAccess
         Guid userId,
         CancellationToken cancellationToken
     ) => session.Query<BandMember>()
+        .OrderByDescending(x => x.JoinedAt)
         .FirstOrDefaultAsync(x => x.BandId == bandId && x.UserId == userId, cancellationToken);
 
     public static async Task<bool> IsOwner(

@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { useCreateBandInvitation } from "@/lib/generated-api/band-api/invitations";
+import { useTranslation } from "react-i18next";
 
 const validationSchema = z.object({
     email: z.string().email("Please enter a valid email address"),
@@ -44,7 +45,10 @@ type Props = {
     onSuccess?: () => void;
 };
 
+type InvitationError = { code?: string };
+
 export function InviteMember({ bandId, onSuccess }: Props) {
+    const { t } = useTranslation();
     const form = useForm({
         defaultValues,
         resolver: zodResolver(validationSchema),
@@ -59,13 +63,21 @@ export function InviteMember({ bandId, onSuccess }: Props) {
                 bandId,
                 data: { inviteeEmail: values.email, role: values.role },
             });
-            toast.success("Invitation sent successfully");
+            toast.success(t("band.invitationSent"));
             form.reset(defaultValues);
             setOpen(false);
             onSuccess?.();
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to send invitation");
+        } catch (error) {
+            const apiError = error as InvitationError;
+            const description = apiError.code
+                ? t(`errors.${apiError.code}`, { defaultValue: t("errors.generic") })
+                : t("errors.generic");
+            toast.error(
+                apiError.code === "invitation_already_pending"
+                    ? t("band.invitationPendingTitle")
+                    : t("band.invitationFailed"),
+                { description },
+            );
         }
     }
 
@@ -74,15 +86,14 @@ export function InviteMember({ bandId, onSuccess }: Props) {
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Invite Member
+                    {t("band.invite")}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Invite New Member</DialogTitle>
+                    <DialogTitle>{t("band.inviteTitle")}</DialogTitle>
                     <DialogDescription>
-                        Send an invitation to join this band. The user will need
-                        to accept the invitation.
+                        {t("band.inviteHint")}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -97,7 +108,7 @@ export function InviteMember({ bandId, onSuccess }: Props) {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email Address</FormLabel>
+                                    <FormLabel>{t("band.email")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="email"
@@ -115,16 +126,16 @@ export function InviteMember({ bandId, onSuccess }: Props) {
                             name="role"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Role</FormLabel>
+                                    <FormLabel>{t("band.role")}</FormLabel>
                                     <FormControl>
                                         <select
                                             {...field}
                                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             <option value="Member">
-                                                Member
+                                                {t("band.roles.Member")}
                                             </option>
-                                            <option value="Admin">Admin</option>
+                                            <option value="Admin">{t("band.roles.Admin")}</option>
                                         </select>
                                     </FormControl>
                                     <FormMessage />
@@ -134,7 +145,7 @@ export function InviteMember({ bandId, onSuccess }: Props) {
 
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button variant="outline">Cancel</Button>
+                                <Button variant="outline">{t("common.cancel")}</Button>
                             </DialogClose>
 
                             <Button
@@ -146,8 +157,8 @@ export function InviteMember({ bandId, onSuccess }: Props) {
                                 }
                             >
                                 {form.formState.isSubmitting
-                                    ? "Sending..."
-                                    : "Send Invitation"}
+                                    ? t("band.sending")
+                                    : t("band.send")}
                             </Button>
                         </DialogFooter>
                     </form>

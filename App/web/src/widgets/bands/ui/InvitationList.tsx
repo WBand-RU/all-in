@@ -4,12 +4,14 @@ import { Card, CardContent } from "@/shared/ui/card";
 import { useGetBandInvitationList } from "@/lib/generated-api/band-api/invitations";
 import { ApiCodes } from "@/lib/generated-api/band-api/models";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 interface InvitationCardProps {
     invitation: any; // TODO: Use proper API type once generated
 }
 
 export function InvitationCard({ invitation }: InvitationCardProps) {
+    const { t } = useTranslation();
     const getStatusIcon = (status: string) => {
         switch (status) {
             case "Pending":
@@ -34,11 +36,11 @@ export function InvitationCard({ invitation }: InvitationCardProps) {
                                 {invitation.inviteeEmail}
                             </span>
                             <Badge variant="outline" className="text-xs">
-                                {invitation.role}
+                                {t(`band.roles.${invitation.role}`)}
                             </Badge>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Invited by {invitation.inviterId}</span>
+                            <span>{t("invitations.invitedBy", { email: invitation.inviterId })}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -51,7 +53,7 @@ export function InvitationCard({ invitation }: InvitationCardProps) {
                             className="flex items-center gap-1"
                         >
                             {getStatusIcon(invitation.status)}
-                            {invitation.status}
+                            {t(`invitations.${invitation.status.toLowerCase()}`)}
                         </Badge>
                     </div>
                 </div>
@@ -62,6 +64,7 @@ export function InvitationCard({ invitation }: InvitationCardProps) {
 
 // Real data component using API
 export function InvitationList({ bandId }: { bandId: string }) {
+    const { t } = useTranslation();
     const { data, isLoading, error } = useGetBandInvitationList(bandId);
 
     if (isLoading) {
@@ -91,8 +94,7 @@ export function InvitationList({ bandId }: { bandId: string }) {
             <Card>
                 <CardContent className="pt-6">
                     <p className="text-muted-foreground text-center">
-                        Failed to load invitations or no permission to view
-                        them.
+                        {t("invitations.loadFailed")}
                     </p>
                 </CardContent>
             </Card>
@@ -113,7 +115,7 @@ export function InvitationList({ bandId }: { bandId: string }) {
             {pendingInvitations.length > 0 && (
                 <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                        Pending Invitations
+                        {t("invitations.pendingTitle")}
                     </h4>
                     {pendingInvitations.map((invitation: any) => (
                         <InvitationCard
@@ -127,7 +129,7 @@ export function InvitationList({ bandId }: { bandId: string }) {
             {otherInvitations.length > 0 && (
                 <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                        Recent Invitations
+                        {t("invitations.recentTitle")}
                     </h4>
                     {otherInvitations.map((invitation: any) => (
                         <InvitationCard
@@ -142,7 +144,7 @@ export function InvitationList({ bandId }: { bandId: string }) {
                 <Card>
                     <CardContent className="pt-6">
                         <p className="text-muted-foreground text-center">
-                            No invitations found for this band.
+                            {t("invitations.emptyBand")}
                         </p>
                     </CardContent>
                 </Card>

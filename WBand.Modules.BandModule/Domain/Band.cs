@@ -52,3 +52,21 @@ public enum InvitationStatus
     Revoked,
     Expired,
 }
+
+public sealed class BandDeparture
+{
+    public Guid Id { get; init; }
+    public Guid BandId { get; init; }
+    public Guid UserId { get; init; }
+    public required string Email { get; init; }
+    public BandDepartureReason Reason { get; init; }
+    public DateTimeOffset LeftAt { get; init; }
+    public DateTimeOffset? RejoinedAt { get; set; }
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum BandDepartureReason
+{
+    Voluntary,
+    RemovedByOwner,
+}

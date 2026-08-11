@@ -18,6 +18,7 @@ using Wolverine.FluentValidation;
 using Wolverine.Http;
 using Wolverine.Marten;
 using Wolverine.RabbitMQ;
+using Weasel.Core;
 
 namespace Shared;
 
@@ -138,6 +139,9 @@ public static class DependencyInjectionExtensions
                     store.Connection(marten.ConnectionString);
                     store.DatabaseSchemaName = marten.SchemaName;
                     store.DisableNpgsqlLogging = true;
+                    // Documents are serialized with string enums (for example "Accepted").
+                    // Marten must use the same representation when translating LINQ predicates.
+                    store.UseSystemTextJsonForSerialization(EnumStorage.AsString);
 
                     foreach (var module in modules.Modules)
                     {

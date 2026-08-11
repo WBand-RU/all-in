@@ -18,4 +18,11 @@ export interface UpdateSongRequest {
   key: UpdateSongRequestKey;
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   bpm: UpdateSongRequestBpm;
+  authors?: string[];
+  tempoTrack?: { bar: number; bpm: number }[];
+  timeSignatureTrack?: { bar: number; beats: number; beatUnit: number }[];
+  countInBars: number;
+  sections?: { name: string; startBar: number; endBar: number }[];
+  status: 'draft' | 'band' | 'catalog' | number;
+  expectedContentVersion: number;
 }

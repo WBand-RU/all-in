@@ -25,6 +25,7 @@ import {
 import { useGetBand, useUpdateBand } from "@/lib/generated-api/band-api/bands";
 import { ApiCodes } from "@/lib/generated-api/band-api/models";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const validationSchema = z.object({
     name: z.string().min(3).max(100),
@@ -43,6 +44,7 @@ type Props = {
 };
 
 export function EditBand({ open, bandId, onClose }: Props) {
+    const { t } = useTranslation();
     const { data: loadedData, refetch } = useGetBand(bandId);
     const form = useForm({
         defaultValues,
@@ -79,17 +81,17 @@ export function EditBand({ open, bandId, onClose }: Props) {
                 {
                     onSuccess: (response) => {
                         if (response.code === ApiCodes.Success) {
-                            toast.success("Band updated successfully");
+                            toast.success(t("band.updated"));
                             form.reset(defaultValues);
                             onClose({ needForRefetch: true });
                         } else if (response.code === ApiCodes.Forbidden) {
                             toast.warning(
-                                "You are not authorized to update a band",
+                                t("band.updateForbidden"),
                             );
                         } else if (response.code === ApiCodes.Conflict) {
-                            toast.warning("Band already exists");
+                            toast.warning(t("band.exists"));
                         } else {
-                            toast.error("Something went wrong");
+                            toast.error(t("errors.generic"));
                         }
                     },
                 },
@@ -106,10 +108,9 @@ export function EditBand({ open, bandId, onClose }: Props) {
         >
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Edit moderator</DialogTitle>
+                    <DialogTitle>{t("band.editBand")}</DialogTitle>
                     <DialogDescription>
-                        Moderators can manage any content on the site. Be
-                        careful!
+                        {t("band.addHint")}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -124,11 +125,11 @@ export function EditBand({ open, bandId, onClose }: Props) {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>{t("common.name")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="text"
-                                            placeholder="Band name"
+                                            placeholder={t("band.bandName")}
                                             {...field}
                                         />
                                     </FormControl>
@@ -139,7 +140,7 @@ export function EditBand({ open, bandId, onClose }: Props) {
 
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button variant="outline">Cancel</Button>
+                                <Button variant="outline">{t("common.cancel")}</Button>
                             </DialogClose>
 
                             <Button
@@ -151,8 +152,8 @@ export function EditBand({ open, bandId, onClose }: Props) {
                                 }
                             >
                                 {form.formState.isSubmitting
-                                    ? "Updating..."
-                                    : "Update"}
+                                    ? t("common.updating")
+                                    : t("common.update")}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -32,6 +32,10 @@ import {
     useGetListOfSongs,
     useDeleteSong,
 } from "@/lib/generated-api/song-api/songs";
+import { useGetListOfBands } from "@/lib/generated-api/band-api/bands";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { useBandAccess } from "@/hooks/use-band-access";
+import { useTranslation } from "react-i18next";
 
 interface Song {
     id: string;
@@ -45,17 +49,22 @@ interface Song {
 export function SongsListPage() {
     const navigator = useNavigator();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [songToDelete, setSongToDelete] = useState<Song | null>(null);
-    const [currentBandId] = useState("default"); // TODO: Get from context
+    const [currentBandId, setCurrentBandId] = useState("all");
+    const { data: bandsData } = useGetListOfBands();
+    const bands = bandsData?.value ?? [];
+    const { access, canEditBand } = useBandAccess();
+    const hasEditableBands = access.some(item => item.canEditContent);
     const {
         data: songs,
         isLoading,
         error,
     } = useGetListOfSongs({
-        bandId: currentBandId,
+        bandId: currentBandId === "all" ? undefined : currentBandId,
         searchTerm: searchTerm || undefined,
         page: 1,
         pageSize: 50,
@@ -64,8 +73,8 @@ export function SongsListPage() {
     useEffect(() => {
         if (error) {
             toast({
-                title: "Error",
-                description: "Failed to load songs",
+                title: t("common.error"),
+                description: t("songs.loadFailed"),
                 variant: "destructive",
             });
         }
@@ -75,8 +84,8 @@ export function SongsListPage() {
         mutation: {
             onSuccess: () => {
                 toast({
-                    title: "Success",
-                    description: "Song deleted successfully",
+                    title: t("common.success"),
+                    description: t("songs.deleted"),
                 });
                 setDeleteDialogOpen(false);
                 setSongToDelete(null);
@@ -87,8 +96,8 @@ export function SongsListPage() {
             },
             onError: () => {
                 toast({
-                    title: "Error",
-                    description: "Failed to delete song",
+                    title: t("common.error"),
+                    description: t("songs.deleteFailed"),
                     variant: "destructive",
                 });
             },
@@ -109,23 +118,30 @@ export function SongsListPage() {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle>Songs</CardTitle>
+                            <CardTitle>{t("songs.title")}</CardTitle>
                             <CardDescription>
-                                Manage your worship songs collection
+                                {t("songs.description")}
                             </CardDescription>
                         </div>
-                        <Button onClick={() => navigator.go("/songs/new")}>
+                        {hasEditableBands && <Button onClick={() => navigator.go("/songs/new")}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Add Song
-                        </Button>
+                            {t("songs.add")}
+                        </Button>}
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="mb-6">
+                    <div className="mb-6 grid gap-4 md:grid-cols-2">
+                        <Select value={currentBandId} onValueChange={setCurrentBandId}>
+                            <SelectTrigger><SelectValue placeholder={t("common.selectBand")} /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">{t("common.allBands")}</SelectItem>
+                                {bands.map((band) => <SelectItem key={band.id} value={band.id}>{band.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                         <div className="relative">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Search songs..."
+                                placeholder={t("songs.search")}
                                 className="pl-8"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -134,32 +150,33 @@ export function SongsListPage() {
                     </div>
 
                     {isLoading ? (
-                        <div className="text-center py-8">Loading...</div>
+                        <div className="text-center py-8">{t("common.loading")}</div>
                     ) : songs?.value?.data?.length === 0 ? (
                         <div className="text-center py-12">
                             <Music className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                             <h3 className="text-lg font-semibold mb-2">
-                                No songs yet
+                                {t("songs.empty")}
                             </h3>
                             <p className="text-muted-foreground mb-4">
-                                Start building your worship library
+                                {t("songs.emptyHint")}
                             </p>
-                            <Button onClick={() => navigator.go("/songs/new")}>
+                            {hasEditableBands && <Button onClick={() => navigator.go("/songs/new")}>
                                 <Plus className="mr-2 h-4 w-4" />
-                                Add Your First Song
-                            </Button>
+                                {t("songs.addFirst")}
+                            </Button>}
                         </div>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Author</TableHead>
-                                    <TableHead>Key</TableHead>
+                                    <TableHead>{t("songs.fields.title")}</TableHead>
+                                    <TableHead>{t("common.author")}</TableHead>
+                                    <TableHead>{t("songs.groupColumn")}</TableHead>
+                                    <TableHead>{t("songs.fields.key")}</TableHead>
                                     <TableHead>BPM</TableHead>
-                                    <TableHead>Added</TableHead>
+                                    <TableHead>{t("common.added")}</TableHead>
                                     <TableHead className="text-right">
-                                        Actions
+                                        {t("common.actions")}
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -178,6 +195,9 @@ export function SongsListPage() {
                                         <TableCell>
                                             {song.author || "-"}
                                         </TableCell>
+                                        <TableCell>
+                                            {bands.find((band) => band.id === song.bandId)?.name ?? "-"}
+                                        </TableCell>
                                         <TableCell>{song.key || "-"}</TableCell>
                                         <TableCell>{song.bpm || "-"}</TableCell>
                                         <TableCell>
@@ -187,7 +207,7 @@ export function SongsListPage() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
-                                                <Button
+                                                {canEditBand(song.bandId) && <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={(e) => {
@@ -198,8 +218,8 @@ export function SongsListPage() {
                                                     }}
                                                 >
                                                     <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button
+                                                </Button>}
+                                                {canEditBand(song.bandId) && <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={(e) => {
@@ -211,7 +231,7 @@ export function SongsListPage() {
                                                     }}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                </Button>}
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -225,11 +245,9 @@ export function SongsListPage() {
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Delete Song</DialogTitle>
+                        <DialogTitle>{t("songs.deleteTitle")}</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete "
-                            {songToDelete?.title}"? This action cannot be
-                            undone.
+                            {t("songs.deleteConfirm", { title: songToDelete?.title })}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -237,10 +255,10 @@ export function SongsListPage() {
                             variant="outline"
                             onClick={() => setDeleteDialogOpen(false)}
                         >
-                            Cancel
+                            {t("common.cancel")}
                         </Button>
                         <Button variant="destructive" onClick={handleDelete}>
-                            Delete
+                            {t("common.delete")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

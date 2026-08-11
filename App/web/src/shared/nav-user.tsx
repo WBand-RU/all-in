@@ -29,14 +29,16 @@ import {
 import { useAuthContext } from "../providers/auth/AuthorizationProviderContext";
 import { Roles, type Roles as PlatformRole } from "../types/roles";
 import { useKeycloak } from "@react-keycloak/web";
+import { useTranslation } from "react-i18next";
 
 export function NavUser() {
 	const { isMobile } = useSidebar();
 	const user = useAuthContext();
 	const { keycloak } = useKeycloak();
+	const { t } = useTranslation();
 	const mapper = new Map<PlatformRole, string>([
-		[Roles.SuperAdmin, "Super administrator"],
-		[Roles.Moderator, "Moderator"],
+		[Roles.SuperAdmin, t("user.superAdmin")],
+		[Roles.Moderator, t("user.moderator")],
 	]);
 
 	if (!user.email) {
@@ -65,7 +67,7 @@ export function NavUser() {
 							<div className="grid flex-1 text-left text-sm leading-tight">
 								<span className="truncate font-medium">{user.email}</span>
 								<span className="text-muted-foreground truncate text-xs">
-					{user.role ? mapper.get(user.role) : "User"}
+					{user.role ? mapper.get(user.role) : t("user.user")}
 								</span>
 							</div>
 							<MoreVerticalIcon className="ml-auto size-4" />
@@ -95,21 +97,21 @@ export function NavUser() {
 						<DropdownMenuGroup>
 							<DropdownMenuItem>
 								<UserCircleIcon />
-								Account
+								{t("user.account")}
 							</DropdownMenuItem>
 							<DropdownMenuItem>
 								<CreditCardIcon />
-								Billing
+								{t("user.billing")}
 							</DropdownMenuItem>
 							<DropdownMenuItem>
 								<BellIcon />
-								Notifications
+								{t("user.notifications")}
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem onSelect={handleLogOut}>
 							<LogOutIcon />
-							Log out
+							{t("user.logout")}
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
