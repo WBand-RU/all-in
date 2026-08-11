@@ -8,14 +8,6 @@ interface OfflineData {
     lastSyncTime: Date;
 }
 
-interface SyncConflict {
-    id: string;
-    type: string;
-    localData: any;
-    remoteData: any;
-    resolution?: "local" | "remote" | "merge";
-}
-
 class OfflineService {
     private readonly DB_NAME = "WBandOfflineDB";
     private readonly DB_VERSION = 1;

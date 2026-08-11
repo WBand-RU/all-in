@@ -5,11 +5,9 @@ import {
     ChevronUp,
     ChevronDown,
     Music,
-    PlayCircle,
     PauseCircle,
     Hash,
     Clock,
-    Settings,
     ZoomIn,
     ZoomOut,
     Play,
@@ -41,8 +39,8 @@ export function StagePage() {
     const navigate = useNavigate();
     const [fontSize, setFontSize] = useState(3); // 1-5 scale
     const [showChords, setShowChords] = useState(true);
-    const [autoScroll, setAutoScroll] = useState(false);
-    const [scrollPosition, setScrollPosition] = useState(0);
+    const [autoScroll] = useState(false);
+    const [scrollPosition] = useState(0);
     const [currentVerse, setCurrentVerse] = useState(0);
 
     const [stageData, setStageData] = useState<StageData>({

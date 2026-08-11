@@ -1,15 +1,21 @@
-import { createContext, useContext, useEffect, useState, type PropsWithChildren } from "react";
-import type { Roles } from "../../types/roles";
+import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { Roles, type Roles as PlatformRole } from "../../types/roles";
 import { useKeycloak } from "@react-keycloak/web";
+import { apiClient } from "@/lib/axios-instance";
 
-type AuthContext = {
+export type AuthContext = {
 	email?: string;
-	// role?: Roles;
+	name?: string;
+	avatar?: string;
+	role?: PlatformRole;
+	platformRoles: readonly PlatformRole[];
+	hasRole: (role: PlatformRole) => boolean;
 };
 
 const Context = createContext<AuthContext>({
 	email: undefined,
-	// role: undefined,
+	platformRoles: [],
+	hasRole: () => false,
 });
 
 export function useAuthContext() {
@@ -18,7 +24,8 @@ export function useAuthContext() {
 
 export function AuthContextProvider({ children }: PropsWithChildren) {
 	const [email, setEmail] = useState<string>();
-	// const [role, setRole] = useState<Roles>();
+	const [name, setName] = useState<string>();
+	const [avatar, setAvatar] = useState<string>();
 	const { initialized, keycloak } = useKeycloak();
 
 	useEffect(() => {
@@ -28,42 +35,31 @@ export function AuthContextProvider({ children }: PropsWithChildren) {
 
 		if (!keycloak.authenticated) {
 			setEmail(undefined);
-			// setRole(undefined);
+			setName(undefined);
+			setAvatar(undefined);
+			return;
 		}
 
 		keycloak.loadUserInfo()
 			.then(info => {
 				setEmail(info.email);
+				setName(info.name ?? info.preferred_username);
+				setAvatar(info.picture);
             });
 
-        // const allowedRoles = [
-        //     Roles."admin", "user", "moderator",
-        // ];
-
-  //       for (const allowedRole in allowedRoles) {
-  //           if (keycloak.hasRealmRole(allowedRole)) {
-  //               setRole(allowedRole as Roles);
-  //               break;
-  //           }
-  //       }
-
-		// if (keycloak.hasRealmRole("admin")) {
-		// 	setRole("admin");
-		// } else if (keycloak.hasRealmRole("user")) {
-		// 	setRole("user");
-		// } else if (keycloak.hasRealmRole("moderator")) {
-		// 	setRole("moderator");
-		// } else {
-		// 	setRole(undefined);
-		// }
+		void apiClient.get("/api/user/me", {
+			headers: { Authorization: `Bearer ${keycloak.token}` },
+		});
 	}, [initialized, keycloak]);
 
-	function hasRole(role: Roles): boolean {
-		return keycloak.hasRealmRole(role);
-	}
+	const platformRoles = useMemo(() =>
+		Object.values(Roles).filter(role => keycloak.hasRealmRole(role)),
+	[keycloak, initialized]);
+	const hasRole = (role: PlatformRole) => platformRoles.includes(role);
+	const role = platformRoles[0];
 
 	return (
-		<Context.Provider value={{ email }}>
+		<Context.Provider value={{ email, name, avatar, role, platformRoles, hasRole }}>
 			{children}
 		</Context.Provider>
 	);

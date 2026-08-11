@@ -1,5 +1,6 @@
 using Shared.Modules;
 using WBand.Modules.FileModule;
+using WBand.Modules.BandModule;
 using WBand.Modules.UserModule;
 using Xunit;
 
@@ -10,7 +11,7 @@ public sealed class ModuleCatalogTests
     [Fact]
     public void Modules_HaveUniqueNamesAndAssemblies()
     {
-        var catalog = new ModuleCatalog(new UserModule(), new FileModule());
+        var catalog = new ModuleCatalog(new UserModule(), new BandModule(), new FileModule());
 
         Assert.Equal(catalog.Modules.Count, catalog.Modules.Select(module => module.Name).Distinct().Count());
         Assert.Equal(
@@ -26,7 +27,7 @@ public sealed class ModuleCatalogTests
     [Fact]
     public void Modules_DoNotComeFromLegacyServicesDirectory()
     {
-        var catalog = new ModuleCatalog(new UserModule(), new FileModule());
+        var catalog = new ModuleCatalog(new UserModule(), new BandModule(), new FileModule());
 
         Assert.All(
             catalog.Modules,

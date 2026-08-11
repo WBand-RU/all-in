@@ -3,7 +3,6 @@ import {
     Send,
     Paperclip,
     Mic,
-    MoreVertical,
     Edit2,
     Trash2,
     Reply,
@@ -24,14 +23,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/shared/ui/card";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
 import { Badge } from "@/shared/ui/badge";
-import { Textarea } from "@/shared/ui/textarea";
 import { useToast } from "@/shared/ui/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -156,7 +148,6 @@ export function ChatPage() {
     const [inputMessage, setInputMessage] = useState("");
     const [editingMessage, setEditingMessage] = useState<Message | null>(null);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [notificationsMuted, setNotificationsMuted] = useState(false);
     const currentUserId = "currentUser";
 
@@ -613,7 +604,7 @@ export function ChatPage() {
                                 ref={fileInputRef}
                                 type="file"
                                 className="hidden"
-                                onChange={(e) => {
+                                onChange={() => {
                                     // Handle file upload
                                     toast({
                                         title: "File upload",

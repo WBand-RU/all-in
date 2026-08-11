@@ -44,7 +44,7 @@ export const createBand = (
       
       
       return customInstance<ApiResponseOfBand>(
-      {url: `/band-api/bands/bands`, method: 'POST',
+      {url: `/band-api/bands`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: createBandRequest, signal
     },
@@ -102,7 +102,7 @@ const {mutation: mutationOptions} = options ?
       
       
       return customInstance<ApiResponseOfListOfBand>(
-      {url: `/band-api/bands/bands`, method: 'GET', signal
+      {url: `/band-api/bands`, method: 'GET', signal
     },
       );
     }
@@ -112,7 +112,7 @@ const {mutation: mutationOptions} = options ?
 
 export const getGetListOfBandsQueryKey = () => {
     return [
-    `/band-api/bands/bands`
+    `/band-api/bands`
     ] as const;
     }
 
@@ -188,7 +188,7 @@ export const updateBand = (
       
       
       return customInstance<ApiResponse>(
-      {url: `/band-api/bands/bands/${bandId}`, method: 'PUT',
+      {url: `/band-api/bands/${bandId}`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
       data: updateBandRequest
     },
@@ -245,7 +245,7 @@ const {mutation: mutationOptions} = options ?
       
       
       return customInstance<ApiResponse>(
-      {url: `/band-api/bands/bands/${bandId}`, method: 'DELETE'
+      {url: `/band-api/bands/${bandId}`, method: 'DELETE'
     },
       );
     }
@@ -301,7 +301,7 @@ const {mutation: mutationOptions} = options ?
       
       
       return customInstance<ApiResponseOfBand>(
-      {url: `/band-api/bands/bands/${bandId}`, method: 'GET', signal
+      {url: `/band-api/bands/${bandId}`, method: 'GET', signal
     },
       );
     }
@@ -311,7 +311,7 @@ const {mutation: mutationOptions} = options ?
 
 export const getGetBandQueryKey = (bandId?: string,) => {
     return [
-    `/band-api/bands/bands/${bandId}`
+    `/band-api/bands/${bandId}`
     ] as const;
     }
 
@@ -376,7 +376,6 @@ export function useGetBand<TData = Awaited<ReturnType<typeof getBand>>, TError =
 
   return query;
 }
-
 
 
 

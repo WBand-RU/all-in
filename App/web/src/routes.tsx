@@ -25,6 +25,7 @@ export const Segments = {
     chat: "chat",
     search: "search",
     invitations: "invitations",
+    playback: "playback",
 };
 
 export const router = createBrowserRouter([

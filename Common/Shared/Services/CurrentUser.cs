@@ -11,11 +11,14 @@ public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICur
                 ?? throw new InvalidOperationException("User not found")
         );
 
-    public string Role =>
-        httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role)
-        ?? throw new InvalidOperationException("Role not found");
-
     public string GetUserEmail =>
         httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email)
         ?? throw new InvalidOperationException("Email not found");
+
+    public string? DisplayName =>
+        httpContextAccessor.HttpContext?.User?.FindFirstValue("name")
+        ?? httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
+
+    public bool IsInRole(string role) =>
+        httpContextAccessor.HttpContext?.User?.IsInRole(role) == true;
 }

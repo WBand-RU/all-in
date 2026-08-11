@@ -7,8 +7,6 @@ import { AuthContextProvider } from "./auth/AuthorizationProviderContext";
 export function AuthorizedProvider(props: PropsWithChildren) {
     const setAccessToken = useIdentityStore(x => x.setAccessToken);
 
-    console.log("AuthorizedProvider");
-
     return (
         <ReactKeycloakProvider
             authClient={keycloak}
@@ -18,6 +16,14 @@ export function AuthorizedProvider(props: PropsWithChildren) {
             }} // 'login-required' èëè 'check-sso'
             autoRefreshToken={true}
             onTokens={x => setAccessToken(x.token)}
+            onEvent={(event) => {
+                if (event === "onAuthSuccess" || event === "onAuthRefreshSuccess") {
+                    setAccessToken(keycloak.token);
+                }
+                if (event === "onAuthLogout" || event === "onAuthError") {
+                    setAccessToken(undefined);
+                }
+            }}
         >
             <AuthContextProvider>
                 {props.children}

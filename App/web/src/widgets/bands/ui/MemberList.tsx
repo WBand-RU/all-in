@@ -15,22 +15,29 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { useGetMembers } from "@/lib/generated-api/band-api/members";
+import {
+    getGetMembersQueryKey,
+    useGetMembers,
+    useRemoveMember,
+    useUpdateMemberRole,
+} from "@/lib/generated-api/band-api/members";
 import type { Member } from "@/lib/generated-api/band-api/models";
+import { useAuthContext } from "@/providers/auth/AuthorizationProviderContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MemberCardProps {
     member: Member;
     onRoleChange: (memberId: string, newRole: "Admin" | "Member") => void;
     onRemove: (memberId: string) => void;
+    canManage: boolean;
 }
 
 export function MemberCard({
     member,
     onRoleChange,
     onRemove,
+    canManage,
 }: MemberCardProps) {
-    const canManage = member.role === "Owner" || member.role === "Admin";
-
     const canRemove = canManage && member.role !== "Owner";
 
     const getRoleBadgeVariant = (role: string) => {
@@ -75,7 +82,13 @@ export function MemberCard({
                             className="text-xs"
                         >
                             {getRoleIcon(member.role)}
-                            <span className="ml-1">{member.role}</span>
+                            <span className="ml-1">
+                                {member.role === "Owner"
+                                    ? "Собственник"
+                                    : member.role === "Admin"
+                                      ? "Администратор"
+                                      : "Участник"}
+                            </span>
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                             Joined{" "}
@@ -139,6 +152,10 @@ export function MemberCard({
 // Real data component using API
 export function MemberList({ bandId }: { bandId: string }) {
     const { data, isLoading, error } = useGetMembers(bandId);
+    const { email } = useAuthContext();
+    const updateRole = useUpdateMemberRole();
+    const removeMember = useRemoveMember();
+    const queryClient = useQueryClient();
 
     if (isLoading) {
         return (
@@ -171,18 +188,29 @@ export function MemberList({ bandId }: { bandId: string }) {
     }
 
     const members = data?.value || [];
+    const canManage = members.some(
+        member => member.email === email && member.role === "Owner",
+    );
 
     const handleRoleChange = (
         memberId: string,
         newRole: "Admin" | "Member",
     ) => {
-        console.log("Change role:", memberId, newRole);
-        // TODO: Call API to update member role
+        void updateRole.mutateAsync({
+            bandId,
+            memberId,
+            data: { newRole },
+        }).then(() => queryClient.invalidateQueries({
+            queryKey: getGetMembersQueryKey(bandId),
+        }));
     };
 
     const handleRemove = (memberId: string) => {
-        console.log("Remove member:", memberId);
-        // TODO: Call API to remove member
+        void removeMember.mutateAsync({ bandId, memberId }).then(() =>
+            queryClient.invalidateQueries({
+                queryKey: getGetMembersQueryKey(bandId),
+            }),
+        );
     };
 
     if (members.length === 0) {
@@ -201,6 +229,7 @@ export function MemberList({ bandId }: { bandId: string }) {
                     member={member}
                     onRoleChange={handleRoleChange}
                     onRemove={handleRemove}
+                    canManage={canManage}
                 />
             ))}
         </div>

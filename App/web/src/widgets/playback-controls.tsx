@@ -2,10 +2,8 @@ import { useState } from "react";
 import {
     Play,
     Upload,
-    Settings,
     Loader2,
     Music,
-    Recycle,
     Trash2,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -25,7 +23,6 @@ import {
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { Input } from "@/shared/ui/input";
-import { Badge } from "@/shared/ui/badge";
 import { useToast } from "@/shared/ui/use-toast";
 import {
     useGetTracks,

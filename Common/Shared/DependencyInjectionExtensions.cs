@@ -1,5 +1,6 @@
 using JasperFx.Core;
 using Marten;
+using System.Reflection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -26,7 +27,8 @@ namespace Shared;
 public static class DependencyInjectionExtensions
 {
     /// <summary>
-    /// Configures sources with the priority: environment variables, environment file, then appsettings.json.
+    /// Configures sources with the priority: environment variables, development User Secrets,
+    /// environment file, then appsettings.json.
     /// </summary>
     public static WebApplicationBuilder ApplyWBandConfiguration(this WebApplicationBuilder builder)
     {
@@ -36,6 +38,19 @@ public static class DependencyInjectionExtensions
             optional: true,
             reloadOnChange: true
         );
+
+        if (builder.Environment.IsDevelopment())
+        {
+            var entryAssembly = Assembly.Load(
+                new AssemblyName(builder.Environment.ApplicationName)
+            );
+            builder.Configuration.AddUserSecrets(
+                entryAssembly,
+                optional: true,
+                reloadOnChange: true
+            );
+        }
+
         builder.Configuration.AddEnvironmentVariables();
 
         return builder;

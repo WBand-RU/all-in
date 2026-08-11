@@ -27,17 +27,16 @@ import {
 	useSidebar,
 } from "@/shared/ui/sidebar";
 import { useAuthContext } from "../providers/auth/AuthorizationProviderContext";
-import type { Roles } from "../types/roles";
+import { Roles, type Roles as PlatformRole } from "../types/roles";
 import { useKeycloak } from "@react-keycloak/web";
 
 export function NavUser() {
 	const { isMobile } = useSidebar();
 	const user = useAuthContext();
 	const { keycloak } = useKeycloak();
-	const mapper = new Map<Roles, string>([
-		["admin", "Administrator"],
-		["user", "User"],
-		["moderator", "Moderator"],
+	const mapper = new Map<PlatformRole, string>([
+		[Roles.SuperAdmin, "Super administrator"],
+		[Roles.Moderator, "Moderator"],
 	]);
 
 	if (!user.email) {
@@ -66,7 +65,7 @@ export function NavUser() {
 							<div className="grid flex-1 text-left text-sm leading-tight">
 								<span className="truncate font-medium">{user.email}</span>
 								<span className="text-muted-foreground truncate text-xs">
-									{mapper.get(user.role)}
+					{user.role ? mapper.get(user.role) : "User"}
 								</span>
 							</div>
 							<MoreVerticalIcon className="ml-auto size-4" />

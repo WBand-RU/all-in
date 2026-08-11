@@ -32,7 +32,7 @@ interface CountResponse {
 }
 
 export function NavMain() {
-    const { role } = useAuthContext();
+    useAuthContext();
     const [items, setItems] = useState<MenuItem[]>([]);
 
     // Get pending invitations count
@@ -48,8 +48,7 @@ export function NavMain() {
         countData?.code === ApiCodes.Success ? countData.value : 0;
 
     useEffect(() => {
-        if (role === "user") {
-            setItems([
+        setItems([
                 {
                     title: "Dashboard",
                     url: `/app`,
@@ -96,9 +95,8 @@ export function NavMain() {
                     url: `/app/${Segments.bands}`,
                     icon: UsersIcon,
                 },
-            ]);
-        }
-    }, [role, pendingInvitationsCount]);
+        ]);
+    }, [pendingInvitationsCount]);
 
     return (
         <SidebarGroup>

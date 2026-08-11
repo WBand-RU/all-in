@@ -3,11 +3,12 @@ using JasperFx;
 using Shared;
 using Shared.Modules;
 using WBand.Modules.FileModule;
+using WBand.Modules.BandModule;
 using WBand.Modules.UserModule;
 
 var builder = WebApplication.CreateBuilder(args).ApplyWBandConfiguration();
 
-var modules = new ModuleCatalog(new UserModule(), new FileModule());
+var modules = new ModuleCatalog(new UserModule(), new BandModule(), new FileModule());
 modules.AddServices(builder);
 
 builder.AddKeycloakAuthentication();

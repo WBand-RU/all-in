@@ -14,28 +14,10 @@ type Item = {
 	children?: Item[];
 };
 
-type TitleResolver = (segment: string) => Promise<string> | string;
-
 const items: Item[] = [
 	{
 		segment: Segments.app,
 		title: "Dashboard",
-		children: [
-			{
-				segment: Segments.moderators,
-				title: "Moderators",
-			},
-			{
-				segment: Segments.equipmentTypes,
-				title: "Equipment Types",
-				children: [
-					{
-						segment: Segments.equipmentTypes,
-						title: "" // TODO: not implemented
-					}
-				]
-			}
-		]
 	},
 ];
 

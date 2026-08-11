@@ -1,4 +1,5 @@
 using Keycloak.AuthServices.Authorization;
+using Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -33,8 +34,14 @@ public static class HostExtensions
             options.SslRequired = keycloak.SslRequired ? "external" : "none";
         });
 
-        builder
-            .Services.AddAuthorization()
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy(Roles.SuperAdmin, policy => policy.RequireRole(Roles.SuperAdmin));
+            options.AddPolicy(
+                Roles.Moderator,
+                policy => policy.RequireRole(Roles.SuperAdmin, Roles.Moderator)
+            );
+        })
             .AddKeycloakAuthorization(options =>
             {
                 options.AuthServerUrl = keycloak.Url;

@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Shared\Shared.csproj" />
     <ProjectReference Include="..\..\WBand.Modules.FileModule\WBand.Modules.FileModule.csproj" />
+    <ProjectReference Include="..\..\WBand.Modules.BandModule\WBand.Modules.BandModule.csproj" />
     <ProjectReference Include="..\..\WBand.Modules.UserModule\WBand.Modules.UserModule.csproj" />
   </ItemGroup>
 </Project>

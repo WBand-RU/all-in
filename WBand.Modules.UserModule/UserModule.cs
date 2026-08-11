@@ -1,4 +1,5 @@
 using System.Reflection;
+using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -6,6 +7,7 @@ using Shared.Modules;
 using Shared.HealthChecks;
 using WBand.Modules.UserModule.Infrastructure;
 using WBand.Modules.UserModule.Infrastructure.Messaging;
+using WBand.Modules.UserModule.Domain;
 using Wolverine;
 using Wolverine.RabbitMQ;
 
@@ -21,6 +23,8 @@ public sealed class UserModule : IWBandModule
     public string Name => "UserModule";
 
     public Assembly Assembly => typeof(UserModule).Assembly;
+
+    public string MartenSchemaName => "users";
 
     public void AddServices(IHostApplicationBuilder builder)
     {
@@ -61,6 +65,11 @@ public sealed class UserModule : IWBandModule
         options
             .ListenToRabbitQueueOnNamedBroker(KeycloakBroker, events.Queue)
             .DefaultIncomingMessage<KeycloakEvent>();
+    }
+
+    public void ConfigureMarten(StoreOptions options)
+    {
+        options.Schema.For<UserProfile>().DatabaseSchemaName(MartenSchemaName);
     }
 
     private static void Copy(KeycloakEventsOptions source, KeycloakEventsOptions target)

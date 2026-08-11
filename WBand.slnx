@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Modules/">
     <Project Path="WBand.Modules.FileModule/WBand.Modules.FileModule.csproj" />
+    <Project Path="WBand.Modules.BandModule/WBand.Modules.BandModule.csproj" />
     <Project Path="WBand.Modules.UserModule/WBand.Modules.UserModule.csproj" />
   </Folder>
   <Folder Name="/App/">
