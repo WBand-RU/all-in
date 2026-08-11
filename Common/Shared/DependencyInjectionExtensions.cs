@@ -1,17 +1,15 @@
 using System.Reflection;
 using FluentValidation;
-using ImTools;
 using JasperFx.Core;
 using Marten;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Extensions.Logging;
 using Shared.Services;
 using Wolverine;
 using Wolverine.ErrorHandling;
 using Wolverine.FluentValidation;
-using Wolverine.Http;
-using Wolverine.Http.ApiVersioning;
 using Wolverine.Marten;
 using Wolverine.RabbitMQ;
 
@@ -28,6 +26,9 @@ public static class DependencyInjection
 
         builder.Services.AddValidatorsFromAssembly(assembly);
 
+        Log.Logger = new LoggerConfiguration().WriteTo.Debug().WriteTo.Console().CreateLogger();
+        builder.Logging.AddSerilog(Log.Logger);
+
         return builder;
     }
 
@@ -37,6 +38,7 @@ public static class DependencyInjection
         ushort rabbitmqPort,
         string rabbitmqUsername,
         string rabbitmqPassword,
+        string rabbitmqVirtualHost,
         string martenDatabaseConnectionString,
         string martenDatabaseSchemaName,
         Assembly assembly,
@@ -56,6 +58,7 @@ public static class DependencyInjection
                     x.Port = rabbitmqPort;
                     x.UserName = rabbitmqUsername;
                     x.Password = rabbitmqPassword;
+                    x.VirtualHost = rabbitmqVirtualHost;
                 })
                 .AutoProvision()
                 .UseConventionalRouting();
@@ -89,16 +92,8 @@ public static class DependencyInjection
         });
     }
 
-    public static void UseWolverineEndpoints(this WebApplication app)
+    public static void AddRabbitMQService(this IServiceCollection services)
     {
-        app.MapWolverineEndpoints(opts =>
-        {
-            opts.UseApiVersioning(x =>
-            {
-                x.UnversionedPolicy = UnversionedPolicy.RequireExplicit;
-            });
-
-            opts.UseDataAnnotationsValidationProblemDetailMiddleware();
-        });
+        services.AddScoped<IRabbitMQService, RabbitMQService>();
     }
 }

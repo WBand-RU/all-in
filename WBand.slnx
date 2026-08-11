@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Modules/">
+    <Project Path="WBand.Modules.FileModule/WBand.Modules.FileModule.csproj" Id="232257fb-d336-4f26-9c49-088a06d36cf8" />
+    <Project Path="WBand.Modules.UserModule/WBand.Modules.UserModule.csproj" Id="b7c2cb9b-5bc6-4b74-a925-2e85ad946888" />
+  </Folder>
   <Folder Name="/Services/">
     <Project Path="BandEvents/BandEvents.csproj" Id="4e4c45e3-5656-4b7a-a011-85114d2d52d6" />
     <Project Path="Services/BandService.Tests/BandService.Tests.csproj">
@@ -20,16 +24,12 @@
     <Project Path="Services/SongService/SongService.csproj">
       <Build Solution="Debug|*" Project="false" />
     </Project>
-    <Project Path="Services/UserService/UserService.csproj" />
   </Folder>
   <Folder Name="/App/">
     <Project Path="App/WBand.AgentPlayer/WBand.AgentPlayer.csproj">
       <Build Solution="Debug|*" Project="false" />
     </Project>
-    <Project Path="App/WBand.AppHost/WBand.AppHost.csproj" />
-    <Project Path="App/WBand.Tests/WBand.Tests.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="App/WBand.WebAPI/WBand.WebAPI.csproj" />
     <Project Path="App/web/" Type="Website" DisplayName="web">
       <BuildType Project="Debug" />
       <Build Solution="Debug|*" Project="false" />
@@ -56,6 +56,11 @@
   <Folder Name="/Common/">
     <Project Path="Common/Auth/Auth.csproj" />
     <Project Path="Common/Shared/Shared.csproj" />
-    <Project Path="Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/Элементы решения/">
+    <File Path="AGENTS.md" />
+    <File Path="DEVELOPMENT_PLAN.md" />
+    <File Path="README.md" />
+    <File Path="WBAND_SYSTEM_SPEC_v1.md" />
   </Folder>
 </Solution>

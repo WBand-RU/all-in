@@ -1,22 +1,31 @@
-Lern all projects for understand contexts.
-Use mcp tools if need.
+# Руководство по репозиторию
 
-web:
+## Целевая архитектура и структура
 
-- use pnpm, tailwindcss, shadcn, vite, ts, react.
-- if only you modify any backend api endpoints, then use `pnpm generate-api` for generate client code (don't use it if you modify frontend code).
-- for add shadcn components use `pnpm dlx shadcn@latest add <component_name>`.
-- make user frendly and best practices UI/UX.
-- use `react-router` intead `react-router-dom` (lib name changed)
+WBand развивается как **модульный монолит** на ASP.NET Core. Рабочие серверные модули размещаются в каталогах `WBand.Modules.<НазваниеМодуля>/`; каждый модуль владеет своей доменной логикой, обработчиками, контрактами и данными. Используйте `Common/` только для действительно общих абстракций, не превращая его в место для доменной логики.
 
-backend:
+Каталоги `Services/` и `src/` — устаревший код: он не используется и будет удалён. Не добавляйте туда функциональность и не создавайте новых зависимостей от этих проектов. `App/` содержит точки входа и клиентские приложения. Функциональные и архитектурные требования описаны в `WBAND_SYSTEM_SPEC_v1.md`.
 
-- use current architecture.
-- use microservice architecture.
-- the system ups via Aspire AppHost project.
-- divide domain logic on microservices.
-- use best practices for coding.
-- make classes small and understandable for people.
-- write triple slash comments.
-- make architecture code expandable and easy modifyable.
-- use SAGA, retrying, resiliance if need for reduce errors count.
+## Взаимодействие модулей
+
+Для HTTP-взаимодействия и событийной интеграции используйте WolverineFX. Сохраняйте границы модулей: не обращайтесь к их внутренним реализациям напрямую. Для операций, охватывающих несколько модулей, проектируйте явные сообщения, идемпотентные обработчики, повторные попытки и SAGA-координацию при необходимости.
+
+## Сборка, тестирование и локальная разработка
+
+- `dotnet build WBand.slnx` — собирает .NET-решение.
+- `dotnet test WBand.slnx` — запускает все обнаруженные .NET-тесты.
+- В `App/web` выполните `bun install`, затем `bun run dev`, чтобы запустить Vite.
+- `bun run build` проверяет TypeScript и собирает фронтенд; `bun run lint` запускает ESLint.
+- Выполняйте `bun run generate-api` только после изменения HTTP-эндпоинтов бэкенда, чтобы обновить типизированный клиент.
+
+Запускайте состав системы через Aspire AppHost, если он включён в решение.
+
+## Стиль кода и соглашения
+
+Соблюдайте `.editorconfig`: UTF-8, четыре пробела для отступов и двойные кавычки, где настроено. В C# используйте PascalCase для публичных типов и членов, camelCase — для локальных переменных и параметров. Делайте классы небольшими, добавляйте `///` XML-документацию к публичным контрактам и именуйте тесты по поведению: `CreateBand_WhenNameIsValid_ReturnsBand`.
+
+Фронтенд использует React, TypeScript, Bun, Vite, Tailwind CSS, shadcn/ui и `react-router` (не `react-router-dom`). Проектируйте доступный и понятный интерфейс. Добавляйте компоненты shadcn командой `bunx shadcn@latest add <component>`.
+
+## Коммиты и pull request
+
+Используйте короткие сообщения в стиле Conventional Commits: `feat: add band module`, `fix: handle invitation expiry`. Один коммит — одна задача. В PR опишите изменение поведения, укажите связанные задачи, проверки и приложите скриншоты для заметных UI-изменений. Отдельно отмечайте новые HTTP-контракты, Wolverine-сообщения и изменения конфигурации.

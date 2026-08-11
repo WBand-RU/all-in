@@ -1,8 +1,8 @@
 import Keycloak, { type KeycloakConfig } from "keycloak-js";
 
 const keycloakConfig: KeycloakConfig = {
-    url: "https://localhost:8080", // URL Keycloak
-    realm: "wband", // realm
+    url: "https://auth.wband.ru", // URL Keycloak
+    realm: "wband-dev", // realm
     clientId: "web", // Client ID
 };
 

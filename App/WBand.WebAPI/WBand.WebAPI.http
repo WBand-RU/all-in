@@ -1,0 +1,6 @@
+@WBand.WebAPI_HostAddress = http://localhost:5079
+
+GET {{WBand.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

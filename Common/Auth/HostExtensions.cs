@@ -1,56 +1,47 @@
-﻿using Auth.Utils.ClaimTransformations;
-using Microsoft.AspNetCore.Authentication;
+using Keycloak.AuthServices.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Auth;
 
 public static class HostExtensions
 {
     public static IHostApplicationBuilder AddKeycloakAuthentication(
-        this IHostApplicationBuilder builder
+        this IHostApplicationBuilder builder,
+        string url,
+        string realm,
+        string clientId,
+        string clientSecret,
+        bool sslRequired
     )
     {
+        builder.Services.AddKeycloakWebApiAuthentication(x =>
+        {
+            x.AuthServerUrl = url;
+            x.Realm = realm;
+            x.Resource = clientId;
+            x.Credentials.Secret = clientSecret;
+            x.SslRequired = sslRequired ? "external" : "none";
+        });
+
         builder
-            .Services.AddAuthentication()
-            .AddKeycloakJwtBearer(
-                serviceName: "keycloak",
-                realm: "wband",
-                options =>
-                {
-                    Console.WriteLine($"Audience: {options.Audience}");
-
-                    options.MetadataAddress =
-                        options.Authority + "/.well-known/openid-configuration";
-
-                    options.Audience = "account";
-
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateAudience = true,
-                        ValidAudiences = [options.Audience],
-                        NameClaimType = "preferred_username",
-                    };
-
-                    if (builder.Environment.IsDevelopment())
-                    {
-                        options.RequireHttpsMetadata = false;
-                    }
-                    else
-                    {
-                        options.Authority = "https://your-keycloak-server.com/realms/MyRealm";
-                    }
-                }
-            );
-
-        builder.Services.AddAuthorizationBuilder();
-
-        builder.Services.AddHttpContextAccessor();
-
-        builder.Services.AddSingleton<IClaimsTransformation, RoleClaimsTransformation>();
+            .Services.AddAuthorization()
+            .AddKeycloakAuthorization(x =>
+            {
+                x.AuthServerUrl = url;
+                x.Realm = realm;
+                x.Resource = clientId;
+                x.Credentials.Secret = clientSecret;
+                x.SslRequired = sslRequired ? "external" : "none";
+            });
 
         return builder;
+    }
+
+    public static void UseKeycloakAuthentication(this IApplicationBuilder app)
+    {
+        app.UseAuthentication();
+        app.UseAuthorization();
     }
 }

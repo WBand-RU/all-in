@@ -4,12 +4,12 @@ import { useKeycloak } from "@react-keycloak/web";
 
 type AuthContext = {
 	email?: string;
-	role?: Roles;
+	// role?: Roles;
 };
 
 const Context = createContext<AuthContext>({
 	email: undefined,
-	role: undefined,
+	// role: undefined,
 });
 
 export function useAuthContext() {
@@ -18,7 +18,7 @@ export function useAuthContext() {
 
 export function AuthContextProvider({ children }: PropsWithChildren) {
 	const [email, setEmail] = useState<string>();
-	const [role, setRole] = useState<Roles>();
+	// const [role, setRole] = useState<Roles>();
 	const { initialized, keycloak } = useKeycloak();
 
 	useEffect(() => {
@@ -28,23 +28,34 @@ export function AuthContextProvider({ children }: PropsWithChildren) {
 
 		if (!keycloak.authenticated) {
 			setEmail(undefined);
-			setRole(undefined);
+			// setRole(undefined);
 		}
 
 		keycloak.loadUserInfo()
 			.then(info => {
 				setEmail(info.email);
-			});
+            });
 
-		if (keycloak.hasRealmRole("admin")) {
-			setRole("admin");
-		} else if (keycloak.hasRealmRole("user")) {
-			setRole("user");
-		} else if (keycloak.hasRealmRole("moderator")) {
-			setRole("moderator");
-		} else {
-			setRole(undefined);
-		}
+        // const allowedRoles = [
+        //     Roles."admin", "user", "moderator",
+        // ];
+
+  //       for (const allowedRole in allowedRoles) {
+  //           if (keycloak.hasRealmRole(allowedRole)) {
+  //               setRole(allowedRole as Roles);
+  //               break;
+  //           }
+  //       }
+
+		// if (keycloak.hasRealmRole("admin")) {
+		// 	setRole("admin");
+		// } else if (keycloak.hasRealmRole("user")) {
+		// 	setRole("user");
+		// } else if (keycloak.hasRealmRole("moderator")) {
+		// 	setRole("moderator");
+		// } else {
+		// 	setRole(undefined);
+		// }
 	}, [initialized, keycloak]);
 
 	function hasRole(role: Roles): boolean {
@@ -52,7 +63,7 @@ export function AuthContextProvider({ children }: PropsWithChildren) {
 	}
 
 	return (
-		<Context.Provider value={{ email, role, }}>
+		<Context.Provider value={{ email }}>
 			{children}
 		</Context.Provider>
 	);

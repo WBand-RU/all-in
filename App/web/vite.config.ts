@@ -10,9 +10,15 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
-        port: 53663,
+        port: 3000,
         host: "0.0.0.0",
-        allowedHosts: ["host.docker.internal", "aspire.dev.internal"]
+        allowedHosts: ["host.docker.internal", "aspire.dev.internal"],
+        proxy: {
+            "/api": {
+                target: "http://localhost:5000",
+                changeOrigin: true,
+            },
+        }
     },
     resolve: {
         alias: {
