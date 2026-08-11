@@ -102,7 +102,9 @@ public static class DependencyInjectionExtensions
 
         builder.UseWolverine(options =>
         {
-            options.CodeGeneration.TypeLoadMode = JasperFx.CodeGeneration.TypeLoadMode.Static;
+            // Static mode requires generated handlers to be compiled into every module assembly.
+            // Dynamic mode is required during normal development when endpoints are added or changed.
+            options.CodeGeneration.TypeLoadMode = JasperFx.CodeGeneration.TypeLoadMode.Dynamic;
             options
                 .Policies.OnAnyException()
                 .RetryWithCooldown(50.Milliseconds(), 100.Milliseconds(), 250.Milliseconds());

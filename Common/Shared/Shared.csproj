@@ -22,5 +22,6 @@
         <PackageReference Include="WolverineFx.Marten" Version="6.24.5" />
         <PackageReference Include="WolverineFx.RabbitMQ" Version="6.24.5" />
         <PackageReference Include="WolverineFx.Http" Version="6.24.4" />
+        <PackageReference Include="WolverineFx.RuntimeCompilation" Version="6.25.5" />
     </ItemGroup>
 </Project>

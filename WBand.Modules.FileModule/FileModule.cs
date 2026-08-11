@@ -31,15 +31,17 @@ public sealed class FileModule : IWBandModule
 
         builder.Services.AddMinio(options =>
         {
-            options.WithEndpoint(storage.Url).WithCredentials(storage.AccessKey, storage.SecretKey);
+            var uri = new Uri(storage.Url, UriKind.Absolute);
+            var endpoint = uri.IsDefaultPort ? uri.Host : $"{uri.Host}:{uri.Port}";
+
+            options.WithEndpoint(endpoint).WithCredentials(storage.AccessKey, storage.SecretKey);
 
             if (!string.IsNullOrWhiteSpace(storage.Region))
             {
                 options.WithRegion(storage.Region);
             }
 
-            if (Uri.TryCreate(storage.Url, UriKind.Absolute, out var uri)
-                && uri.Scheme == Uri.UriSchemeHttps)
+            if (uri.Scheme == Uri.UriSchemeHttps)
             {
                 options.WithSSL();
             }
