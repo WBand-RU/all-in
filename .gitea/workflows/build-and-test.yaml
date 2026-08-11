@@ -25,24 +25,17 @@ jobs:
       - name: Test Solution
         run: dotnet test WBand.slnx --no-build --verbosity normal
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install Web Dependencies
         working-directory: ./App/web
-        run: pnpm install
+        run: bun install --frozen-lockfile
 
       - name: Build Web
         working-directory: ./App/web
-        run: pnpm build
+        run: bun run build
 
       - name: Lint Web
         working-directory: ./App/web
-        run: pnpm lint
+        run: bun run lint

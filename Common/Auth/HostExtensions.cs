@@ -1,47 +1,61 @@
 using Keycloak.AuthServices.Authorization;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Auth;
 
+/// <summary>
+/// Registers Keycloak authentication and authorization for the API host.
+/// </summary>
 public static class HostExtensions
 {
+    /// <summary>
+    /// Adds Keycloak authentication using validated application configuration.
+    /// </summary>
     public static IHostApplicationBuilder AddKeycloakAuthentication(
-        this IHostApplicationBuilder builder,
-        string url,
-        string realm,
-        string clientId,
-        string clientSecret,
-        bool sslRequired
+        this IHostApplicationBuilder builder
     )
     {
-        builder.Services.AddKeycloakWebApiAuthentication(x =>
+        var keycloak = KeycloakAuthenticationOptions.FromConfiguration(builder.Configuration);
+
+        builder
+            .Services.AddOptions<KeycloakAuthenticationOptions>()
+            .Configure(options => Copy(keycloak, options))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services.AddKeycloakWebApiAuthentication(options =>
         {
-            x.AuthServerUrl = url;
-            x.Realm = realm;
-            x.Resource = clientId;
-            x.Credentials.Secret = clientSecret;
-            x.SslRequired = sslRequired ? "external" : "none";
+            options.AuthServerUrl = keycloak.Url;
+            options.Realm = keycloak.Realm;
+            options.Resource = keycloak.ClientId;
+            options.Credentials.Secret = keycloak.ClientSecret;
+            options.SslRequired = keycloak.SslRequired ? "external" : "none";
         });
 
         builder
             .Services.AddAuthorization()
-            .AddKeycloakAuthorization(x =>
+            .AddKeycloakAuthorization(options =>
             {
-                x.AuthServerUrl = url;
-                x.Realm = realm;
-                x.Resource = clientId;
-                x.Credentials.Secret = clientSecret;
-                x.SslRequired = sslRequired ? "external" : "none";
+                options.AuthServerUrl = keycloak.Url;
+                options.Realm = keycloak.Realm;
+                options.Resource = keycloak.ClientId;
+                options.Credentials.Secret = keycloak.ClientSecret;
+                options.SslRequired = keycloak.SslRequired ? "external" : "none";
             });
 
         return builder;
     }
 
-    public static void UseKeycloakAuthentication(this IApplicationBuilder app)
+    private static void Copy(
+        KeycloakAuthenticationOptions source,
+        KeycloakAuthenticationOptions target
+    )
     {
-        app.UseAuthentication();
-        app.UseAuthorization();
+        target.Url = source.Url;
+        target.Realm = source.Realm;
+        target.ClientId = source.ClientId;
+        target.ClientSecret = source.ClientSecret;
+        target.SslRequired = source.SslRequired;
     }
 }

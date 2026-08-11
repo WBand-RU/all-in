@@ -1,13 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Options;
 using Minio;
 using Minio.DataModel.Args;
+using WBand.Modules.FileModule.Infrastructure;
 
 namespace WBand.Modules.FileModule.Services;
 
-internal class FileService(IMinioClient minioClient, IOptions<FileServiceConfig> options)
+internal sealed class FileService(IMinioClient minioClient, IOptions<FileStorageOptions> options)
     : IFileService
 {
     private readonly string bucket = options.Value.Bucket;

@@ -1,29 +1,7 @@
 <Solution>
   <Folder Name="/Modules/">
-    <Project Path="WBand.Modules.FileModule/WBand.Modules.FileModule.csproj" Id="232257fb-d336-4f26-9c49-088a06d36cf8" />
-    <Project Path="WBand.Modules.UserModule/WBand.Modules.UserModule.csproj" Id="b7c2cb9b-5bc6-4b74-a925-2e85ad946888" />
-  </Folder>
-  <Folder Name="/Services/">
-    <Project Path="BandEvents/BandEvents.csproj" Id="4e4c45e3-5656-4b7a-a011-85114d2d52d6" />
-    <Project Path="Services/BandService.Tests/BandService.Tests.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
-    <Project Path="Services/BandService/BandService.csproj" />
-    <Project Path="Services/ChatService/ChatService.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
-    <Project Path="Services/NotificationService/NotificationService.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
-    <Project Path="Services/PlaybackService/PlaybackService.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
-    <Project Path="Services/PlaylistService/PlaylistService.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
-    <Project Path="Services/SongService/SongService.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="WBand.Modules.FileModule/WBand.Modules.FileModule.csproj" />
+    <Project Path="WBand.Modules.UserModule/WBand.Modules.UserModule.csproj" />
   </Folder>
   <Folder Name="/App/">
     <Project Path="App/WBand.AgentPlayer/WBand.AgentPlayer.csproj">
@@ -33,29 +11,16 @@
     <Project Path="App/web/" Type="Website" DisplayName="web">
       <BuildType Project="Debug" />
       <Build Solution="Debug|*" Project="false" />
-      <Properties Name="WebsiteProperties">
-        <Property Name="Debug.AspNetCompiler.Debug" Value="&quot;True&quot;" />
-        <Property Name="Debug.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
-        <Property Name="Debug.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
-        <Property Name="Debug.AspNetCompiler.PhysicalPath" Value="&quot;web\&quot;" />
-        <Property Name="Debug.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_62008\&quot;" />
-        <Property Name="Debug.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
-        <Property Name="Debug.AspNetCompiler.VirtualPath" Value="&quot;/localhost_62008&quot;" />
-        <Property Name="Release.AspNetCompiler.Debug" Value="&quot;False&quot;" />
-        <Property Name="Release.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
-        <Property Name="Release.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
-        <Property Name="Release.AspNetCompiler.PhysicalPath" Value="&quot;web\&quot;" />
-        <Property Name="Release.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_62008\&quot;" />
-        <Property Name="Release.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
-        <Property Name="Release.AspNetCompiler.VirtualPath" Value="&quot;/localhost_62008&quot;" />
-        <Property Name="TargetFrameworkMoniker" Value="&quot;.NETFramework,Version%3Dv4.8&quot;" />
-        <Property Name="VWDPort" Value="&quot;62008&quot;" />
-      </Properties>
     </Project>
   </Folder>
   <Folder Name="/Common/">
+    <Project Path="BandEvents/BandEvents.csproj" />
     <Project Path="Common/Auth/Auth.csproj" />
     <Project Path="Common/Shared/Shared.csproj" />
+    <Project Path="Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/WBand.Architecture.Tests/WBand.Architecture.Tests.csproj" />
   </Folder>
   <Folder Name="/Элементы решения/">
     <File Path="AGENTS.md" />

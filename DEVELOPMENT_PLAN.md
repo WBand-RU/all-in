@@ -6,6 +6,8 @@
 
 ## 1. Укрепить основу приложения
 
+> Статус: базовая серверная основа реализована 11.08.2026; сборка и архитектурные тесты проходят. Для полного закрытия этапа остаются изолированные интеграционные тесты HTTP/Marten/Wolverine и исправление существующих ошибок frontend build/lint.
+
 1. Описать стандарт модуля: composition root, `Domain`, `Application`, `Contracts`, `Endpoints`, `Infrastructure`, изоляция схемы Marten и тестовый проект `WBand.Modules.<Name>.Tests`.
 2. Централизовать подключение Wolverine, Marten, RabbitMQ, OpenAPI, health checks и конфигурацию через options с валидацией при запуске.
 3. Убрать ручное чтение RabbitMQ в `UserModule`, заменить его Wolverine-слушателем. Исправить конфигурацию `FileModule` (bucket сейчас читается из `S3_REGION`), добавить авторизацию и валидацию к файловым endpoint'ам.

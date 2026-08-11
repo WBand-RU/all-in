@@ -1,99 +1,152 @@
-using System.Reflection;
-using FluentValidation;
 using JasperFx.Core;
 using Marten;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Serilog.Extensions.Logging;
+using Shared.Configuration;
+using Shared.Modules;
 using Shared.Services;
 using Wolverine;
 using Wolverine.ErrorHandling;
 using Wolverine.FluentValidation;
+using Wolverine.Http;
 using Wolverine.Marten;
 using Wolverine.RabbitMQ;
 
 namespace Shared;
 
-public static class DependencyInjection
+/// <summary>
+/// Registers common application infrastructure for the modular monolith host.
+/// </summary>
+public static class DependencyInjectionExtensions
 {
-    public static IHostApplicationBuilder AddShared(
-        this IHostApplicationBuilder builder,
-        Assembly assembly
-    )
+    /// <summary>
+    /// Configures sources with the priority: environment variables, environment file, then appsettings.json.
+    /// </summary>
+    public static WebApplicationBuilder ApplyWBandConfiguration(this WebApplicationBuilder builder)
     {
-        builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-
-        builder.Services.AddValidatorsFromAssembly(assembly);
-
-        Log.Logger = new LoggerConfiguration().WriteTo.Debug().WriteTo.Console().CreateLogger();
-        builder.Logging.AddSerilog(Log.Logger);
+        builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+        builder.Configuration.AddJsonFile(
+            $"appsettings.{builder.Environment.EnvironmentName}.json",
+            optional: true,
+            reloadOnChange: true
+        );
+        builder.Configuration.AddEnvironmentVariables();
 
         return builder;
     }
 
-    public static void AddEventDriven(
-        this IHostApplicationBuilder builder,
-        string rabbitmqHost,
-        ushort rabbitmqPort,
-        string rabbitmqUsername,
-        string rabbitmqPassword,
-        string rabbitmqVirtualHost,
-        string martenDatabaseConnectionString,
-        string martenDatabaseSchemaName,
-        Assembly assembly,
-        params Type[] describeTypes
+    /// <summary>
+    /// Registers shared services, validated options, Wolverine, Marten, and operational endpoints.
+    /// </summary>
+    public static WebApplicationBuilder AddWBandFoundation(
+        this WebApplicationBuilder builder,
+        ModuleCatalog modules
     )
     {
-        builder.UseWolverine(x =>
-        {
-            x.CodeGeneration.TypeLoadMode = JasperFx.CodeGeneration.TypeLoadMode.Static;
+        var messaging = MessagingOptions.FromConfiguration(builder.Configuration);
+        var marten = MartenOptions.FromConfiguration(builder.Configuration);
 
-            x.Policies.OnAnyException()
+        builder
+            .Services.AddOptions<MessagingOptions>()
+            .Configure(options => Copy(messaging, options))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder
+            .Services.AddOptions<MartenOptions>()
+            .Configure(options => Copy(marten, options))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+        builder.Services.AddProblemDetails();
+        builder.Services.AddOpenApi();
+        builder.Services.AddHealthChecks();
+        builder.Services.AddWolverineHttp();
+
+        Log.Logger = new LoggerConfiguration().WriteTo.Debug().WriteTo.Console().CreateLogger();
+        builder.Services.AddSerilog(Log.Logger);
+
+        builder.UseWolverine(options =>
+        {
+            options.CodeGeneration.TypeLoadMode = JasperFx.CodeGeneration.TypeLoadMode.Static;
+            options
+                .Policies.OnAnyException()
                 .RetryWithCooldown(50.Milliseconds(), 100.Milliseconds(), 250.Milliseconds());
 
-            x.UseRabbitMq(x =>
+            options
+                .UseRabbitMq(factory =>
                 {
-                    x.HostName = rabbitmqHost;
-                    x.Port = rabbitmqPort;
-                    x.UserName = rabbitmqUsername;
-                    x.Password = rabbitmqPassword;
-                    x.VirtualHost = rabbitmqVirtualHost;
+                    factory.HostName = messaging.Host;
+                    factory.Port = messaging.Port;
+                    factory.UserName = messaging.Username;
+                    factory.Password = messaging.Password;
+                    factory.VirtualHost = messaging.VirtualHost;
                 })
                 .AutoProvision()
                 .UseConventionalRouting();
 
-            x.Policies.UseDurableOutboxOnAllSendingEndpoints();
-            x.Policies.UseDurableInboxOnAllListeners();
-            x.Policies.AutoApplyTransactions();
+            options.Policies.UseDurableOutboxOnAllSendingEndpoints();
+            options.Policies.UseDurableInboxOnAllListeners();
+            options.Policies.AutoApplyTransactions();
+            options.EnvelopeIdGeneration = EnvelopeIdGeneration.GuidV7;
 
-            x.EnvelopeIdGeneration = EnvelopeIdGeneration.GuidV7;
-
-            x.Discovery.IncludeAssembly(assembly);
-
-            foreach (var describeType in describeTypes)
+            foreach (var module in modules.Modules)
             {
-                var errorDesc = x.DescribeHandlerMatch(describeType);
-                Console.WriteLine($"{describeType.Name} => {errorDesc}");
+                options.Discovery.IncludeAssembly(module.Assembly);
+                module.ConfigureWolverine(options, builder.Configuration);
             }
 
-            x.Services.AddMarten(x =>
+            options
+                .Services.AddMarten(store =>
                 {
-                    x.Connection(martenDatabaseConnectionString);
-
-                    x.DisableNpgsqlLogging = false; // TODO: try use true
+                    store.Connection(marten.ConnectionString);
+                    store.DatabaseSchemaName = marten.SchemaName;
+                    store.DisableNpgsqlLogging = true;
                 })
-                .IntegrateWithWolverine(x =>
+                .IntegrateWithWolverine(integration =>
                 {
-                    x.MessageStorageSchemaName = martenDatabaseSchemaName;
+                    integration.MessageStorageSchemaName = marten.SchemaName;
                 });
 
-            x.UseFluentValidation();
+            options.UseFluentValidation();
         });
+
+        return builder;
     }
 
-    public static void AddRabbitMQService(this IServiceCollection services)
+    /// <summary>
+    /// Adds the common middleware and maps health and Wolverine HTTP endpoints.
+    /// </summary>
+    public static WebApplication UseWBandFoundation(this WebApplication app)
     {
-        services.AddScoped<IRabbitMQService, RabbitMQService>();
+        app.UseExceptionHandler();
+        app.UseHttpsRedirection();
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.MapHealthChecks("/health/live");
+        app.MapHealthChecks("/health/ready");
+        app.MapWolverineEndpoints();
+
+        return app;
+    }
+
+    private static void Copy(MessagingOptions source, MessagingOptions target)
+    {
+        target.Host = source.Host;
+        target.Port = source.Port;
+        target.Username = source.Username;
+        target.Password = source.Password;
+        target.VirtualHost = source.VirtualHost;
+    }
+
+    private static void Copy(MartenOptions source, MartenOptions target)
+    {
+        target.ConnectionString = source.ConnectionString;
+        target.SchemaName = source.SchemaName;
     }
 }
