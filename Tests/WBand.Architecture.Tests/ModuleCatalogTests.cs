@@ -17,6 +17,10 @@ public sealed class ModuleCatalogTests
             catalog.Modules.Count,
             catalog.Modules.Select(module => module.Assembly).Distinct().Count()
         );
+        Assert.Equal(
+            catalog.Modules.Count,
+            catalog.Modules.Select(module => module.MartenSchemaName).Distinct().Count()
+        );
     }
 
     [Fact]

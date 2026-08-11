@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shared.Modules;
+using Shared.HealthChecks;
 using WBand.Modules.UserModule.Infrastructure;
 using WBand.Modules.UserModule.Infrastructure.Messaging;
 using Wolverine;
@@ -30,6 +31,12 @@ public sealed class UserModule : IWBandModule
             .Configure(options => Copy(events, options))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+
+        builder.Services.AddHealthChecks().AddCheck(
+            "keycloak-events-rabbitmq",
+            new TcpEndpointHealthCheck(events.Host, events.Port),
+            tags: ["ready"]
+        );
     }
 
     public void ConfigureWolverine(WolverineOptions options, IConfiguration configuration)

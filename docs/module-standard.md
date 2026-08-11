@@ -20,6 +20,7 @@ WBand.Modules.ExampleModule/
 ## Границы и данные
 
 - Модуль владеет своей схемой PostgreSQL/Marten и не читает таблицы другого модуля.
+- Имя схемы задаётся свойством `IWBandModule.MartenSchemaName`. Все документы модуля регистрируйте в `ConfigureMarten`, например: `options.Schema.For<Song>().DatabaseSchemaName(MartenSchemaName)`. Общая схема из `Marten:SchemaName` предназначена только для инфраструктуры Wolverine.
 - Межмодульное взаимодействие выполняется явными Wolverine-сообщениями.
 - Публичные контракты стабильны, версионируются и не содержат persistence-моделей.
 - Внешние события обрабатываются идемпотентно; побочные сообщения отправляются через durable outbox.

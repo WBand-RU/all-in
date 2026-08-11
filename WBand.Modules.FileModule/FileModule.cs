@@ -1,4 +1,5 @@
 using System.Reflection;
+using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -45,6 +46,7 @@ public sealed class FileModule : IWBandModule
         });
 
         builder.Services.AddScoped<IFileService, FileService>();
+        builder.Services.AddValidatorsFromAssembly(Assembly);
     }
 
     private static void Copy(FileStorageOptions source, FileStorageOptions target)

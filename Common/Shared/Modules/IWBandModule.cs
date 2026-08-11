@@ -1,4 +1,5 @@
 using System.Reflection;
+using Marten;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -22,6 +23,11 @@ public interface IWBandModule
     Assembly Assembly { get; }
 
     /// <summary>
+    /// Gets the PostgreSQL schema owned by this module.
+    /// </summary>
+    string MartenSchemaName => Name.Replace("Module", string.Empty).ToLowerInvariant();
+
+    /// <summary>
     /// Registers module-owned services and validated configuration.
     /// </summary>
     void AddServices(IHostApplicationBuilder builder);
@@ -30,6 +36,11 @@ public interface IWBandModule
     /// Configures module-owned Wolverine listeners and routes.
     /// </summary>
     void ConfigureWolverine(WolverineOptions options, IConfiguration configuration) { }
+
+    /// <summary>
+    /// Maps module-owned Marten documents and events to <see cref="MartenSchemaName"/>.
+    /// </summary>
+    void ConfigureMarten(StoreOptions options) { }
 
     /// <summary>
     /// Maps endpoints that cannot be discovered by Wolverine HTTP.

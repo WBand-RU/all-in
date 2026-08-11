@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using WBand.Modules.FileModule.Services;
 using Wolverine.Http;
@@ -17,8 +18,16 @@ public static class DownloadFileEndpoint
         IFileService fileService
     )
     {
-        ArgumentOutOfRangeException.ThrowIfEqual(request.FileId, Guid.Empty);
         var url = await fileService.GetSignedDownloadUrl(request.FileId.ToString());
         return new(url);
+    }
+}
+
+public sealed class DownloadFileRequestValidator
+    : AbstractValidator<DownloadFileEndpoint.DownloadFileRequest>
+{
+    public DownloadFileRequestValidator()
+    {
+        RuleFor(request => request.FileId).NotEmpty();
     }
 }

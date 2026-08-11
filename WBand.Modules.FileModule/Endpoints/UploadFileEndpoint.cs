@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using WBand.Modules.FileModule.Services;
 using Wolverine.Http;
@@ -17,8 +18,16 @@ public static class UploadFileEndpoint
         IFileService fileService
     )
     {
-        ArgumentOutOfRangeException.ThrowIfEqual(request.FileId, Guid.Empty);
         var url = await fileService.GetSignedUploadUrl(request.FileId.ToString());
         return new(url);
+    }
+}
+
+public sealed class UploadFileRequestValidator
+    : AbstractValidator<UploadFileEndpoint.UploadFileRequest>
+{
+    public UploadFileRequestValidator()
+    {
+        RuleFor(request => request.FileId).NotEmpty();
     }
 }

@@ -1,11 +1,14 @@
 using JasperFx.Core;
 using Marten;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using Shared.Configuration;
+using Shared.HealthChecks;
 using Shared.Modules;
 using Shared.Services;
 using Wolverine;
@@ -64,7 +67,19 @@ public static class DependencyInjectionExtensions
         builder.Services.AddScoped<ICurrentUser, CurrentUser>();
         builder.Services.AddProblemDetails();
         builder.Services.AddOpenApi();
-        builder.Services.AddHealthChecks();
+        builder.Services
+            .AddHealthChecks()
+            .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+            .AddCheck(
+                "postgresql",
+                new PostgreSqlHealthCheck(marten.ConnectionString),
+                tags: ["ready"]
+            )
+            .AddCheck(
+                "rabbitmq",
+                new TcpEndpointHealthCheck(messaging.Host, messaging.Port),
+                tags: ["ready"]
+            );
         builder.Services.AddWolverineHttp();
 
         Log.Logger = new LoggerConfiguration().WriteTo.Debug().WriteTo.Console().CreateLogger();
@@ -106,6 +121,11 @@ public static class DependencyInjectionExtensions
                     store.Connection(marten.ConnectionString);
                     store.DatabaseSchemaName = marten.SchemaName;
                     store.DisableNpgsqlLogging = true;
+
+                    foreach (var module in modules.Modules)
+                    {
+                        module.ConfigureMarten(store);
+                    }
                 })
                 .IntegrateWithWolverine(integration =>
                 {
@@ -128,8 +148,14 @@ public static class DependencyInjectionExtensions
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.MapHealthChecks("/health/live");
-        app.MapHealthChecks("/health/ready");
+        app.MapHealthChecks(
+            "/health/live",
+            new HealthCheckOptions { Predicate = registration => registration.Tags.Contains("live") }
+        );
+        app.MapHealthChecks(
+            "/health/ready",
+            new HealthCheckOptions { Predicate = registration => registration.Tags.Contains("ready") }
+        );
         app.MapWolverineEndpoints();
 
         return app;
