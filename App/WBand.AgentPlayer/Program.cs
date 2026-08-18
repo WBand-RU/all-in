@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,10 +32,7 @@ if (parseResult.Errors.Count > 0)
     return;
 }
 
-await RunAgentAsync(
-    parseResult.GetValue<string>(tokenOption)!,
-    parseResult.GetValue<string>(serverOption)!
-);
+await RunAgentAsync(parseResult.GetValue(tokenOption)!, parseResult.GetValue(serverOption)!);
 
 async Task RunAgentAsync(string token, string server)
 {

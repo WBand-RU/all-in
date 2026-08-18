@@ -4,13 +4,14 @@ import { AppLayout } from "@/AppLayout";
 import { AuthorizedProvider } from "@/providers/AuthorizedProvider";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { DashboardPage } from "@/pages/DashboardPage";
-import { BandListPage } from "@/pages/BandListPage";
-import { BandViewPage } from "@/pages/BandViewPage";
+import { BandListPage } from "@/pages/bands/BandListPage";
+import { BandViewPage } from "@/pages/bands/BandViewPage";
 import { SongViewPage } from "@/pages/songs/SongViewPage";
 import { SongsListPage } from "@/pages/songs/SongsListPage";
 import { SongFormPage } from "@/pages/songs/SongFormPage";
 import { PlaylistsListPage } from "@/pages/playlists/PlaylistsListPage";
 import { PlaylistFormPage } from "@/pages/playlists/PlaylistFormPage";
+import { PlaylistViewPage } from "@/pages/playlists/PlaylistViewPage";
 import { StagePage } from "@/pages/stage/StagePage";
 import { ChatPage } from "@/pages/chat/ChatPage";
 import { SearchPage } from "@/pages/search/SearchPage";
@@ -80,6 +81,10 @@ export const router = createBrowserRouter([
             {
                 path: `${Segments.playlists}/new`,
                 element: <PlaylistFormPage />,
+            },
+            {
+                path: `${Segments.playlists}/:id`,
+                element: <PlaylistViewPage />,
             },
             {
                 path: `${Segments.playlists}/:id/edit`,

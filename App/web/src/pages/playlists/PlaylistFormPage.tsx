@@ -1,26 +1,19 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    Save,
+    ArrowDown,
     ArrowLeft,
+    ArrowUp,
     Plus,
-    X,
-    GripVertical,
-    Music,
-    Clock,
-    Pause,
+    Save,
+    Trash2,
 } from "lucide-react";
-import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
-import {
-    SortableContext,
-    verticalListSortingStrategy,
-    useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useTranslation } from "react-i18next";
+import { apiClient } from "@/lib/axios-instance";
+import { useGetListOfBands } from "@/lib/generated-api/band-api/bands";
+import { useBandAccess } from "@/hooks/use-band-access";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
-import { Textarea } from "@/shared/ui/textarea";
 import {
     Card,
     CardContent,
@@ -28,6 +21,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import {
     Select,
     SelectContent,
@@ -35,250 +30,200 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/shared/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/shared/ui/dialog";
-import { Badge } from "@/shared/ui/badge";
+import { Textarea } from "@/shared/ui/textarea";
 import { useToast } from "@/shared/ui/use-toast";
+import type { PlaylistDto, PlaylistItemDto } from "./PlaylistsListPage";
 
-interface PlaylistItem {
-    id: string;
-    type: "song" | "block" | "pause";
-    songId?: string;
-    songTitle?: string;
-    customKey?: string;
-    blockTitle?: string;
-    notes?: string;
-    durationMinutes: number;
-    order: number;
-}
-
-interface PlaylistForm {
-    name: string;
-    description: string;
-    plannedDate: string;
-    items: PlaylistItem[];
-}
-
-interface SortableItemProps {
-    item: PlaylistItem;
-    onRemove: (id: string) => void;
-    onEdit: (item: PlaylistItem) => void;
-}
-
-function SortableItem({ item, onRemove, onEdit }: SortableItemProps) {
-    const { attributes, listeners, setNodeRef, transform, transition } =
-        useSortable({ id: item.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
-
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className="flex items-center gap-3 p-3 bg-background border rounded-lg"
-        >
-            <div
-                {...attributes}
-                {...listeners}
-                className="cursor-grab hover:cursor-grabbing"
-            >
-                <GripVertical className="h-5 w-5 text-muted-foreground" />
-            </div>
-
-            <div className="flex-1">
-                {item.type === "song" && (
-                    <div className="flex items-center gap-2">
-                        <Music className="h-4 w-4" />
-                        <span className="font-medium">{item.songTitle}</span>
-                        {item.customKey && (
-                            <Badge variant="outline">{item.customKey}</Badge>
-                        )}
-                    </div>
-                )}
-                {item.type === "block" && (
-                    <div className="flex items-center gap-2">
-                        <Badge>Block</Badge>
-                        <span className="font-medium">{item.blockTitle}</span>
-                    </div>
-                )}
-                {item.type === "pause" && (
-                    <div className="flex items-center gap-2">
-                        <Pause className="h-4 w-4" />
-                        <span className="font-medium">Pause</span>
-                    </div>
-                )}
-                {item.notes && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                        {item.notes}
-                    </p>
-                )}
-            </div>
-
-            <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {item.durationMinutes}m
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => onEdit(item)}>
-                    Edit
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onRemove(item.id)}
-                >
-                    <X className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
-    );
-}
+type EditableItem = Omit<
+    PlaylistItemDto,
+    "songTitle" | "songContentVersion" | "order" | "structureOverride"
+> & { structureText: string };
+type AvailableSong = { id: string; title: string };
 
 export function PlaylistFormPage() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const { t } = useTranslation();
     const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const { access } = useBandAccess();
     const isEditing = !!id;
-
-    const [loading, setLoading] = useState(false);
-    // const [currentBandId] = useState("default"); // TODO: Get from context when available
-    const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
-    // const [editItemDialogOpen, setEditItemDialogOpen] = useState(false); // TODO: Implement edit dialog
-    // const [currentItem, setCurrentItem] = useState<PlaylistItem | null>(null); // TODO: Use for edit dialog
-    const [itemType, setItemType] = useState<"song" | "block" | "pause">(
-        "song",
+    const { data: bandsData } = useGetListOfBands();
+    const editableBands = (bandsData?.value ?? []).filter((band) =>
+        access.some((item) => item.bandId === band.id && item.canEditContent),
     );
-
-    const [form, setForm] = useState<PlaylistForm>({
-        name: "",
-        description: "",
-        plannedDate: "",
-        items: [],
+    const [bandId, setBandId] = useState("");
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [eventDateTime, setEventDateTime] = useState("");
+    const [venue, setVenue] = useState("");
+    const [contentVersion, setContentVersion] = useState(1);
+    const [items, setItems] = useState<EditableItem[]>([]);
+    const initializedPlaylistId = useRef<string | null>(null);
+    const { data: songsData = [] } = useQuery({
+        queryKey: ["playlist-available-songs", bandId],
+        enabled: !!bandId,
+        queryFn: async () => {
+            const response = await apiClient.get<{
+                value: { data: AvailableSong[] };
+            }>("/song-api/songs", {
+                params: { bandId, page: 1, pageSize: 100 },
+            });
+            return response.data.value.data ?? [];
+        },
+    });
+    const { data: loaded } = useQuery({
+        queryKey: ["playlist-editor", id],
+        enabled: isEditing,
+        queryFn: async () =>
+            (
+                await apiClient.get<{ value: PlaylistDto }>(
+                    `/playlist-api/playlists/${id}`,
+                )
+            ).data.value,
+        staleTime: 0,
+        refetchOnMount: "always",
     });
 
-    const [newItem, setNewItem] = useState({
-        songId: "",
-        songTitle: "",
-        customKey: "",
-        blockTitle: "",
-        notes: "",
-        durationMinutes: 5,
-    });
+    useEffect(() => {
+        if (!isEditing && !bandId && editableBands.length > 0)
+            setBandId(editableBands[0].id);
+    }, [isEditing, bandId, editableBands]);
+    useEffect(() => {
+        if (!loaded || initializedPlaylistId.current === loaded.id) return;
 
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (!over || active.id === over.id) return;
-
-        const oldIndex = form.items.findIndex((item) => item.id === active.id);
-        const newIndex = form.items.findIndex((item) => item.id === over.id);
-
-        const newItems = [...form.items];
-        const [movedItem] = newItems.splice(oldIndex, 1);
-        newItems.splice(newIndex, 0, movedItem);
-
-        // Update order
-        newItems.forEach((item, index) => {
-            item.order = index + 1;
-        });
-
-        setForm({ ...form, items: newItems });
-    };
-
-    const handleAddItem = () => {
-        const newPlaylistItem: PlaylistItem = {
-            id: `item-${Date.now()}`,
-            type: itemType,
-            songId: itemType === "song" ? newItem.songId : undefined,
-            songTitle: itemType === "song" ? newItem.songTitle : undefined,
-            customKey: itemType === "song" ? newItem.customKey : undefined,
-            blockTitle: itemType === "block" ? newItem.blockTitle : undefined,
-            notes: newItem.notes,
-            durationMinutes: newItem.durationMinutes,
-            order: form.items.length + 1,
-        };
-
-        setForm({
-            ...form,
-            items: [...form.items, newPlaylistItem],
-        });
-
-        // Reset form
-        setNewItem({
-            songId: "",
-            songTitle: "",
-            customKey: "",
-            blockTitle: "",
-            notes: "",
-            durationMinutes: 5,
-        });
-        setAddItemDialogOpen(false);
-    };
-
-    const handleEditItem = (_item: PlaylistItem) => {
-        // TODO: Implement edit dialog
-        toast({
-            title: "Edit feature coming soon",
-            description:
-                "Edit functionality will be available in the next update",
-        });
-    };
-
-    const handleRemoveItem = (id: string) => {
-        const newItems = form.items.filter((item) => item.id !== id);
-        newItems.forEach((item, index) => {
-            item.order = index + 1;
-        });
-        setForm({ ...form, items: newItems });
-    };
-
-    const getTotalDuration = () => {
-        return form.items.reduce(
-            (total, item) => total + item.durationMinutes,
-            0,
+        initializedPlaylistId.current = loaded.id;
+        setBandId(loaded.bandId);
+        setTitle(loaded.title);
+        setDescription(loaded.description ?? "");
+        setVenue(loaded.venue ?? "");
+        setEventDateTime(
+            loaded.eventDateTime ? loaded.eventDateTime.slice(0, 16) : "",
         );
-    };
+        setContentVersion(loaded.contentVersion);
+        setItems(
+            [...(loaded.items ?? [])]
+                .sort((left, right) => left.order - right.order)
+                .map((item) => ({
+                    id: item.id,
+                    songId: item.songId,
+                    keyOverride: item.keyOverride ?? null,
+                    bpmOverride: item.bpmOverride ?? null,
+                    transition: item.transition,
+                    pauseSeconds: item.pauseSeconds ?? 0,
+                    crossfadeSeconds: item.crossfadeSeconds ?? 0,
+                    notes: item.notes ?? null,
+                    stemMixOverrides: item.stemMixOverrides ?? [],
+                    structureText: (item.structureOverride ?? [])
+                        .map(
+                            (section) =>
+                                `${section.name}:${section.startBar}-${section.endBar}`,
+                        )
+                        .join("\n"),
+                })),
+        );
+    }, [loaded]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!form.name.trim()) {
-            toast({
-                title: "Validation Error",
-                description: "Playlist name is required",
-                variant: "destructive",
-            });
-            return;
+    const songs = [...songsData];
+    for (const item of loaded?.items ?? []) {
+        if (!songs.some((song) => song.id === item.songId)) {
+            songs.push({ id: item.songId, title: item.songTitle });
         }
+    }
 
-        try {
-            setLoading(true);
+    const save = useMutation({
+        mutationFn: async () => {
+            const payload = {
+                title,
+                description: description || null,
+                eventDateTime: eventDateTime
+                    ? new Date(eventDateTime).toISOString()
+                    : null,
+                venue: venue || null,
+                items: items.map((item) => ({
+                    id: item.id,
+                    songId: item.songId,
+                    keyOverride: item.keyOverride || null,
+                    bpmOverride: item.bpmOverride || null,
+                    structureOverride: item.structureText
+                        .split("\n")
+                        .map((line) => /^(.+):(\d+)-(\d+)$/.exec(line.trim()))
+                        .filter(Boolean)
+                        .map((match) => ({
+                            name: match![1],
+                            startBar: Number(match![2]),
+                            endBar: Number(match![3]),
+                        })),
+                    stemMixOverrides: [],
+                    transition: item.transition,
+                    pauseSeconds: item.pauseSeconds,
+                    crossfadeSeconds: item.crossfadeSeconds,
+                    notes: item.notes || null,
+                })),
+            };
+            return isEditing
+                ? apiClient.put(`/playlist-api/playlists/${id}`, {
+                      ...payload,
+                      expectedContentVersion: contentVersion,
+                  })
+                : apiClient.post("/playlist-api/playlists", {
+                      ...payload,
+                      bandId,
+                  });
+        },
+        onSuccess: async () => {
+            toast({
+                title: t(isEditing ? "playlists.updated" : "playlists.created"),
+            });
+            await queryClient.invalidateQueries({ queryKey: ["playlist", id] });
+            await queryClient.invalidateQueries({
+                queryKey: ["playlist-editor", id],
+            });
+            await queryClient.invalidateQueries({ queryKey: ["playlists"] });
+            navigate(
+                isEditing && id ? `/app/playlists/${id}` : "/app/playlists",
+            );
+        },
+        onError: () =>
+            toast({ title: t("playlists.saveFailed"), variant: "destructive" }),
+    });
 
-            // TODO: Implement API calls
-            toast({
-                title: "Success",
-                description: `Playlist ${isEditing ? "updated" : "created"} successfully`,
-            });
-            navigate("/playlists");
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: `Failed to ${isEditing ? "update" : "create"} playlist`,
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(false);
-        }
+    const addSong = () => {
+        const used = new Set(items.map((item) => item.songId));
+        const song = songs.find((candidate) => !used.has(candidate.id));
+        if (!song) return;
+        setItems([
+            ...items,
+            {
+                id: crypto.randomUUID(),
+                songId: song.id,
+                keyOverride: null,
+                bpmOverride: null,
+                transition: "Pause",
+                pauseSeconds: 0,
+                crossfadeSeconds: 0,
+                notes: null,
+                stemMixOverrides: [],
+                structureText: "",
+            },
+        ]);
     };
+    const move = (index: number, offset: number) => {
+        const target = index + offset;
+        if (target < 0 || target >= items.length) return;
+        const copy = [...items];
+        [copy[index], copy[target]] = [copy[target], copy[index]];
+        setItems(copy);
+    };
+    const update = (index: number, value: Partial<EditableItem>) =>
+        setItems(
+            items.map((item, itemIndex) =>
+                itemIndex === index ? { ...item, ...value } : item,
+            ),
+        );
+
+    const returnPath =
+        isEditing && id ? `/app/playlists/${id}` : "/app/playlists";
 
     return (
         <div className="container mx-auto py-8">
@@ -287,265 +232,378 @@ export function PlaylistFormPage() {
                     <div className="flex items-center gap-4">
                         <Button
                             variant="ghost"
-                            size="sm"
-                            onClick={() => navigate("/playlists")}
+                            size="icon"
+                            onClick={() => navigate(returnPath)}
                         >
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
-                        <div className="flex-1">
+                        <div>
                             <CardTitle>
-                                {isEditing ? "Edit Playlist" : "New Playlist"}
+                                {t(
+                                    isEditing
+                                        ? "playlists.edit"
+                                        : "playlists.new",
+                                )}
                             </CardTitle>
                             <CardDescription>
-                                {isEditing
-                                    ? "Update playlist details"
-                                    : "Create a worship service setlist"}
+                                {t("playlists.formHint")}
                             </CardDescription>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                            Total Duration: {getTotalDuration()} minutes
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <form
+                        className="space-y-6"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            if (!title.trim() || !bandId) return;
+                            save.mutate();
+                        }}
+                    >
+                        <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Playlist Name *</Label>
+                                <Label>{t("common.band")} *</Label>
+                                <Select
+                                    disabled={isEditing}
+                                    value={bandId}
+                                    onValueChange={(value) => {
+                                        setBandId(value);
+                                        setItems([]);
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue
+                                            placeholder={t("common.selectBand")}
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {editableBands.map((band) => (
+                                            <SelectItem
+                                                key={band.id}
+                                                value={band.id}
+                                            >
+                                                {band.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>{t("playlists.name")} *</Label>
                                 <Input
-                                    id="name"
-                                    value={form.name}
-                                    onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            name: e.target.value,
-                                        })
+                                    value={title}
+                                    onChange={(event) =>
+                                        setTitle(event.target.value)
                                     }
-                                    placeholder="Sunday Morning Service"
-                                    required
                                 />
                             </div>
-
                             <div className="space-y-2">
-                                <Label htmlFor="plannedDate">
-                                    Planned Date
-                                </Label>
+                                <Label>{t("playlists.dateTime")}</Label>
                                 <Input
-                                    id="plannedDate"
-                                    type="date"
-                                    value={form.plannedDate}
-                                    onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            plannedDate: e.target.value,
-                                        })
+                                    type="datetime-local"
+                                    value={eventDateTime}
+                                    onChange={(event) =>
+                                        setEventDateTime(event.target.value)
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>{t("playlists.venue")}</Label>
+                                <Input
+                                    value={venue}
+                                    onChange={(event) =>
+                                        setVenue(event.target.value)
                                     }
                                 />
                             </div>
                         </div>
-
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label>{t("playlists.notes")}</Label>
                             <Textarea
-                                id="description"
-                                value={form.description}
-                                onChange={(e) =>
-                                    setForm({
-                                        ...form,
-                                        description: e.target.value,
-                                    })
+                                value={description}
+                                onChange={(event) =>
+                                    setDescription(event.target.value)
                                 }
-                                placeholder="Enter playlist description..."
-                                rows={3}
                             />
                         </div>
-
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <Label>Playlist Items</Label>
-                                <Button
-                                    type="button"
-                                    onClick={() => setAddItemDialogOpen(true)}
-                                >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Item
-                                </Button>
-                            </div>
-
-                            {form.items.length === 0 ? (
-                                <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                                    <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                                    <p className="text-sm text-muted-foreground">
-                                        No items in playlist yet. Add songs,
-                                        blocks, or pauses.
-                                    </p>
-                                </div>
-                            ) : (
-                                <DndContext
-                                    collisionDetection={closestCenter}
-                                    onDragEnd={handleDragEnd}
-                                >
-                                    <SortableContext
-                                        items={form.items.map(
-                                            (item) => item.id,
-                                        )}
-                                        strategy={verticalListSortingStrategy}
-                                    >
-                                        <div className="space-y-2">
-                                            {form.items.map((item) => (
-                                                <SortableItem
-                                                    key={item.id}
-                                                    item={item}
-                                                    onRemove={handleRemoveItem}
-                                                    onEdit={handleEditItem}
-                                                />
-                                            ))}
-                                        </div>
-                                    </SortableContext>
-                                </DndContext>
-                            )}
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-semibold">
+                                {t("playlists.items")}
+                            </h3>
+                            <Button
+                                type="button"
+                                disabled={
+                                    !bandId || items.length >= songs.length
+                                }
+                                onClick={addSong}
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                {t("playlists.addSong")}
+                            </Button>
                         </div>
-
-                        <div className="flex justify-end gap-4">
+                        {items.length === 0 && (
+                            <div className="rounded-md border border-dashed p-8 text-center text-muted-foreground">
+                                {t("playlists.noItems")}
+                            </div>
+                        )}
+                        <div className="space-y-4">
+                            {items.map((item, index) => (
+                                <Card key={item.id}>
+                                    <CardContent className="space-y-4 pt-6">
+                                        <div className="flex items-center gap-2">
+                                            <strong className="mr-auto">
+                                                {index + 1}.{" "}
+                                                {songs.find(
+                                                    (song) =>
+                                                        song.id === item.songId,
+                                                )?.title ??
+                                                    loaded?.items.find(
+                                                        (loadedItem) =>
+                                                            loadedItem.songId ===
+                                                            item.songId,
+                                                    )?.songTitle}
+                                            </strong>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => move(index, -1)}
+                                            >
+                                                <ArrowUp className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => move(index, 1)}
+                                            >
+                                                <ArrowDown className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() =>
+                                                    setItems(
+                                                        items.filter(
+                                                            (_, itemIndex) =>
+                                                                itemIndex !==
+                                                                index,
+                                                        ),
+                                                    )
+                                                }
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <Select
+                                            value={item.songId}
+                                            onValueChange={(songId) =>
+                                                update(index, { songId })
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {songs.map((song) => (
+                                                    <SelectItem
+                                                        key={song.id}
+                                                        value={song.id}
+                                                    >
+                                                        {song.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <div className="grid gap-4 md:grid-cols-3">
+                                            <div className="space-y-2">
+                                                <Label>
+                                                    {t("playlists.keyOverride")}
+                                                </Label>
+                                                <Input
+                                                    value={
+                                                        item.keyOverride ?? ""
+                                                    }
+                                                    onChange={(event) =>
+                                                        update(index, {
+                                                            keyOverride:
+                                                                event.target
+                                                                    .value,
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>
+                                                    {t("playlists.bpmOverride")}
+                                                </Label>
+                                                <Input
+                                                    type="number"
+                                                    min="20"
+                                                    max="400"
+                                                    value={
+                                                        item.bpmOverride ?? ""
+                                                    }
+                                                    onChange={(event) =>
+                                                        update(index, {
+                                                            bpmOverride: event
+                                                                .target.value
+                                                                ? Number(
+                                                                      event
+                                                                          .target
+                                                                          .value,
+                                                                  )
+                                                                : null,
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>
+                                                    {t("playlists.transition")}
+                                                </Label>
+                                                <Select
+                                                    value={item.transition}
+                                                    onValueChange={(
+                                                        transition: EditableItem["transition"],
+                                                    ) =>
+                                                        update(index, {
+                                                            transition,
+                                                        })
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="AutoStart">
+                                                            {t(
+                                                                "playlists.autoStart",
+                                                            )}
+                                                        </SelectItem>
+                                                        <SelectItem value="Pause">
+                                                            {t(
+                                                                "playlists.pause",
+                                                            )}
+                                                        </SelectItem>
+                                                        <SelectItem value="Crossfade">
+                                                            {t(
+                                                                "playlists.crossfade",
+                                                            )}
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        {item.transition === "Pause" && (
+                                            <div className="space-y-2">
+                                                <Label>
+                                                    {t(
+                                                        "playlists.pauseSeconds",
+                                                    )}
+                                                </Label>
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    max="3600"
+                                                    value={item.pauseSeconds}
+                                                    onChange={(event) =>
+                                                        update(index, {
+                                                            pauseSeconds:
+                                                                Number(
+                                                                    event.target
+                                                                        .value,
+                                                                ),
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                        {item.transition === "Crossfade" && (
+                                            <div className="space-y-2">
+                                                <Label>
+                                                    {t(
+                                                        "playlists.crossfadeSeconds",
+                                                    )}
+                                                </Label>
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    max="60"
+                                                    value={
+                                                        item.crossfadeSeconds
+                                                    }
+                                                    onChange={(event) =>
+                                                        update(index, {
+                                                            crossfadeSeconds:
+                                                                Number(
+                                                                    event.target
+                                                                        .value,
+                                                                ),
+                                                        })
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="space-y-2">
+                                            <Label>
+                                                {t(
+                                                    "playlists.structureOverride",
+                                                )}
+                                            </Label>
+                                            <Textarea
+                                                value={item.structureText}
+                                                onChange={(event) =>
+                                                    update(index, {
+                                                        structureText:
+                                                            event.target.value,
+                                                    })
+                                                }
+                                                placeholder={t(
+                                                    "songs.sectionsPlaceholder",
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>
+                                                {t("playlists.itemNotes")}
+                                            </Label>
+                                            <Input
+                                                value={item.notes ?? ""}
+                                                onChange={(event) =>
+                                                    update(index, {
+                                                        notes: event.target
+                                                            .value,
+                                                    })
+                                                }
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                        <div className="flex justify-end gap-3">
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => navigate("/playlists")}
+                                onClick={() => navigate(returnPath)}
                             >
-                                Cancel
+                                {t("common.cancel")}
                             </Button>
-                            <Button type="submit" disabled={loading}>
+                            <Button
+                                type="submit"
+                                disabled={
+                                    save.isPending || !title.trim() || !bandId
+                                }
+                            >
                                 <Save className="mr-2 h-4 w-4" />
-                                {isEditing ? "Update" : "Create"} Playlist
+                                {t("common.save")}
                             </Button>
                         </div>
                     </form>
                 </CardContent>
             </Card>
-
-            {/* Add Item Dialog */}
-            <Dialog
-                open={addItemDialogOpen}
-                onOpenChange={setAddItemDialogOpen}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add Playlist Item</DialogTitle>
-                        <DialogDescription>
-                            Add a song, block, or pause to your playlist
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Item Type</Label>
-                            <Select
-                                value={itemType}
-                                onValueChange={(
-                                    value: "song" | "block" | "pause",
-                                ) => setItemType(value)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="song">Song</SelectItem>
-                                    <SelectItem value="block">Block</SelectItem>
-                                    <SelectItem value="pause">Pause</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {itemType === "song" && (
-                            <>
-                                <div className="space-y-2">
-                                    <Label>Song</Label>
-                                    <Input
-                                        placeholder="Select or enter song title"
-                                        value={newItem.songTitle}
-                                        onChange={(e) =>
-                                            setNewItem({
-                                                ...newItem,
-                                                songTitle: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Custom Key (optional)</Label>
-                                    <Input
-                                        placeholder="e.g., G"
-                                        value={newItem.customKey}
-                                        onChange={(e) =>
-                                            setNewItem({
-                                                ...newItem,
-                                                customKey: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        {itemType === "block" && (
-                            <div className="space-y-2">
-                                <Label>Block Title</Label>
-                                <Input
-                                    placeholder="e.g., Worship Block, Prayer"
-                                    value={newItem.blockTitle}
-                                    onChange={(e) =>
-                                        setNewItem({
-                                            ...newItem,
-                                            blockTitle: e.target.value,
-                                        })
-                                    }
-                                />
-                            </div>
-                        )}
-
-                        <div className="space-y-2">
-                            <Label>Duration (minutes)</Label>
-                            <Input
-                                type="number"
-                                min="1"
-                                value={newItem.durationMinutes}
-                                onChange={(e) =>
-                                    setNewItem({
-                                        ...newItem,
-                                        durationMinutes:
-                                            parseInt(e.target.value) || 5,
-                                    })
-                                }
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Notes (optional)</Label>
-                            <Textarea
-                                placeholder="Additional notes..."
-                                value={newItem.notes}
-                                onChange={(e) =>
-                                    setNewItem({
-                                        ...newItem,
-                                        notes: e.target.value,
-                                    })
-                                }
-                                rows={2}
-                            />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setAddItemDialogOpen(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleAddItem}>Add Item</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

@@ -9,6 +9,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,6 +21,7 @@
     <ProjectReference Include="..\..\WBand.Modules.BandModule\WBand.Modules.BandModule.csproj" />
     <ProjectReference Include="..\..\WBand.Modules.UserModule\WBand.Modules.UserModule.csproj" />
     <ProjectReference Include="..\..\WBand.Modules.SongModule\WBand.Modules.SongModule.csproj" />
+    <ProjectReference Include="..\..\WBand.Modules.PlaylistModule\WBand.Modules.PlaylistModule.csproj" />
   </ItemGroup>
 
 </Project>

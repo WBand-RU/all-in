@@ -27,5 +27,6 @@ function createApiConfig(apiName) {
 export default defineConfig({
     bandApi: createApiConfig("band-api"),
     songApi: createApiConfig("song-api"),
+    playlistApi: createApiConfig("playlist-api"),
     playbackApi: createApiConfig("playback-api"),
 });
