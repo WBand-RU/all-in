@@ -6,13 +6,11 @@ import { Button } from "@/shared/ui/button";
 import {
     ArrowLeftIcon,
     CalendarIcon,
-    UserIcon,
     UsersIcon,
     MailIcon,
 } from "lucide-react";
 import { useNavigator } from "@/services/navigator";
 import { ApiCodes } from "@/lib/generated-api/band-api/models";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { InviteMember } from "../../widgets/bands/ui/InviteMember";
 import { MemberList } from "../../widgets/bands/ui/MemberList";

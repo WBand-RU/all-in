@@ -1,10 +1,10 @@
-import Keycloak, { type KeycloakConfig } from "keycloak-js";
+import Keycloak from "keycloak-js";
+import { resolveKeycloakConfig } from "@/config/keycloak-config";
 
-const runtimeConfig = window.__WBAND_CONFIG__;
-const keycloakConfig: KeycloakConfig = {
-    url: runtimeConfig?.keycloakUrl || import.meta.env.VITE_KEYCLOAK_URL || "https://auth.wband.ru",
-    realm: runtimeConfig?.keycloakRealm || import.meta.env.VITE_KEYCLOAK_REALM || "wband-dev",
-    clientId: runtimeConfig?.keycloakClientId || import.meta.env.VITE_KEYCLOAK_CLIENT_ID || "web",
-};
+const keycloakConfig = resolveKeycloakConfig(window.__WBAND_CONFIG__, {
+    VITE_KEYCLOAK_URL: import.meta.env.VITE_KEYCLOAK_URL,
+    VITE_KEYCLOAK_REALM: import.meta.env.VITE_KEYCLOAK_REALM,
+    VITE_KEYCLOAK_CLIENT_ID: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
+});
 
 export const keycloak = new Keycloak(keycloakConfig);

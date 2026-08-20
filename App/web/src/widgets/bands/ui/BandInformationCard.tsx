@@ -1,7 +1,6 @@
 import { UserIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../shared/ui/card";
 import type { Band } from "../../../lib/generated-api/band-api/models";
-import { useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { EditableText } from "../../../shared/ui/editable-text";
 import { useUpdateBand } from "../../../lib/generated-api/band-api/bands";
@@ -13,11 +12,7 @@ interface Props {
 
 export function BandInformationCard({ band, isOwner }: Props) {
     const { t } = useTranslation("translation");
-    const { 
-        mutateAsync: updateBand,
-        isPending: isPendingUpdateBand, 
-        isError: isErrorUpdateBand 
-    } = useUpdateBand();
+    const { mutateAsync: updateBand } = useUpdateBand();
 
     async function handleNameEdited(newName: string) {
         try {
