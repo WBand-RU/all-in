@@ -48,7 +48,6 @@ public static class QueueSongMixesEndpoint
             BandId = song.BandId, SourceCount = sources.Length, CreatedAt = DateTimeOffset.UtcNow,
             CreatedBy = user.GetUserId, LastEnqueuedAt = DateTimeOffset.UtcNow };
         session.Store(batch); await session.SaveChangesAsync(cancellationToken);
-        await bus.SendAsync(new GenerateSongMixes(batch.Id, songId, song.BandId, user.GetUserId));
         return Results.Accepted($"/mixer-api/songs/{songId}/mixes", new MixBatchResponse(batch.Id,
             songId, batch.Status, batch.SourceCount, null, batch.CreatedAt, null, null,
             null, 0, "Queued", null, 0, 0, []));

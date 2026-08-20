@@ -27,6 +27,8 @@ public sealed class MixBatch
     public int CompletedOutputCount { get; set; }
     public int TotalOutputCount { get; set; }
     public DateTimeOffset? CompletedAt { get; set; }
+    public Guid? LeaseId { get; set; }
+    public DateTimeOffset? LeaseExpiresAt { get; set; }
 }
 
 public sealed class MixArtifact

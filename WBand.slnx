@@ -11,6 +11,7 @@
   <Folder Name="/App/">
     <Project Path="App/WBand.AgentPlayer/WBand.AgentPlayer.csproj" />
     <Project Path="App/WBand.Dev/WBand.Dev.csproj" Id="94401692-10f4-4b53-998c-bc22c09f096c" />
+    <Project Path="App/WBand.MixerWorker/WBand.MixerWorker.csproj" />
     <Project Path="App/WBand.WebAPI/WBand.WebAPI.csproj" />
     <Project Path="App/web/" Type="Website" DisplayName="web">
       <BuildType Project="Debug" />

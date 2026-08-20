@@ -23,7 +23,11 @@ public sealed class FileModule : IWBandModule
 
     public string MartenSchemaName => "files";
 
-    public void AddServices(IHostApplicationBuilder builder)
+    public void AddServices(IHostApplicationBuilder builder) =>
+        AddStorageServices(builder, addUploadCleanup: true);
+
+    /// <summary>Registers file storage for a host, optionally including upload cleanup.</summary>
+    public static void AddStorageServices(IHostApplicationBuilder builder, bool addUploadCleanup)
     {
         var storage = FileStorageOptions.FromConfiguration(builder.Configuration);
 
@@ -52,8 +56,9 @@ public sealed class FileModule : IWBandModule
         });
 
         builder.Services.AddScoped<IFileService, FileService>();
-        builder.Services.AddHostedService<FileUploadCleanupService>();
-        builder.Services.AddValidatorsFromAssembly(Assembly);
+        if (addUploadCleanup)
+            builder.Services.AddHostedService<FileUploadCleanupService>();
+        builder.Services.AddValidatorsFromAssembly(typeof(FileModule).Assembly);
     }
 
     public void ConfigureMarten(StoreOptions options) =>

@@ -27,6 +27,7 @@ public sealed class GenerateSongMixesHandler(IHttpClientFactory httpClientFactor
         batch.Error = null;
         batch.CurrentStage = "Starting";
         batch.CurrentPlan = null;
+        batch.LeaseExpiresAt = startedAt.AddMinutes(30);
         session.Store(batch); await session.SaveChangesAsync(cancellationToken);
         var workDirectory = Path.Combine(Path.GetTempPath(), "wband-mixer", batch.Id.ToString("N"));
         try
@@ -62,60 +63,79 @@ public sealed class GenerateSongMixesHandler(IHttpClientFactory httpClientFactor
             batch.CurrentStage = "Mixing";
             session.Store(batch);
             await session.SaveChangesAsync(cancellationToken);
-            foreach (var plan in plans)
+            var workGroups = plans.GroupBy(plan => plan.Target?.StemId).ToArray();
+            foreach (var workGroup in workGroups)
             {
-                var artifactKind = ToArtifactKind(plan.Kind);
-                var outputs = new[] { (Mime: "audio/wav", Format: "wav"),
-                    (Mime: "audio/mpeg", Format: "mp3") };
-                var missingOutputs = outputs.Where(output => !completedOutputs.Contains(
-                    ArtifactKey(artifactKind, plan.Target?.StemId, output.Format))).ToArray();
-                if (missingOutputs.Length == 0) continue;
+                var pendingPlans = workGroup.Where(plan =>
+                    !completedOutputs.Contains(ArtifactKey(ToArtifactKind(plan.Kind),
+                        plan.Target?.StemId, "wav")) ||
+                    !completedOutputs.Contains(ArtifactKey(ToArtifactKind(plan.Kind),
+                        plan.Target?.StemId, "mp3"))).ToArray();
+                if (pendingPlans.Length == 0) continue;
 
                 batch.HeartbeatAt = DateTimeOffset.UtcNow;
-                batch.CurrentPlan = plan.Name;
+                batch.LeaseExpiresAt = batch.HeartbeatAt.Value.AddMinutes(30);
+                batch.CurrentPlan = string.Join(" + ", pendingPlans.Select(plan => plan.Name));
                 session.Store(batch);
                 await session.SaveChangesAsync(cancellationToken);
-                var wavePath = Path.Combine(workDirectory, $"{plan.Name}.wav");
-                var mp3Path = Path.Combine(workDirectory, $"{plan.Name}.mp3");
-                await FfmpegMixRunner.RunAsync(plan, wavePath, mp3Path, cancellationToken);
-                foreach (var output in missingOutputs.Select(output => (Path:
-                    output.Format == "wav" ? wavePath : mp3Path, output.Mime, output.Format)))
+                var renderOutputs = pendingPlans.Select(plan => new MixOutput(plan,
+                    Path.Combine(workDirectory, $"{plan.Name}.wav"),
+                    Path.Combine(workDirectory, $"{plan.Name}.mp3"))).ToArray();
+                await FfmpegMixRunner.RunAsync(renderOutputs, cancellationToken);
+                foreach (var renderOutput in renderOutputs)
                 {
-                    var bytes = await File.ReadAllBytesAsync(output.Path, cancellationToken);
-                    var fileId = Guid.CreateVersion7();
-                    var checksum = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-                    var key = $"bands/{command.BandId:D}/songs/{command.SongId:D}/mixes/{fileId:D}/{plan.Name}.{output.Format}";
-                    var upload = await bus.InvokeAsync<CreateFileUploadResult>(new CreateFileUpload(fileId,
-                        command.BandId, key, $"{plan.Name}.{output.Format}", output.Mime,
-                        bytes.LongLength, checksum, command.RequestedBy));
-                    if (upload.Ticket is not { } ticket)
-                        throw new InvalidOperationException($"Mix upload rejected: {upload.Error}");
-                    using var content = new ByteArrayContent(bytes);
-                    content.Headers.ContentType = new MediaTypeHeaderValue(output.Mime);
-                    content.Headers.ContentLength = bytes.LongLength;
-                    using var response = await client.PutAsync(ticket.UploadUrl, content, cancellationToken);
-                    response.EnsureSuccessStatusCode();
-                    var completed = await bus.InvokeAsync<CompleteFileUploadResult>(new CompleteFileUpload(fileId));
-                    if (completed.File is null)
-                        throw new InvalidOperationException($"Mix verification failed: {completed.Error}");
-                    session.Store(new MixArtifact { Id = Guid.CreateVersion7(), BatchId = batch.Id,
-                        SongId = command.SongId, BandId = command.BandId, FileId = fileId,
-                        Kind = artifactKind,
-                        TargetStemId = plan.Target?.StemId, Group = plan.Target?.Group ?? "Общий микс",
-                        Name = plan.Target is null ? "Полный микс" : plan.Target.Name,
-                        Format = output.Format, CreatedAt = DateTimeOffset.UtcNow });
-                    completedOutputs.Add(ArtifactKey(artifactKind, plan.Target?.StemId,
-                        output.Format));
-                    batch.CompletedOutputCount = completedOutputs.Count;
-                    batch.HeartbeatAt = DateTimeOffset.UtcNow;
-                    session.Store(batch);
-                    await session.SaveChangesAsync(cancellationToken);
+                    var plan = renderOutput.Plan;
+                    var artifactKind = ToArtifactKind(plan.Kind);
+                    var outputs = new[]
+                    {
+                        (Path: renderOutput.WavePath, Mime: "audio/wav", Format: "wav"),
+                        (Path: renderOutput.Mp3Path, Mime: "audio/mpeg", Format: "mp3"),
+                    };
+                    foreach (var output in outputs.Where(output => !completedOutputs.Contains(
+                        ArtifactKey(artifactKind, plan.Target?.StemId, output.Format))))
+                    {
+                        var bytes = await File.ReadAllBytesAsync(output.Path, cancellationToken);
+                        var fileId = Guid.CreateVersion7();
+                        var checksum = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+                        var key = $"bands/{command.BandId:D}/songs/{command.SongId:D}/mixes/" +
+                            $"{fileId:D}/{plan.Name}.{output.Format}";
+                        var upload = await bus.InvokeAsync<CreateFileUploadResult>(new CreateFileUpload(
+                            fileId, command.BandId, key, $"{plan.Name}.{output.Format}", output.Mime,
+                            bytes.LongLength, checksum, command.RequestedBy));
+                        if (upload.Ticket is not { } ticket)
+                            throw new InvalidOperationException($"Mix upload rejected: {upload.Error}");
+                        using var content = new ByteArrayContent(bytes);
+                        content.Headers.ContentType = new MediaTypeHeaderValue(output.Mime);
+                        content.Headers.ContentLength = bytes.LongLength;
+                        using var response = await client.PutAsync(ticket.UploadUrl, content,
+                            cancellationToken);
+                        response.EnsureSuccessStatusCode();
+                        var completed = await bus.InvokeAsync<CompleteFileUploadResult>(
+                            new CompleteFileUpload(fileId));
+                        if (completed.File is null)
+                            throw new InvalidOperationException($"Mix verification failed: {completed.Error}");
+                        session.Store(new MixArtifact { Id = Guid.CreateVersion7(), BatchId = batch.Id,
+                            SongId = command.SongId, BandId = command.BandId, FileId = fileId,
+                            Kind = artifactKind, TargetStemId = plan.Target?.StemId,
+                            Group = plan.Target?.Group ?? "Общий микс",
+                            Name = plan.Target is null ? "Полный микс" : plan.Target.Name,
+                            Format = output.Format, CreatedAt = DateTimeOffset.UtcNow });
+                        completedOutputs.Add(ArtifactKey(artifactKind, plan.Target?.StemId,
+                            output.Format));
+                        batch.CompletedOutputCount = completedOutputs.Count;
+                        batch.HeartbeatAt = DateTimeOffset.UtcNow;
+                        batch.LeaseExpiresAt = batch.HeartbeatAt.Value.AddMinutes(30);
+                        session.Store(batch);
+                        await session.SaveChangesAsync(cancellationToken);
+                    }
                 }
             }
             batch.Status = MixBatchStatus.Ready; batch.CompletedAt = DateTimeOffset.UtcNow;
             batch.HeartbeatAt = batch.CompletedAt;
             batch.CurrentStage = "Ready";
             batch.CurrentPlan = null;
+            batch.LeaseId = null;
+            batch.LeaseExpiresAt = null;
             session.Store(batch); await session.SaveChangesAsync(cancellationToken);
         }
         catch (OperationCanceledException)
@@ -123,6 +143,8 @@ public sealed class GenerateSongMixesHandler(IHttpClientFactory httpClientFactor
             batch.Status = MixBatchStatus.Queued;
             batch.HeartbeatAt = DateTimeOffset.UtcNow;
             batch.CurrentStage = "Queued";
+            batch.LeaseId = null;
+            batch.LeaseExpiresAt = null;
             session.Store(batch);
             try { await session.SaveChangesAsync(CancellationToken.None); }
             catch (Exception exception) { logger.LogWarning(exception,
@@ -134,6 +156,8 @@ public sealed class GenerateSongMixesHandler(IHttpClientFactory httpClientFactor
             logger.LogError(exception, "Mix batch {BatchId} failed", batch.Id);
             batch.Status = MixBatchStatus.Failed; batch.Error = exception.Message;
             batch.CurrentStage = "Failed";
+            batch.LeaseId = null;
+            batch.LeaseExpiresAt = null;
             batch.CompletedAt = DateTimeOffset.UtcNow; session.Store(batch);
             await session.SaveChangesAsync(CancellationToken.None);
         }

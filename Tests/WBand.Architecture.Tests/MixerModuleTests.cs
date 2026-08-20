@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using WBand.Modules.MixerModule.Application;
 using WBand.Modules.MixerModule.Domain;
 using Xunit;
@@ -8,22 +6,6 @@ namespace WBand.Architecture.Tests;
 
 public sealed class MixerModuleTests
 {
-    [Fact]
-    public void RecoveryService_CanBeConstructedAsSingletonWithScopeValidation()
-    {
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddSingleton<IHostedService, MixBatchRecoveryService>();
-
-        using var provider = services.BuildServiceProvider(new ServiceProviderOptions
-        {
-            ValidateOnBuild = true,
-            ValidateScopes = true,
-        });
-
-        Assert.IsType<MixBatchRecoveryService>(provider.GetRequiredService<IHostedService>());
-    }
-
     [Fact]
     public void MixPlan_CreatesFullFocusAndMinusForEachInstrument()
     {
@@ -58,23 +40,22 @@ public sealed class MixerModuleTests
     }
 
     [Fact]
-    public void RecoveryPolicy_RecoversProcessingBatchWithoutRecentHeartbeat()
+    public void LeasePolicy_ClaimsProcessingBatchWithExpiredLease()
     {
         var now = DateTimeOffset.UtcNow;
         var batch = new MixBatch { Status = MixBatchStatus.Processing,
-            StartedAt = now.AddHours(-1), CreatedAt = now.AddHours(-1) };
+            LeaseExpiresAt = now.AddMinutes(-1), CreatedAt = now.AddHours(-1) };
 
-        Assert.True(MixBatchRecoveryPolicy.IsStale(batch, now));
+        Assert.True(MixBatchLeasePolicy.CanClaim(batch, now));
     }
 
     [Fact]
-    public void RecoveryPolicy_DoesNotDuplicateActiveBatch()
+    public void LeasePolicy_DoesNotDuplicateActiveBatch()
     {
         var now = DateTimeOffset.UtcNow;
         var batch = new MixBatch { Status = MixBatchStatus.Processing,
-            StartedAt = now.AddHours(-1), HeartbeatAt = now.AddMinutes(-5),
-            CreatedAt = now.AddHours(-1) };
+            LeaseExpiresAt = now.AddMinutes(5), CreatedAt = now.AddHours(-1) };
 
-        Assert.False(MixBatchRecoveryPolicy.IsStale(batch, now));
+        Assert.False(MixBatchLeasePolicy.CanClaim(batch, now));
     }
 }

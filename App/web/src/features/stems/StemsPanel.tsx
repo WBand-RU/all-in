@@ -224,22 +224,27 @@ export function StemsPanel({ songId, canEdit }: { songId: string; canEdit: boole
             {canEdit && stems.data?.stems.some(stem => stem.fileStatus === "Ready") &&
                 <Button variant="outline" disabled={regenerate.isPending || ["Queued", "Processing"].includes(mixes.data?.status ?? "")}
                     onClick={() => regenerate.mutate()}><RefreshCw className="mr-2 h-4 w-4" />Пересобрать</Button>}
-        </div></CardHeader><CardContent>
-            {mixes.data?.status === "Queued" || mixes.data?.status === "Processing"
-                ? <div className="flex items-start gap-2 text-muted-foreground"><LoaderCircle className="mt-0.5 h-4 w-4 animate-spin" />
+        </div></CardHeader><CardContent className="space-y-5">
+            {(mixes.data?.status === "Queued" || mixes.data?.status === "Processing") &&
+                <div className="flex items-start gap-2 text-muted-foreground"><LoaderCircle className="mt-0.5 h-4 w-4 animate-spin" />
                     <div><div>Миксы создаются: {mixes.data.completedOutputCount ?? mixes.data.artifacts.length}
                         {mixes.data.totalOutputCount > 0 ? ` из ${mixes.data.totalOutputCount}` : ""}</div>
                         {mixes.data.currentStage && <div className="text-xs">Этап: {mixes.data.currentStage}
-                            {mixes.data.currentPlan ? ` · ${mixes.data.currentPlan}` : ""}</div>}</div></div>
-                : mixes.data?.status === "Failed" ? <div className="text-destructive">Ошибка: {mixes.data.error}</div>
-                : groupedMixes.length ? <div className="space-y-6">{groupedMixes.map(([group, artifacts]) => <section key={group}>
+                            {mixes.data.currentPlan ? ` · ${mixes.data.currentPlan}` : ""}</div>}</div></div>}
+            {mixes.data?.status === "Failed" && <div className="text-destructive">Ошибка: {mixes.data.error}</div>}
+            {groupedMixes.length ? <div className="space-y-6">{groupedMixes.map(([group, artifacts]) => <section key={group}>
                     <h3 className="mb-2 font-semibold">{group}</h3><div className="grid gap-2 md:grid-cols-2">
-                    {artifacts.map(artifact => <div key={artifact.id} className="flex items-center justify-between rounded-lg border p-3">
-                        <div><div className="font-medium">{artifact.name}</div><div className="flex gap-2"><Badge>{artifact.kind}</Badge><Badge>{artifact.format.toUpperCase()}</Badge></div></div>
-                        {artifact.downloadUrl && <Button variant="outline" size="sm" asChild><a href={artifact.downloadUrl} target="_blank" rel="noreferrer">
-                            <Download className="mr-2 h-4 w-4" />Скачать</a></Button>}
+                    {artifacts.map(artifact => <div key={artifact.id} className="space-y-3 rounded-lg border p-3">
+                        <div className="flex items-start justify-between gap-3"><div><div className="font-medium">{artifact.name}</div>
+                            <div className="flex gap-2"><Badge>{artifact.kind}</Badge><Badge>{artifact.format.toUpperCase()}</Badge></div></div>
+                            {artifact.downloadUrl && <Button variant="outline" size="sm" asChild><a href={artifact.downloadUrl} target="_blank" rel="noreferrer">
+                                <Download className="mr-2 h-4 w-4" />Скачать</a></Button>}</div>
+                        {artifact.downloadUrl && <audio className="h-10 w-full" controls preload="metadata" src={artifact.downloadUrl}>
+                            Ваш браузер не поддерживает воспроизведение аудио.
+                        </audio>}
                     </div>)}</div></section>)}</div>
-                : <div className="text-sm text-muted-foreground">Готовых миксов пока нет</div>}
+                : !["Queued", "Processing", "Failed"].includes(mixes.data?.status ?? "") &&
+                    <div className="text-sm text-muted-foreground">Готовых миксов пока нет</div>}
         </CardContent></Card>
 
         <Dialog open={uploadOpen} onOpenChange={open => { if (!upload.isPending) setUploadOpen(open); }}>

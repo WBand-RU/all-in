@@ -24,6 +24,7 @@ public enum MixPlanKind { Full, Focus, Minus }
 public sealed record MixInput(AudioTrack Track, double GainDb, bool Muted = false);
 public sealed record MixPlan(string Name, MixPlanKind Kind, AudioTrack? Target,
     IReadOnlyList<MixInput> Inputs);
+public sealed record MixOutput(MixPlan Plan, string WavePath, string Mp3Path);
 
 public static class MixPlanFactory
 {
@@ -61,12 +62,17 @@ public static class MixPlanFactory
 
 public static class FfmpegMixRunner
 {
-    public static async Task RunAsync(MixPlan plan, string waveOutputPath, string mp3OutputPath,
+    /// <summary>
+    /// Renders one or more plans which share the same sources in a single FFmpeg process.
+    /// Each source is decoded and resampled only once for the whole group.
+    /// </summary>
+    public static async Task RunAsync(IReadOnlyList<MixOutput> outputs,
         CancellationToken cancellationToken)
     {
+        if (outputs.Count == 0) return;
         var startInfo = new ProcessStartInfo { FileName = "ffmpeg", RedirectStandardError = true,
             RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true };
-        foreach (var argument in BuildArguments(plan, waveOutputPath, mp3OutputPath))
+        foreach (var argument in BuildArguments(outputs))
             startInfo.ArgumentList.Add(argument);
         using var process = new Process { StartInfo = startInfo };
         try
@@ -95,32 +101,59 @@ public static class FfmpegMixRunner
         }
     }
 
-    private static IReadOnlyList<string> BuildArguments(MixPlan plan, string waveOutputPath,
-        string mp3OutputPath)
+    private static IReadOnlyList<string> BuildArguments(IReadOnlyList<MixOutput> outputs)
     {
         var arguments = new List<string> { "-hide_banner", "-nostdin", "-y" };
-        foreach (var input in plan.Inputs) { arguments.Add("-i"); arguments.Add(input.Track.Path); }
-        arguments.Add("-filter_complex"); arguments.Add(BuildFilter(plan.Inputs));
-        arguments.AddRange(["-map", "[mixwav]", "-c:a", "pcm_s24le", "-ar", "48000",
-            "-ac", "2", "-f", "wav", waveOutputPath, "-map", "[mixmp3]", "-c:a",
-            "libmp3lame", "-b:a", "320k", "-ar", "48000", "-ac", "2", "-f", "mp3",
-            mp3OutputPath]);
+        foreach (var input in outputs[0].Plan.Inputs)
+        {
+            arguments.Add("-i");
+            arguments.Add(input.Track.Path);
+        }
+        arguments.Add("-filter_complex");
+        arguments.Add(BuildFilter(outputs.Select(output => output.Plan).ToArray()));
+        for (var planIndex = 0; planIndex < outputs.Count; planIndex++)
+        {
+            var output = outputs[planIndex];
+            arguments.AddRange(["-map", $"[mix{planIndex}wav]", "-c:a", "pcm_s24le", "-ar",
+                "48000", "-ac", "2", "-f", "wav", output.WavePath, "-map",
+                $"[mix{planIndex}mp3]", "-c:a", "libmp3lame", "-b:a", "320k", "-ar",
+                "48000", "-ac", "2", "-f", "mp3", output.Mp3Path]);
+        }
         return arguments;
     }
 
-    private static string BuildFilter(IReadOnlyList<MixInput> inputs)
+    private static string BuildFilter(IReadOnlyList<MixPlan> plans)
     {
         var filters = new List<string>();
-        for (var index = 0; index < inputs.Count; index++)
+        var inputs = plans[0].Inputs;
+        for (var inputIndex = 0; inputIndex < inputs.Count; inputIndex++)
         {
-            var volume = inputs[index].Muted ? "0" :
-                $"{inputs[index].GainDb.ToString("0.###", CultureInfo.InvariantCulture)}dB";
-            filters.Add($"[{index}:a:0]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo," +
-                $"asetpts=PTS-STARTPTS,volume={volume}[a{index}]");
+            var baseFilter = $"[{inputIndex}:a:0]aresample=48000," +
+                "aformat=sample_fmts=fltp:channel_layouts=stereo,asetpts=PTS-STARTPTS";
+            if (plans.Count == 1)
+                filters.Add($"{baseFilter}[p0s{inputIndex}]");
+            else
+            {
+                var branches = string.Concat(Enumerable.Range(0, plans.Count)
+                    .Select(planIndex => $"[p{planIndex}s{inputIndex}]"));
+                filters.Add($"{baseFilter},asplit={plans.Count}{branches}");
+            }
         }
-        var labels = string.Concat(Enumerable.Range(0, inputs.Count).Select(index => $"[a{index}]"));
-        filters.Add($"{labels}amix=inputs={inputs.Count}:duration=longest:dropout_transition=0:normalize=0," +
-            "alimiter=limit=0.95:attack=5:release=50:latency=1,asplit=2[mixwav][mixmp3]");
+        for (var planIndex = 0; planIndex < plans.Count; planIndex++)
+        {
+            for (var inputIndex = 0; inputIndex < inputs.Count; inputIndex++)
+            {
+                var input = plans[planIndex].Inputs[inputIndex];
+                var volume = input.Muted ? "0" :
+                    $"{input.GainDb.ToString("0.###", CultureInfo.InvariantCulture)}dB";
+                filters.Add($"[p{planIndex}s{inputIndex}]volume={volume}[p{planIndex}a{inputIndex}]");
+            }
+            var labels = string.Concat(Enumerable.Range(0, inputs.Count)
+                .Select(inputIndex => $"[p{planIndex}a{inputIndex}]"));
+            filters.Add($"{labels}amix=inputs={inputs.Count}:duration=longest:" +
+                "dropout_transition=0:normalize=0,alimiter=limit=0.95:attack=5:release=50:" +
+                $"latency=1,asplit=2[mix{planIndex}wav][mix{planIndex}mp3]");
+        }
         return string.Join(';', filters);
     }
 

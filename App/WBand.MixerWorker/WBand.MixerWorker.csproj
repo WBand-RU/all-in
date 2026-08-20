@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>wband-webapi-development</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.19.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\Shared\Shared.csproj" />
+    <ProjectReference Include="..\..\Modules\WBand.Modules.FileModule\WBand.Modules.FileModule.csproj" />
+    <ProjectReference Include="..\..\Modules\WBand.Modules.StemModule\WBand.Modules.StemModule.csproj" />
+    <ProjectReference Include="..\..\Modules\WBand.Modules.MixerModule\WBand.Modules.MixerModule.csproj" />
+  </ItemGroup>
+</Project>
