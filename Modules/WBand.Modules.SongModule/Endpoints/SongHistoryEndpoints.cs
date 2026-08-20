@@ -30,9 +30,6 @@ public sealed record SongVersionDetailsResponse(
     IReadOnlyList<TempoChange> TempoTrack,
     IReadOnlyList<TimeSignatureChange> TimeSignatureTrack,
     int CountInBars,
-    IReadOnlyList<SongSection> Sections,
-    string? Lyrics,
-    string? Chords,
     SongStatus Status);
 
 public static class ListSongVersionsEndpoint
@@ -97,9 +94,6 @@ public static class GetSongVersionEndpoint
             value.TempoTrack,
             value.TimeSignatureTrack,
             value.CountInBars,
-            value.Sections,
-            value.Lyrics,
-            value.Chords,
             value.Status)));
     }
 }

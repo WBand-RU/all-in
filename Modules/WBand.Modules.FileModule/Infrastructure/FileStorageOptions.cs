@@ -7,7 +7,7 @@ namespace WBand.Modules.FileModule.Infrastructure;
 /// <summary>
 /// Defines the S3-compatible storage owned by the file module.
 /// </summary>
-internal sealed class FileStorageOptions
+public sealed class FileStorageOptions
 {
     public const string SectionName = "Modules:FileModule:S3";
 
@@ -30,6 +30,20 @@ internal sealed class FileStorageOptions
 
     [Range(1, 604800)]
     public int DownloadExpirationSeconds { get; set; }
+
+    [Range(1, long.MaxValue)]
+    public long MaxFileSizeBytes { get; set; } = 536_870_912;
+
+    [Range(1, 1440)]
+    public int IncompleteUploadLifetimeMinutes { get; set; } = 60;
+
+    [Range(1, 1440)]
+    public int CleanupIntervalMinutes { get; set; } = 15;
+
+    [MinLength(1)]
+    public string[] AllowedMimeTypes { get; set; } = ["audio/wav", "audio/x-wav", "audio/mpeg",
+        "audio/ogg", "audio/opus", "audio/flac", "audio/x-flac", "audio/mp4", "audio/aac",
+        "audio/x-ms-wma"];
 
     /// <summary>
     /// Reads development settings first and falls back to production environment variables.
@@ -61,6 +75,16 @@ internal sealed class FileStorageOptions
                     "S3_DOWNLOAD_EXPIRATION_SECONDS"
                 )
             ),
+            MaxFileSizeBytes = configuration.GetValue<long?>(
+                $"{SectionName}:MaxFileSizeBytes") ?? 536_870_912,
+            IncompleteUploadLifetimeMinutes = configuration.GetValue<int?>(
+                $"{SectionName}:IncompleteUploadLifetimeMinutes") ?? 60,
+            CleanupIntervalMinutes = configuration.GetValue<int?>(
+                $"{SectionName}:CleanupIntervalMinutes") ?? 15,
+            AllowedMimeTypes = configuration.GetSection($"{SectionName}:AllowedMimeTypes")
+                .Get<string[]>() ?? ["audio/wav", "audio/x-wav", "audio/mpeg", "audio/ogg",
+                    "audio/opus", "audio/flac", "audio/x-flac", "audio/mp4", "audio/aac",
+                    "audio/x-ms-wma"],
         };
     }
 

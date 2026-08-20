@@ -20,6 +20,8 @@ public sealed class SongModule : IWBandModule
     public void ConfigureMarten(StoreOptions options)
     {
         options.Schema.For<Song>().DatabaseSchemaName(MartenSchemaName).UseOptimisticConcurrency(true);
+        options.Schema.For<SongSection>().DatabaseSchemaName(MartenSchemaName)
+            .UseOptimisticConcurrency(true);
         options.Schema.For<SongRevision>().DatabaseSchemaName(MartenSchemaName);
     }
 }

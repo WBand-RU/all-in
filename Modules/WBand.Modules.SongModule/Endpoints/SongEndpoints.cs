@@ -16,34 +16,31 @@ namespace WBand.Modules.SongModule.Endpoints;
 public sealed record CreateSongRequest(
     Guid BandId, string Title, IReadOnlyList<string>? Authors, string? Author,
     string? Key, int? Bpm, IReadOnlyList<TempoChange>? TempoTrack,
-    IReadOnlyList<TimeSignatureChange>? TimeSignatureTrack, int CountInBars = 2,
-    IReadOnlyList<SongSection>? Sections = null, string? Lyrics = null, string? Chords = null);
+    IReadOnlyList<TimeSignatureChange>? TimeSignatureTrack, int CountInBars = 2);
 
 public sealed record UpdateSongRequest(
     string Title, IReadOnlyList<string>? Authors, string? Author, string? Key, int? Bpm,
     IReadOnlyList<TempoChange>? TempoTrack, IReadOnlyList<TimeSignatureChange>? TimeSignatureTrack,
-    int CountInBars, IReadOnlyList<SongSection>? Sections, string? Lyrics, string? Chords,
-    SongStatus Status, long ExpectedContentVersion);
+    int CountInBars, SongStatus Status, long ExpectedContentVersion);
 
 public sealed record SongResponse(
     Guid Id, Guid BandId, string Title, IReadOnlyList<string> Authors, string? Author,
     string? Key, int? Bpm, IReadOnlyList<TempoChange> TempoTrack,
     IReadOnlyList<TimeSignatureChange> TimeSignatureTrack, int CountInBars,
-    IReadOnlyList<SongSection> Sections, string? Lyrics, string? Chords, SongStatus Status,
-    long ContentVersion, DateTimeOffset CreatedAt, Guid CreatedBy, DateTimeOffset? UpdatedAt,
+    SongStatus Status, long ContentVersion, DateTimeOffset CreatedAt, Guid CreatedBy, DateTimeOffset? UpdatedAt,
     Guid? UpdatedBy, DateTimeOffset? DeletedAt, DateTimeOffset? PurgeAfter)
 {
     public static SongResponse From(Song song) => new(
         song.Id, song.BandId, song.Title, song.Authors, song.Authors.FirstOrDefault(), song.Key,
-        song.Bpm, song.TempoTrack, song.TimeSignatureTrack, song.CountInBars, song.Sections,
-        song.Lyrics, song.Chords, song.Status, song.ContentVersion, song.CreatedAt, song.CreatedBy,
+        song.Bpm, song.TempoTrack, song.TimeSignatureTrack, song.CountInBars,
+        song.Status, song.ContentVersion, song.CreatedAt, song.CreatedBy,
         song.UpdatedAt, song.UpdatedBy, song.DeletedAt, song.PurgeAfter);
 }
 
 public sealed class CreateSongRequestValidator : AbstractValidator<CreateSongRequest>
 {
     public CreateSongRequestValidator() => SongValidation.Configure(this, x => x.Title, x => x.Key,
-        x => x.Bpm, x => x.CountInBars, x => x.Sections, x => x.TimeSignatureTrack, x => x.TempoTrack);
+        x => x.Bpm, x => x.CountInBars, x => x.TimeSignatureTrack, x => x.TempoTrack);
 }
 
 public sealed class UpdateSongRequestValidator : AbstractValidator<UpdateSongRequest>
@@ -51,7 +48,7 @@ public sealed class UpdateSongRequestValidator : AbstractValidator<UpdateSongReq
     public UpdateSongRequestValidator()
     {
         SongValidation.Configure(this, x => x.Title, x => x.Key, x => x.Bpm, x => x.CountInBars,
-            x => x.Sections, x => x.TimeSignatureTrack, x => x.TempoTrack);
+            x => x.TimeSignatureTrack, x => x.TempoTrack);
         RuleFor(x => x.ExpectedContentVersion).GreaterThan(0);
     }
 }
@@ -63,7 +60,6 @@ internal static class SongValidation
         System.Linq.Expressions.Expression<Func<T, string?>> key,
         System.Linq.Expressions.Expression<Func<T, int?>> bpm,
         System.Linq.Expressions.Expression<Func<T, int>> countIn,
-        System.Linq.Expressions.Expression<Func<T, IReadOnlyList<SongSection>?>> sections,
         System.Linq.Expressions.Expression<Func<T, IReadOnlyList<TimeSignatureChange>?>> signatures,
         System.Linq.Expressions.Expression<Func<T, IReadOnlyList<TempoChange>?>> tempos)
     {
@@ -71,8 +67,6 @@ internal static class SongValidation
         validator.RuleFor(key).Matches("^[CDEFGAB](#|b)?(m|maj|min|dim|aug)?$").When(x => key.Compile()(x) is not null);
         validator.RuleFor(bpm).InclusiveBetween(20, 400).When(x => bpm.Compile()(x).HasValue);
         validator.RuleFor(countIn).InclusiveBetween(0, 8);
-        validator.RuleFor(sections).Must(x => x is null || x.All(s =>
-            !string.IsNullOrWhiteSpace(s.Name) && s.StartBar > 0 && s.EndBar >= s.StartBar));
         validator.RuleFor(signatures).Must(x => x is null || x.All(s =>
             s.Bar > 0 && s.Beats > 0 && s.BeatUnit is 1 or 2 or 4 or 8 or 16));
         validator.RuleFor(tempos).Must(x => x is null || x.All(t =>
@@ -105,8 +99,7 @@ public static class CreateSongEndpoint
             Authors = SongAccess.Authors(request.Authors, request.Author), Key = request.Key?.Trim(),
             Bpm = request.Bpm, TempoTrack = request.TempoTrack?.ToList() ?? [],
             TimeSignatureTrack = request.TimeSignatureTrack?.ToList() ?? [new(1, 4, 4)],
-            CountInBars = request.CountInBars, Sections = request.Sections?.ToList() ?? [],
-            Lyrics = request.Lyrics, Chords = request.Chords, CreatedAt = now, CreatedBy = user.GetUserId,
+            CountInBars = request.CountInBars, CreatedAt = now, CreatedBy = user.GetUserId,
         };
         session.Store(song);
         session.Store(SongVersioning.Revision(song, user.GetUserId, now));
@@ -172,7 +165,6 @@ public static class UpdateSongEndpoint
         song.Title = request.Title.Trim(); song.Authors = SongAccess.Authors(request.Authors, request.Author);
         song.Key = request.Key?.Trim(); song.Bpm = request.Bpm; song.TempoTrack = request.TempoTrack?.ToList() ?? [];
         song.TimeSignatureTrack = request.TimeSignatureTrack?.ToList() ?? []; song.CountInBars = request.CountInBars;
-        song.Sections = request.Sections?.ToList() ?? []; song.Lyrics = request.Lyrics; song.Chords = request.Chords;
         song.Status = request.Status; song.ContentVersion++; song.UpdatedAt = DateTimeOffset.UtcNow; song.UpdatedBy = user.GetUserId;
         session.Store(song);
         session.Store(SongVersioning.Revision(song, user.GetUserId, song.UpdatedAt.Value));

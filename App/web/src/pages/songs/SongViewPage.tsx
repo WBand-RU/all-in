@@ -21,6 +21,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { useBandAccess } from "@/hooks/use-band-access";
 import { useTranslation } from "react-i18next";
+import { StemsPanel } from "@/features/stems/StemsPanel";
+import { SongSectionsPanel } from "@/features/song-sections/SongSectionsPanel";
 
 interface SongVersion {
     contentVersion: number;
@@ -41,9 +43,6 @@ interface SongVersionDetails {
     tempoTrack: { bar: number; bpm: number }[];
     timeSignatureTrack: { bar: number; beats: number; beatUnit: number }[];
     countInBars: number;
-    sections: { name: string; startBar: number; endBar: number }[];
-    lyrics?: string | null;
-    chords?: string | null;
     status: string | number;
 }
 
@@ -199,24 +198,6 @@ export function SongViewPage() {
                         )}
                     </div>
 
-                    {song.lyrics && (
-                        <div className="space-y-2">
-                            <Label>{t("songs.fields.lyrics")}</Label>
-                            <div className="bg-muted p-4 rounded-md whitespace-pre-wrap">
-                                {song.lyrics}
-                            </div>
-                        </div>
-                    )}
-
-                    {song.chords && (
-                        <div className="space-y-2">
-                            <Label>{t("songs.fields.chords")}</Label>
-                            <div className="bg-muted p-4 rounded-md whitespace-pre-wrap font-mono">
-                                {song.chords}
-                            </div>
-                        </div>
-                    )}
-
                     <div className="text-sm text-muted-foreground">
                         {t("songActions.createdAt", { date: new Date(song.createdAt).toLocaleDateString() })}
                     </div>
@@ -309,18 +290,6 @@ export function SongViewPage() {
                                     <div>{version.timeSignatureTrack.map(x => `${x.beats}/${x.beatUnit} ${t("songs.fields.fromBar", { bar: x.bar })}`).join(", ") || "—"}</div>
                                 </div>
                                 <div><Label>{t("songs.fields.countIn")}</Label><div>{version.countInBars}</div></div>
-                                <div className="sm:col-span-2">
-                                    <Label>{t("songs.fields.sections")}</Label>
-                                    <div>{version.sections.map(x => `${x.name}: ${x.startBar}–${x.endBar}`).join(", ") || "—"}</div>
-                                </div>
-                            </div>
-                            <div>
-                                <Label>{t("songs.fields.lyrics")}</Label>
-                                <div className="mt-2 whitespace-pre-wrap rounded-md bg-muted p-4">{version.lyrics || "—"}</div>
-                            </div>
-                            <div>
-                                <Label>{t("songs.fields.chords")}</Label>
-                                <div className="mt-2 whitespace-pre-wrap rounded-md bg-muted p-4 font-mono">{version.chords || "—"}</div>
                             </div>
                             {canEditBand(song.bandId) && <div className="flex justify-end border-t pt-4">
                                 <Button
@@ -338,6 +307,9 @@ export function SongViewPage() {
                     })()}
                 </DialogContent>
             </Dialog>
+
+            <SongSectionsPanel songId={song.id} canEdit={canEditBand(song.bandId)} />
+            <StemsPanel songId={song.id} canEdit={canEditBand(song.bandId)} />
 
             {/* Player Component */}
             <Player songId={id || ""} songTitle={song.title} />

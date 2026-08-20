@@ -30,6 +30,18 @@ export default defineConfig({
                 target: "http://localhost:5000",
                 changeOrigin: true,
             },
+            "/stem-api": {
+                target: "http://localhost:5000",
+                changeOrigin: true,
+            },
+            "/mixer-api": {
+                target: "http://localhost:5000",
+                changeOrigin: true,
+            },
+            "/files": {
+                target: "http://localhost:5000",
+                changeOrigin: true,
+            },
         }
     },
     resolve: {

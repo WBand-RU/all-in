@@ -1,21 +1,12 @@
 namespace WBand.Modules.FileModule.Services;
 
-/// <summary>
-/// Сервис для работы с файлами.
-/// </summary>
+/// <summary>Provides private S3-compatible object operations.</summary>
 public interface IFileService
 {
-    /// <summary>
-    /// Получить ссылку на скачивание или просмотр файла.
-    /// </summary>
-    /// <param name="fileName"></param>
-    /// <returns></returns>
-    Task<string> GetSignedDownloadUrl(string fileName);
-
-    /// <summary>
-    /// Получить ссылку на загрузку файла на сервер.
-    /// </summary>
-    /// <param name="fileName"></param>
-    /// <returns></returns>
-    Task<string> GetSignedUploadUrl(string fileName);
+    Task<string> GetSignedDownloadUrl(string objectKey);
+    Task<string> GetSignedUploadUrl(string objectKey, string mimeType, long size);
+    Task<StoredObjectInfo> InspectAsync(string objectKey, CancellationToken cancellationToken);
+    Task DeleteAsync(string objectKey, CancellationToken cancellationToken);
 }
+
+public sealed record StoredObjectInfo(long Size, string ContentType, string Sha256);

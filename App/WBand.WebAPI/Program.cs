@@ -6,6 +6,8 @@ using WBand.Modules.BandModule;
 using WBand.Modules.FileModule;
 using WBand.Modules.PlaylistModule;
 using WBand.Modules.SongModule;
+using WBand.Modules.StemModule;
+using WBand.Modules.MixerModule;
 using WBand.Modules.UserModule;
 
 var builder = WebApplication.CreateBuilder(args).ApplyWBandConfiguration();
@@ -15,7 +17,9 @@ var modules = new ModuleCatalog(
     new BandModule(),
     new SongModule(),
     new PlaylistModule(),
-    new FileModule()
+    new FileModule(),
+    new StemModule(),
+    new MixerModule()
 );
 modules.AddServices(builder);
 

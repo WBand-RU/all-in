@@ -4,7 +4,6 @@ public enum SongStatus { Draft, Band, Catalog }
 
 public sealed record TempoChange(int Bar, int Bpm);
 public sealed record TimeSignatureChange(int Bar, int Beats, int BeatUnit);
-public sealed record SongSection(string Name, int StartBar, int EndBar);
 
 public sealed class Song
 {
@@ -17,9 +16,6 @@ public sealed class Song
     public List<TempoChange> TempoTrack { get; set; } = [];
     public List<TimeSignatureChange> TimeSignatureTrack { get; set; } = [];
     public int CountInBars { get; set; } = 2;
-    public List<SongSection> Sections { get; set; } = [];
-    public string? Lyrics { get; set; }
-    public string? Chords { get; set; }
     public SongStatus Status { get; set; } = SongStatus.Draft;
     public long ContentVersion { get; set; } = 1;
     public DateTimeOffset CreatedAt { get; set; }
@@ -31,6 +27,27 @@ public sealed class Song
 
     public bool IsDeleted => DeletedAt is not null;
     public DateTimeOffset? PurgeAfter => DeletedAt?.AddDays(30);
+}
+
+/// <summary>
+/// A shared structural block for lyrics and chords. Sections have an independent
+/// lifecycle so the song document contains metadata only.
+/// </summary>
+public sealed class SongSection
+{
+    public Guid Id { get; set; }
+    public Guid SongId { get; set; }
+    public Guid BandId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int Order { get; set; }
+    public int BarCount { get; set; } = 4;
+    public string? Lyrics { get; set; }
+    public string? Chords { get; set; }
+    public long Revision { get; set; } = 1;
+    public DateTimeOffset CreatedAt { get; set; }
+    public Guid CreatedBy { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
+    public Guid? UpdatedBy { get; set; }
 }
 
 public sealed class SongRevision
@@ -51,7 +68,4 @@ public sealed record SongSnapshot(
     List<TempoChange> TempoTrack,
     List<TimeSignatureChange> TimeSignatureTrack,
     int CountInBars,
-    List<SongSection> Sections,
-    string? Lyrics,
-    string? Chords,
     SongStatus Status);

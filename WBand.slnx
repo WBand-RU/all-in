@@ -3,7 +3,9 @@
     <Project Path="Modules/WBand.Modules.BandModule/WBand.Modules.BandModule.csproj" />
     <Project Path="Modules/WBand.Modules.FileModule/WBand.Modules.FileModule.csproj" />
     <Project Path="Modules/WBand.Modules.PlaylistModule/WBand.Modules.PlaylistModule.csproj" />
+    <Project Path="Modules/WBand.Modules.MixerModule/WBand.Modules.MixerModule.csproj" />
     <Project Path="Modules/WBand.Modules.SongModule/WBand.Modules.SongModule.csproj" />
+    <Project Path="Modules/WBand.Modules.StemModule/WBand.Modules.StemModule.csproj" />
     <Project Path="Modules/WBand.Modules.UserModule/WBand.Modules.UserModule.csproj" />
   </Folder>
   <Folder Name="/App/">

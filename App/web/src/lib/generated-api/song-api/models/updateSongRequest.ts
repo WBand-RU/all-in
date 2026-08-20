@@ -5,16 +5,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { UpdateSongRequestAuthor } from './updateSongRequestAuthor';
-import type { UpdateSongRequestLyrics } from './updateSongRequestLyrics';
-import type { UpdateSongRequestChords } from './updateSongRequestChords';
 import type { UpdateSongRequestKey } from './updateSongRequestKey';
 import type { UpdateSongRequestBpm } from './updateSongRequestBpm';
 
 export interface UpdateSongRequest {
   title: string;
   author: UpdateSongRequestAuthor;
-  lyrics: UpdateSongRequestLyrics;
-  chords: UpdateSongRequestChords;
   key: UpdateSongRequestKey;
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   bpm: UpdateSongRequestBpm;
@@ -22,7 +18,6 @@ export interface UpdateSongRequest {
   tempoTrack?: { bar: number; bpm: number }[];
   timeSignatureTrack?: { bar: number; beats: number; beatUnit: number }[];
   countInBars: number;
-  sections?: { name: string; startBar: number; endBar: number }[];
   status: 'draft' | 'band' | 'catalog' | number;
   expectedContentVersion: number;
 }

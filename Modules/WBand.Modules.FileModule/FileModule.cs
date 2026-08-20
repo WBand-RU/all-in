@@ -1,11 +1,13 @@
 using System.Reflection;
 using FluentValidation;
+using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Minio;
 using Shared.Modules;
 using WBand.Modules.FileModule.Infrastructure;
+using WBand.Modules.FileModule.Domain;
 using WBand.Modules.FileModule.Services;
 
 namespace WBand.Modules.FileModule;
@@ -18,6 +20,8 @@ public sealed class FileModule : IWBandModule
     public string Name => "FileModule";
 
     public Assembly Assembly => typeof(FileModule).Assembly;
+
+    public string MartenSchemaName => "files";
 
     public void AddServices(IHostApplicationBuilder builder)
     {
@@ -48,8 +52,12 @@ public sealed class FileModule : IWBandModule
         });
 
         builder.Services.AddScoped<IFileService, FileService>();
+        builder.Services.AddHostedService<FileUploadCleanupService>();
         builder.Services.AddValidatorsFromAssembly(Assembly);
     }
+
+    public void ConfigureMarten(StoreOptions options) =>
+        options.Schema.For<FileObject>().DatabaseSchemaName(MartenSchemaName);
 
     private static void Copy(FileStorageOptions source, FileStorageOptions target)
     {
@@ -60,5 +68,9 @@ public sealed class FileModule : IWBandModule
         target.SecretKey = source.SecretKey;
         target.UploadExpirationSeconds = source.UploadExpirationSeconds;
         target.DownloadExpirationSeconds = source.DownloadExpirationSeconds;
+        target.MaxFileSizeBytes = source.MaxFileSizeBytes;
+        target.IncompleteUploadLifetimeMinutes = source.IncompleteUploadLifetimeMinutes;
+        target.CleanupIntervalMinutes = source.CleanupIntervalMinutes;
+        target.AllowedMimeTypes = source.AllowedMimeTypes;
     }
 }

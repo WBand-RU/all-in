@@ -5,8 +5,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { SongAuthor } from './songAuthor';
-import type { SongLyrics } from './songLyrics';
-import type { SongChords } from './songChords';
 import type { SongKey } from './songKey';
 import type { SongBpm } from './songBpm';
 import type { SongUpdatedAt } from './songUpdatedAt';
@@ -17,8 +15,6 @@ export interface Song {
   bandId: string;
   title: string;
   author?: SongAuthor;
-  lyrics?: SongLyrics;
-  chords?: SongChords;
   key?: SongKey;
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   bpm?: SongBpm;
@@ -30,7 +26,6 @@ export interface Song {
   tempoTrack: { bar: number; bpm: number }[];
   timeSignatureTrack: { bar: number; beats: number; beatUnit: number }[];
   countInBars: number;
-  sections: { name: string; startBar: number; endBar: number }[];
   status: 'draft' | 'band' | 'catalog' | number;
   contentVersion: number;
   deletedAt?: string | null;

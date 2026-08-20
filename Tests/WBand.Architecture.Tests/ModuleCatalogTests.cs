@@ -4,6 +4,8 @@ using WBand.Modules.BandModule;
 using WBand.Modules.UserModule;
 using WBand.Modules.SongModule;
 using WBand.Modules.PlaylistModule;
+using WBand.Modules.StemModule;
+using WBand.Modules.MixerModule;
 using Xunit;
 
 namespace WBand.Architecture.Tests;
@@ -13,7 +15,7 @@ public sealed class ModuleCatalogTests
     [Fact]
     public void Modules_HaveUniqueNamesAndAssemblies()
     {
-        var catalog = new ModuleCatalog(new UserModule(), new BandModule(), new SongModule(), new PlaylistModule(), new FileModule());
+        var catalog = CreateCatalog();
 
         Assert.Equal(catalog.Modules.Count, catalog.Modules.Select(module => module.Name).Distinct().Count());
         Assert.Equal(
@@ -29,11 +31,15 @@ public sealed class ModuleCatalogTests
     [Fact]
     public void Modules_DoNotComeFromLegacyServicesDirectory()
     {
-        var catalog = new ModuleCatalog(new UserModule(), new BandModule(), new SongModule(), new PlaylistModule(), new FileModule());
+        var catalog = CreateCatalog();
 
         Assert.All(
             catalog.Modules,
             module => Assert.DoesNotContain("Services", module.Assembly.Location, StringComparison.Ordinal)
         );
     }
+
+    private static ModuleCatalog CreateCatalog() => new(new UserModule(), new BandModule(),
+        new SongModule(), new PlaylistModule(), new FileModule(), new StemModule(),
+        new MixerModule());
 }

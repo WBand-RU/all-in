@@ -5,7 +5,6 @@ import { Save, ArrowLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { Textarea } from "@/shared/ui/textarea";
 import {
     Card,
     CardContent,
@@ -29,6 +28,7 @@ import {
 } from "@/lib/generated-api/song-api/songs";
 import { useGetListOfBands } from "@/lib/generated-api/band-api/bands";
 import { useBandAccess } from "@/hooks/use-band-access";
+import { SongSectionsPanel } from "@/features/song-sections/SongSectionsPanel";
 
 const musicalKeys = [
     "Ab",
@@ -70,13 +70,10 @@ const musicalKeys = [
 interface SongForm {
     title: string;
     author: string;
-    lyrics: string;
-    chords: string;
     key: string;
     bpm: number | null;
     timeSignature: string;
     countInBars: number;
-    sections: string;
 }
 
 export function SongFormPage() {
@@ -130,13 +127,10 @@ export function SongFormPage() {
     const [form, setForm] = useState<SongForm>({
         title: "",
         author: "",
-        lyrics: "",
-        chords: "",
         key: "",
         bpm: null,
         timeSignature: "4/4",
         countInBars: 2,
-        sections: "",
     });
     const [currentBandId, setCurrentBandId] = useState("");
     const { data: bandsData } = useGetListOfBands();
@@ -176,8 +170,6 @@ export function SongFormPage() {
             setForm({
                 title: song.title,
                 author: song.author || "",
-                lyrics: song.lyrics || "",
-                chords: song.chords || "",
                 key: song.key || "",
                 bpm: song.bpm
                     ? typeof song.bpm === "string"
@@ -188,7 +180,6 @@ export function SongFormPage() {
                     ? `${song.timeSignatureTrack[0].beats}/${song.timeSignatureTrack[0].beatUnit}`
                     : "4/4",
                 countInBars: song.countInBars ?? 2,
-                sections: (song.sections ?? []).map((x) => `${x.name}:${x.startBar}-${x.endBar}`).join("\n"),
             });
             setCurrentBandId(song.bandId);
         }
@@ -223,25 +214,17 @@ export function SongFormPage() {
                 return;
             }
             const [beats, beatUnit] = form.timeSignature.split("/").map(Number);
-            const sections = form.sections.split("\n").map((line) => {
-                const [name, range] = line.split(":");
-                const [startBar, endBar] = (range ?? "").split("-").map(Number);
-                return { name: name?.trim(), startBar, endBar };
-            }).filter((x) => x.name && x.startBar > 0 && x.endBar >= x.startBar);
             updateSong.mutate({
                 songId: id,
                 data: {
                     title: form.title,
                     author: form.author || null,
-                    lyrics: form.lyrics || null,
-                    chords: form.chords || null,
                     key: form.key || null,
                     bpm: form.bpm,
                     authors: form.author ? [form.author] : [],
                     tempoTrack: form.bpm ? [{ bar: 1, bpm: form.bpm }] : [],
                     timeSignatureTrack: [{ bar: 1, beats, beatUnit }],
                     countInBars: form.countInBars,
-                    sections,
                     status: songData?.value?.status ?? 0,
                     expectedContentVersion: songData?.value?.contentVersion ?? 0,
                 },
@@ -252,25 +235,17 @@ export function SongFormPage() {
                 return;
             }
             const [beats, beatUnit] = form.timeSignature.split("/").map(Number);
-            const sections = form.sections.split("\n").map((line) => {
-                const [name, range] = line.split(":");
-                const [startBar, endBar] = (range ?? "").split("-").map(Number);
-                return { name: name?.trim(), startBar, endBar };
-            }).filter((x) => x.name && x.startBar > 0 && x.endBar >= x.startBar);
             createSong.mutate({
                 data: {
                     bandId: currentBandId,
                     title: form.title,
                     author: form.author || null,
-                    lyrics: form.lyrics || null,
-                    chords: form.chords || null,
                     key: form.key || null,
                     bpm: form.bpm,
                     authors: form.author ? [form.author] : [],
                     tempoTrack: form.bpm ? [{ bar: 1, bpm: form.bpm }] : [],
                     timeSignatureTrack: [{ bar: 1, beats, beatUnit }],
                     countInBars: form.countInBars,
-                    sections,
                 },
             });
         }
@@ -384,37 +359,6 @@ export function SongFormPage() {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="sections">{t("songs.fields.sections")}</Label>
-                            <Textarea id="sections" value={form.sections} onChange={(e) => setForm({ ...form, sections: e.target.value })} placeholder={t("songs.sectionsPlaceholder")} rows={4} />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="lyrics">{t("songs.fields.lyrics")}</Label>
-                            <Textarea
-                                id="lyrics"
-                                value={form.lyrics}
-                                onChange={(e) =>
-                                    setForm({ ...form, lyrics: e.target.value })
-                                }
-                                placeholder={t("songActions.lyricsPlaceholder")}
-                                rows={10}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="chords">{t("songs.fields.chords")}</Label>
-                            <Textarea
-                                id="chords"
-                                value={form.chords}
-                                onChange={(e) =>
-                                    setForm({ ...form, chords: e.target.value })
-                                }
-                                placeholder={t("songActions.chordsPlaceholder")}
-                                rows={6}
-                            />
-                        </div>
-
                         <div className="flex justify-end gap-4">
                             <Button
                                 type="button"
@@ -438,6 +382,7 @@ export function SongFormPage() {
                     </form>
                 </CardContent>
             </Card>
+            {isEditing && id && <SongSectionsPanel songId={id} canEdit />}
         </div>
     );
 }

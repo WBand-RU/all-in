@@ -1,17 +1,5 @@
-import {
-    type ColumnDef,
-    type Row,
-    getCoreRowModel,
-    getFacetedRowModel,
-    getFacetedUniqueValues,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from "@tanstack/react-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MoreVerticalIcon, Undo2Icon } from "lucide-react";
-import { z } from "zod";
 
 import { Button } from "@/shared/ui/button";
 import {
@@ -39,7 +27,6 @@ import {
     getGetListOfBandsQueryKey,
 } from "@/lib/generated-api/band-api/bands";
 import { toast } from "sonner";
-import { AxiosError } from "axios";
 import { apiClient } from "@/lib/axios-instance";
 import { useBandAccess } from "@/hooks/use-band-access";
 import { useTranslation } from "react-i18next";
@@ -49,48 +36,6 @@ interface FormerBand {
     bandName: string;
     leftAt: string;
 }
-
-const schema = z.object({
-    id: z.string(),
-    name: z.string(),
-});
-
-type Model = z.infer<typeof schema>;
-
-const columns: ColumnDef<Model>[] = [
-    {
-        id: "id",
-        header: () => "ID",
-    },
-    {
-        id: "name",
-        header: () => "Name",
-    },
-    {
-        id: "actions",
-        cell: () => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="text-muted-foreground flex size-8 data-[state=open]:bg-muted"
-                        size="icon"
-                    >
-                        <MoreVerticalIcon />
-                        <span className="sr-only">Open menu</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                    <DropdownMenuItem>Make a copy</DropdownMenuItem>
-                    <DropdownMenuItem>Favorite</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Delete</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        ),
-    },
-];
 
 export function BandListPage() {
     const { t } = useTranslation();
@@ -121,19 +66,6 @@ export function BandListPage() {
         onError: () => toast.error(t("band.rejoinFailed")),
     });
 
-    const table = useReactTable({
-        data: data?.value || [],
-        columns,
-        getRowId: (row: Model) => row.id.toString(),
-        enableRowSelection: true,
-        getCoreRowModel: getCoreRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFacetedRowModel: getFacetedRowModel(),
-        getFacetedUniqueValues: getFacetedUniqueValues(),
-    });
-
     async function handleDelete(bandId: string) {
         try {
             await deleteBandMutator.mutateAsync(
@@ -141,26 +73,18 @@ export function BandListPage() {
                     bandId,
                 },
                 {
-                    onError: (e) => {
-                        console.error(e);
-                        if (e instanceof AxiosError) {
-                            toast.error(t("errors.generic"));
-                        } else {
-                            toast.error(t("errors.generic"));
-                        }
+                    onError: (error) => {
+                        console.error(error);
+                        toast.error(t("errors.generic"));
                     },
                 },
             );
             queryClient.invalidateQueries({
                 queryKey: getGetListOfBandsQueryKey(),
             });
-        } catch (e) {
-            console.error(e);
-            if (e instanceof AxiosError) {
-                toast.error(t("errors.generic"));
-            } else {
-                toast.error(t("errors.generic"));
-            }
+        } catch (error) {
+            console.error(error);
+            toast.error(t("errors.generic"));
         }
     }
 
@@ -183,17 +107,17 @@ export function BandListPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody className="**:data-[slot=table-cell]:first:w-8">
-                    {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row: Row<Model>) => (
+                    {data?.value?.length ? (
+                        data.value.map((band) => (
                             <TableRow
-                                key={row.id}
+                                key={band.id}
                                 className="cursor-pointer"
-                                onClick={() => go(row.id)}
+                                onClick={() => go(band.id)}
                             >
-                                <TableCell>{row.id}</TableCell>
-                                <TableCell>{row.original.name}</TableCell>
+                                <TableCell>{band.id}</TableCell>
+                                <TableCell>{band.name}</TableCell>
                                 <TableCell>
-                                    {access.some(item => item.bandId === row.id && item.role === "Owner") && <DropdownMenu>
+                                    {access.some(item => item.bandId === band.id && item.role === "Owner") && <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button
                                                 variant="ghost"
@@ -211,7 +135,7 @@ export function BandListPage() {
                                                 onSelect={(e) => {
                                                     e.stopPropagation();
                                                     setIsEditorOpen(true);
-                                                    setEditableBandId(row.id);
+                                                    setEditableBandId(band.id);
                                                 }}
                                             >
                                                 {t("common.edit")}
@@ -220,7 +144,7 @@ export function BandListPage() {
                                             <DropdownMenuItem
                                                 onSelect={(e) => {
                                                     e.stopPropagation();
-                                                    handleDelete(row.id);
+                                                    handleDelete(band.id);
                                                 }}
                                             >
                                                 {t("common.delete")}
@@ -229,12 +153,12 @@ export function BandListPage() {
                                     </DropdownMenu>}
 
                                     <EditBand
-                                        key={"editor-" + row.id}
+                                        key={"editor-" + band.id}
                                         open={
                                             isEditorOpen &&
-                                            editableBandId === row.id
+                                            editableBandId === band.id
                                         }
-                                        bandId={row.id}
+                                        bandId={band.id}
                                         onClose={async ({ needForRefetch }) => {
                                             if (needForRefetch) {
                                                 queryClient.invalidateQueries({
@@ -252,7 +176,7 @@ export function BandListPage() {
                     ) : (
                         <TableRow>
                             <TableCell
-                                colSpan={columns.length}
+                                colSpan={3}
                                 className="h-24 text-center"
                             >
                                 {t("common.noResults")}

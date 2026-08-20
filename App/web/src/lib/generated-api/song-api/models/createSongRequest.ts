@@ -5,8 +5,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CreateSongRequestAuthor } from './createSongRequestAuthor';
-import type { CreateSongRequestLyrics } from './createSongRequestLyrics';
-import type { CreateSongRequestChords } from './createSongRequestChords';
 import type { CreateSongRequestKey } from './createSongRequestKey';
 import type { CreateSongRequestBpm } from './createSongRequestBpm';
 
@@ -14,8 +12,6 @@ export interface CreateSongRequest {
   bandId: string;
   title: string;
   author: CreateSongRequestAuthor;
-  lyrics: CreateSongRequestLyrics;
-  chords: CreateSongRequestChords;
   key: CreateSongRequestKey;
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   bpm: CreateSongRequestBpm;
@@ -23,5 +19,4 @@ export interface CreateSongRequest {
   tempoTrack?: { bar: number; bpm: number }[];
   timeSignatureTrack?: { bar: number; beats: number; beatUnit: number }[];
   countInBars?: number;
-  sections?: { name: string; startBar: number; endBar: number }[];
 }

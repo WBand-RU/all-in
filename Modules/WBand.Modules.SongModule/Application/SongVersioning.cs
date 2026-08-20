@@ -6,8 +6,7 @@ public static class SongVersioning
 {
     public static SongSnapshot Snapshot(Song song) => new(
         song.Title, [.. song.Authors], song.Key, song.Bpm, [.. song.TempoTrack],
-        [.. song.TimeSignatureTrack], song.CountInBars, [.. song.Sections],
-        song.Lyrics, song.Chords, song.Status);
+        [.. song.TimeSignatureTrack], song.CountInBars, song.Status);
 
     public static SongRevision Revision(Song song, Guid userId, DateTimeOffset now) => new()
     {
@@ -24,9 +23,6 @@ public static class SongVersioning
         song.TempoTrack = [.. value.TempoTrack];
         song.TimeSignatureTrack = [.. value.TimeSignatureTrack];
         song.CountInBars = value.CountInBars;
-        song.Sections = [.. value.Sections];
-        song.Lyrics = value.Lyrics;
-        song.Chords = value.Chords;
         song.Status = value.Status;
     }
 }
