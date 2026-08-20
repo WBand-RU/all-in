@@ -107,8 +107,8 @@ jobs:
           context: .
           file: App/WBand.MixerWorker/Dockerfile
           push: false
-          tags: wband-mixer-worker:pr-check
-          cache-from: type=gha,scope=mixer-worker
+          tags: wband-mixer_worker:pr-check
+          cache-from: type=gha,scope=mixer_worker
 
   web:
     name: web / lint, test and build
@@ -182,7 +182,6 @@ jobs:
       - name: Login to container registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY_URL }}
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
       - name: Build and push
@@ -192,8 +191,8 @@ jobs:
           file: App/WBand.WebAPI/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_REGISTRY_URL }}/${{ vars.REGISTRY_NAMESPACE }}/wband-webapi:${{ github.sha }}
-            ${{ secrets.DOCKER_REGISTRY_URL }}/${{ vars.REGISTRY_NAMESPACE }}/wband-webapi:${{ github.ref_name }}
+            ${{ secrets.DOCKER_REGISTRY_USERNAME }}/wband-webapi:${{ github.sha }}
+            ${{ secrets.DOCKER_REGISTRY_USERNAME }}/wband-webapi:${{ github.ref_name }}
           cache-from: type=gha,scope=webapi
           cache-to: type=gha,mode=max,scope=webapi
 
@@ -208,7 +207,6 @@ jobs:
       - name: Login to container registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY_URL }}
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
       - name: Build and push
@@ -218,10 +216,10 @@ jobs:
           file: App/WBand.MixerWorker/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_REGISTRY_URL }}/${{ vars.REGISTRY_NAMESPACE }}/wband-mixer-worker:${{ github.sha }}
-            ${{ secrets.DOCKER_REGISTRY_URL }}/${{ vars.REGISTRY_NAMESPACE }}/wband-mixer-worker:${{ github.ref_name }}
-          cache-from: type=gha,scope=mixer-worker
-          cache-to: type=gha,mode=max,scope=mixer-worker
+            ${{ secrets.DOCKER_REGISTRY_USERNAME }}/wband-mixer_worker:${{ github.sha }}
+            ${{ secrets.DOCKER_REGISTRY_USERNAME }}/wband-mixer_worker:${{ github.ref_name }}
+          cache-from: type=gha,scope=mixer_worker
+          cache-to: type=gha,mode=max,scope=mixer_worker
 
   publish-web:
     name: Publish web image
@@ -234,7 +232,6 @@ jobs:
       - name: Login to container registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY_URL }}
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
       - name: Build and push
@@ -244,8 +241,8 @@ jobs:
           file: App/web/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_REGISTRY_URL }}/${{ vars.REGISTRY_NAMESPACE }}/wband-web:${{ github.sha }}
-            ${{ secrets.DOCKER_REGISTRY_URL }}/${{ vars.REGISTRY_NAMESPACE }}/wband-web:${{ github.ref_name }}
+            ${{ secrets.DOCKER_REGISTRY_USERNAME }}/wband-web:${{ github.sha }}
+            ${{ secrets.DOCKER_REGISTRY_USERNAME }}/wband-web:${{ github.ref_name }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 
@@ -313,7 +310,7 @@ jobs:
             deploy_service "$WEBAPI_SERVICE" "$DOCKER_REGISTRY_URL/$REGISTRY_NAMESPACE/wband-webapi:${GITHUB_SHA}"
           fi
           if [[ "$WORKER_CHANGED" == "true" ]]; then
-            deploy_service "$WORKER_SERVICE" "$DOCKER_REGISTRY_URL/$REGISTRY_NAMESPACE/wband-mixer-worker:${GITHUB_SHA}"
+            deploy_service "$WORKER_SERVICE" "$DOCKER_REGISTRY_URL/$REGISTRY_NAMESPACE/wband-mixer_worker:${GITHUB_SHA}"
           fi
           if [[ "$WEB_CHANGED" == "true" ]]; then
             deploy_service "$WEB_SERVICE" "$DOCKER_REGISTRY_URL/$REGISTRY_NAMESPACE/wband-web:${GITHUB_SHA}"
