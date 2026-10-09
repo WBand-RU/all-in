@@ -1,0 +1,48 @@
+{
+    "realm": "wband-dev",
+    "enabled": true,
+    "registrationAllowed": true,
+    "loginWithEmailAllowed": true,
+    "eventsEnabled": true,
+    "eventsListeners": ["jboss-logging", "keycloak-to-rabbitmq"],
+    "adminEventsEnabled": true,
+    "roles": { "realm": [{ "name": "super-admin" }, { "name": "moderator" }] },
+    "clients": [
+        {
+            "clientId": "spa-bff-client",
+            "enabled": true,
+            "protocol": "openid-connect",
+            "publicClient": false,
+            "secret": "${WBAND_BFF_CLIENT_SECRET}",
+            "standardFlowEnabled": true,
+            "directAccessGrantsEnabled": false,
+            "redirectUris": ["http://localhost:4000/signin-oidc"],
+            "attributes": {
+                "pkce.code.challenge.method": "S256",
+                "post.logout.redirect.uris": "http://localhost:4000/signout-callback-oidc"
+            },
+            "defaultClientScopes": ["basic", "profile", "email", "roles"],
+            "protocolMappers": [
+                {
+                    "name": "webapi-audience",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-audience-mapper",
+                    "config": {
+                        "included.client.audience": "webapi",
+                        "id.token.claim": "false",
+                        "access.token.claim": "true"
+                    }
+                }
+            ]
+        },
+        {
+            "clientId": "webapi",
+            "enabled": true,
+            "protocol": "openid-connect",
+            "bearerOnly": true,
+            "publicClient": false,
+            "standardFlowEnabled": false,
+            "directAccessGrantsEnabled": false
+        }
+    ]
+}

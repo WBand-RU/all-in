@@ -1,66 +1,58 @@
-import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { createContext, useContext, type PropsWithChildren } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getAuthMe } from "@/lib/generated-api/auth/auth";
 import { Roles, type Roles as PlatformRole } from "../../types/roles";
-import { useKeycloak } from "@react-keycloak/web";
-import { apiClient } from "@/lib/axios-instance";
+import { getCsrfToken, login, logout, setCsrfToken } from "@/lib/auth-session";
 
 export type AuthContext = {
-	email?: string;
-	name?: string;
-	avatar?: string;
-	role?: PlatformRole;
-	platformRoles: readonly PlatformRole[];
-	hasRole: (role: PlatformRole) => boolean;
+    id?: string;
+    username?: string;
+    email?: string;
+    name?: string;
+    avatar?: string;
+    roles: readonly string[];
+    role?: PlatformRole;
+    platformRoles: readonly PlatformRole[];
+    hasRole: (role: string) => boolean;
+    authenticated: boolean;
+    loading: boolean;
+    error: Error | null;
+    login: () => void;
+    logout: () => void;
+    refresh: () => void;
 };
-
-const Context = createContext<AuthContext>({
-	email: undefined,
-	platformRoles: [],
-	hasRole: () => false,
-});
-
+const Context = createContext<AuthContext | null>(null);
 export function useAuthContext() {
-	return useContext(Context);
+    const context = useContext(Context);
+    if (!context) throw new Error("useAuthContext must be used within AuthContextProvider");
+    return context;
 }
-
 export function AuthContextProvider({ children }: PropsWithChildren) {
-	const [email, setEmail] = useState<string>();
-	const [name, setName] = useState<string>();
-	const [avatar, setAvatar] = useState<string>();
-	const { initialized, keycloak } = useKeycloak();
-
-	useEffect(() => {
-		if (!initialized) {
-			return;
-		}
-
-		if (!keycloak.authenticated) {
-			setEmail(undefined);
-			setName(undefined);
-			setAvatar(undefined);
-			return;
-		}
-
-		keycloak.loadUserInfo()
-			.then(info => {
-				setEmail(info.email);
-				setName(info.name ?? info.preferred_username);
-				setAvatar(info.picture);
-            });
-
-		void apiClient.get("/api/user/me", {
-			headers: { Authorization: `Bearer ${keycloak.token}` },
-		});
-	}, [initialized, keycloak]);
-
-	const platformRoles = useMemo(() =>
-		Object.values(Roles).filter(role => keycloak.hasRealmRole(role)),
-	[keycloak, initialized]);
-	const hasRole = (role: PlatformRole) => platformRoles.includes(role);
-	const role = platformRoles[0];
-
-	return (
-		<Context.Provider value={{ email, name, avatar, role, platformRoles, hasRole }}>
-			{children}
-		</Context.Provider>
-	);
+    const session = useQuery({
+        queryKey: ["auth", "session"],
+        queryFn: async ({ signal }) => {
+            const response = await getAuthMe({ credentials: "same-origin", cache: "no-store", signal });
+            if (response.status === 401) {
+                setCsrfToken(undefined);
+                return null;
+            }
+            if (response.status !== 200) throw new Error("Не удалось загрузить профиль пользователя");
+            const profile = response.data;
+            setCsrfToken(profile.csrfToken);
+            return profile;
+        },
+        retry: false,
+        staleTime: 60_000,
+        refetchInterval: 60_000,
+    });
+    const profile = session.data;
+    const roles = profile?.roles ?? [];
+    const platformRoles = Object.values(Roles).filter(role => roles.includes(role));
+    return <Context.Provider value={{
+        id: profile?.id, username: profile?.username ?? undefined, email: profile?.email ?? undefined,
+        name: profile?.name ?? profile?.username ?? undefined, avatar: profile?.avatar ?? undefined, roles,
+        role: platformRoles[0], platformRoles, hasRole: role => roles.includes(role),
+        authenticated: !!profile && !!getCsrfToken(), loading: session.isPending,
+        error: session.error, login, logout, refresh: () => { void session.refetch(); },
+    }}>{children}</Context.Provider>;
 }

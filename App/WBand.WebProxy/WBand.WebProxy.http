@@ -1,0 +1,6 @@
+@WBand.WebProxy_HostAddress = http://localhost:5201
+
+GET {{WBand.WebProxy_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

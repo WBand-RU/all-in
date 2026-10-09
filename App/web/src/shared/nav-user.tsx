@@ -28,13 +28,11 @@ import {
 } from "@/shared/ui/sidebar";
 import { useAuthContext } from "../providers/auth/AuthorizationProviderContext";
 import { Roles, type Roles as PlatformRole } from "../types/roles";
-import { useKeycloak } from "@react-keycloak/web";
 import { useTranslation } from "react-i18next";
 
 export function NavUser() {
 	const { isMobile } = useSidebar();
 	const user = useAuthContext();
-	const { keycloak } = useKeycloak();
 	const { t } = useTranslation();
 	const mapper = new Map<PlatformRole, string>([
 		[Roles.SuperAdmin, t("user.superAdmin")],
@@ -45,10 +43,8 @@ export function NavUser() {
 		return null;
 	}
 
-	async function handleLogOut() {
-		await keycloak.logout({
-			redirectUri: window.location.origin,
-		});
+	function handleLogOut() {
+		user.logout();
 	}
 
 	return (

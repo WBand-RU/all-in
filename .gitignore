@@ -10,3 +10,5 @@ node_modules
 *.zip
 
 appsettings*.json
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

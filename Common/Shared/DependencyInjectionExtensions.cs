@@ -172,11 +172,11 @@ public static class DependencyInjectionExtensions
         app.MapHealthChecks(
             "/health/live",
             new HealthCheckOptions { Predicate = registration => registration.Tags.Contains("live") }
-        );
+        ).AllowAnonymous();
         app.MapHealthChecks(
             "/health/ready",
             new HealthCheckOptions { Predicate = registration => registration.Tags.Contains("ready") }
-        );
+        ).AllowAnonymous();
         app.MapWolverineEndpoints();
 
         return app;

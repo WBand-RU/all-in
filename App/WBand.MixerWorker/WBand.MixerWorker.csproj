@@ -10,8 +10,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Shared\Shared.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.FileModule\WBand.Modules.FileModule.csproj" />
+    <ProjectReference Include="..\..\Modules\FileModule\WBand.Modules.FileModule.csproj" />
     <ProjectReference Include="..\..\Modules\WBand.Modules.StemModule\WBand.Modules.StemModule.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.MixerModule\WBand.Modules.MixerModule.csproj" />
+    <ProjectReference Include="..\..\Modules\MixerModule\WBand.Modules.MixerModule.csproj" />
   </ItemGroup>
 </Project>

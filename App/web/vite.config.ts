@@ -14,32 +14,36 @@ export default defineConfig({
         host: "0.0.0.0",
         allowedHosts: ["host.docker.internal", "aspire.dev.internal"],
         proxy: {
+            "/auth": {
+                target: "http://localhost:4000",
+                changeOrigin: true,
+            },
             "/api": {
-                target: "http://localhost:5000",
+                target: "http://localhost:4000",
                 changeOrigin: true,
             },
             "/band-api": {
-                target: "http://localhost:5000",
+                target: "http://localhost:4000",
                 changeOrigin: true,
             },
             "/song-api": {
-                target: "http://localhost:5000",
+                target: "http://localhost:4000",
                 changeOrigin: true,
             },
             "/playlist-api": {
-                target: "http://localhost:5000",
+                target: "http://localhost:4000",
                 changeOrigin: true,
             },
             "/stem-api": {
-                target: "http://localhost:5000",
+                target: "http://localhost:4000",
                 changeOrigin: true,
             },
             "/mixer-api": {
-                target: "http://localhost:5000",
+                target: "http://localhost:4000",
                 changeOrigin: true,
             },
             "/files": {
-                target: "http://localhost:5000",
+                target: "http://localhost:4000",
                 changeOrigin: true,
             },
         }

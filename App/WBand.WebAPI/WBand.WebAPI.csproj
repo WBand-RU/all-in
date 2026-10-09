@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
@@ -17,13 +17,13 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Auth\Auth.csproj" />
     <ProjectReference Include="..\..\Common\Shared\Shared.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.FileModule\WBand.Modules.FileModule.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.BandModule\WBand.Modules.BandModule.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.UserModule\WBand.Modules.UserModule.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.SongModule\WBand.Modules.SongModule.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.PlaylistModule\WBand.Modules.PlaylistModule.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.StemModule\WBand.Modules.StemModule.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.MixerModule\WBand.Modules.MixerModule.csproj" />
+    <ProjectReference Include="..\..\Modules\FileModule\WBand.Modules.FileModule.csproj" />
+    <ProjectReference Include="..\..\Modules\BandModule\WBand.Modules.BandModule.csproj" />
+    <ProjectReference Include="..\..\Modules\UserModule\WBand.Modules.UserModule.csproj" />
+    <ProjectReference Include="..\..\Modules\SongModule\WBand.Modules.SongModule.csproj" />
+    <ProjectReference Include="..\..\Modules\PlaylistModule\WBand.Modules.PlaylistModule.csproj" />
+    <ProjectReference Include="..\..\Modules\StemModule\WBand.Modules.StemModule.csproj" />
+    <ProjectReference Include="..\..\Modules\MixerModule\WBand.Modules.MixerModule.csproj" />
   </ItemGroup>
 
 </Project>

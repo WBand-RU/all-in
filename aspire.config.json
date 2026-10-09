@@ -1,0 +1,6 @@
+{
+    "appHost": {
+        "language": "csharp",
+        "path": "App/WBand.AppHost/WBand.AppHost.csproj"
+    }
+}

@@ -19,7 +19,6 @@ public sealed class KeycloakAuthenticationOptions
     [Required]
     public string ClientId { get; set; } = string.Empty;
 
-    [Required]
     public string ClientSecret { get; set; } = string.Empty;
 
     public bool SslRequired { get; set; }
@@ -34,11 +33,10 @@ public sealed class KeycloakAuthenticationOptions
             Url = GetRequired(configuration, "Url", "KEYCLOAK_URL"),
             Realm = GetRequired(configuration, "Realm", "KEYCLOAK_REALM"),
             ClientId = GetRequired(configuration, "ClientId", "KEYCLOAK_CLIENT_ID"),
-            ClientSecret = GetRequired(
-                configuration,
-                "ClientSecret",
-                "KEYCLOAK_CLIENT_SECRET"
-            ),
+            ClientSecret =
+                configuration["KEYCLOAK_CLIENT_SECRET"]
+                ?? configuration[$"{SectionName}:ClientSecret"]
+                ?? string.Empty,
             SslRequired = bool.Parse(
                 GetRequired(configuration, "SslRequired", "KEYCLOAK_SSL_REQUIRED")
             ),
