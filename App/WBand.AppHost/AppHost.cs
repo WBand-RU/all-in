@@ -159,7 +159,15 @@ var webapi = builder
 //     .WithEnvironment("S3_ACCESS_KEY", rustfs.Resource.Parent.AccessKey)
 //     .WithEnvironment("S3_SECRET_KEY", rustfs.Resource.Parent.SecretKey);
 
-var web = builder.AddViteApp("web", "../web").WithBun().WithExternalHttpEndpoints();
+#pragma warning disable ASPIREJAVASCRIPT001
+var web = builder.AddNextJsApp("web", "../web", "dev").WithBun().WithExternalHttpEndpoints();
+
+builder
+    .AddExecutable("generate-api-clients", "bun", "../web", "generate-api-clients")
+    .WaitFor(webapi)
+    .WaitFor(web);
+
+#pragma warning restore
 
 var proxy = builder
     .AddProject<Projects.WBand_WebProxy>("proxy")
