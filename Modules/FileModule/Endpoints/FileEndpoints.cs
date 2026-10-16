@@ -17,9 +17,20 @@ using Wolverine.Http;
 namespace WBand.Modules.FileModule.Endpoints;
 
 public sealed record PresignUploadRequest(
-    Guid BandId, string FileName, string MimeType, long Size, string Sha256);
+    Guid BandId,
+    string FileName,
+    string MimeType,
+    long Size,
+    string Sha256
+);
+
 public sealed record PresignDownloadRequest(Guid FileId);
-public sealed record SignedUrlResponse(Guid FileId, string SignedUrl, DateTimeOffset? ExpiresAt = null);
+
+public sealed record SignedUrlResponse(
+    Guid FileId,
+    string SignedUrl,
+    DateTimeOffset? ExpiresAt = null
+);
 
 public sealed class PresignUploadRequestValidator : AbstractValidator<PresignUploadRequest>
 {
@@ -27,12 +38,20 @@ public sealed class PresignUploadRequestValidator : AbstractValidator<PresignUpl
     {
         RuleFor(request => request.BandId).NotEmpty();
         RuleFor(request => request.FileName).NotEmpty().MaximumLength(255);
-        RuleFor(request => request).Custom((request, context) =>
-        {
-            var error = FileUploadRules.Validate(request.MimeType, request.Size,
-                request.Sha256, options.Value);
-            if (error is not null) context.AddFailure(error);
-        });
+        RuleFor(request => request)
+            .Custom(
+                (request, context) =>
+                {
+                    var error = FileUploadRules.Validate(
+                        request.MimeType,
+                        request.Size,
+                        request.Sha256,
+                        options.Value
+                    );
+                    if (error is not null)
+                        context.AddFailure(error);
+                }
+            );
     }
 }
 
@@ -43,18 +62,38 @@ public static class PresignUploadEndpoint
     public static async Task<IResult> Post(
         PresignUploadRequest request,
         ICurrentUser user,
-        IMessageBus bus)
+        IMessageBus bus
+    )
     {
-        if (!await bus.InvokeAsync<bool>(new CheckBandPermission(request.BandId,
-            user.GetUserId, BandPermission.EditContent))) return Results.Forbid();
+        if (
+            !await bus.InvokeAsync<bool>(
+                new CheckBandPermission(request.BandId, user.Id, BandPermission.EditContent)
+            )
+        )
+            return Results.Forbid();
 
         var fileId = Guid.CreateVersion7();
-        var safeName = string.Concat(Path.GetFileName(request.FileName).Select(character =>
-            char.IsLetterOrDigit(character) || character is '.' or '-' or '_' ? character : '_'));
+        var safeName = string.Concat(
+            Path.GetFileName(request.FileName)
+                .Select(character =>
+                    char.IsLetterOrDigit(character) || character is '.' or '-' or '_'
+                        ? character
+                        : '_'
+                )
+        );
         var key = $"bands/{request.BandId:D}/files/{fileId:D}/{safeName}";
-        var result = await bus.InvokeAsync<CreateFileUploadResult>(new CreateFileUpload(fileId,
-            request.BandId, key, request.FileName, request.MimeType, request.Size,
-            request.Sha256, user.GetUserId));
+        var result = await bus.InvokeAsync<CreateFileUploadResult>(
+            new CreateFileUpload(
+                fileId,
+                request.BandId,
+                key,
+                request.FileName,
+                request.MimeType,
+                request.Size,
+                request.Sha256,
+                user.Id
+            )
+        );
         if (result.Ticket is not { } ticket)
             return Results.BadRequest(new { code = result.Error });
         return Results.Ok(new SignedUrlResponse(ticket.FileId, ticket.UploadUrl, ticket.ExpiresAt));
@@ -71,13 +110,20 @@ public static class CompleteUploadEndpoint
         IDocumentSession session,
         IFileService storage,
         IMessageBus bus,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var file = await session.LoadAsync<FileObject>(fileId, cancellationToken);
-        if (file is null) return Results.NotFound();
-        if (!await bus.InvokeAsync<bool>(new CheckBandPermission(file.BandId,
-            user.GetUserId, BandPermission.EditContent))) return Results.Forbid();
-        if (file.Status == FileObjectStatus.Ready) return Results.Ok(ToReference(file));
+        if (file is null)
+            return Results.NotFound();
+        if (
+            !await bus.InvokeAsync<bool>(
+                new CheckBandPermission(file.BandId, user.Id, BandPermission.EditContent)
+            )
+        )
+            return Results.Forbid();
+        if (file.Status == FileObjectStatus.Ready)
+            return Results.Ok(ToReference(file));
         if (file.Status != FileObjectStatus.Pending || file.ExpiresAt <= DateTimeOffset.UtcNow)
             return Results.Conflict(new { code = "file_upload_not_pending" });
 
@@ -92,12 +138,13 @@ public static class CompleteUploadEndpoint
         }
 
         var mime = FileUploadRules.NormalizeMime(actual.ContentType);
-        var rejection = actual.Size != file.Size ? "file_size_mismatch"
+        var rejection =
+            actual.Size != file.Size ? "file_size_mismatch"
             : !string.Equals(mime, file.MimeType, StringComparison.OrdinalIgnoreCase)
                 ? "file_mime_mismatch"
-                : !string.Equals(actual.Sha256, file.Sha256, StringComparison.OrdinalIgnoreCase)
-                    ? "file_sha256_mismatch"
-                    : null;
+            : !string.Equals(actual.Sha256, file.Sha256, StringComparison.OrdinalIgnoreCase)
+                ? "file_sha256_mismatch"
+            : null;
         if (rejection is not null)
         {
             await storage.DeleteAsync(file.ObjectKey, cancellationToken);
@@ -115,8 +162,8 @@ public static class CompleteUploadEndpoint
         return Results.Ok(ToReference(file));
     }
 
-    private static FileReference ToReference(FileObject file) => new(file.Id, file.BandId,
-        file.Status, file.MimeType, file.Size, file.Sha256);
+    private static FileReference ToReference(FileObject file) =>
+        new(file.Id, file.BandId, file.Status, file.MimeType, file.Size, file.Sha256);
 }
 
 public static class PresignDownloadEndpoint
@@ -129,13 +176,20 @@ public static class PresignDownloadEndpoint
         IQuerySession session,
         IFileService storage,
         IMessageBus bus,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var file = await session.LoadAsync<FileObject>(request.FileId, cancellationToken);
-        if (file is null || file.Status != FileObjectStatus.Ready) return Results.NotFound();
-        if (!await bus.InvokeAsync<bool>(new CheckBandPermission(file.BandId,
-            user.GetUserId, BandPermission.View))) return Results.Forbid();
-        return Results.Ok(new SignedUrlResponse(file.Id,
-            await storage.GetSignedDownloadUrl(file.ObjectKey)));
+        if (file is null || file.Status != FileObjectStatus.Ready)
+            return Results.NotFound();
+        if (
+            !await bus.InvokeAsync<bool>(
+                new CheckBandPermission(file.BandId, user.Id, BandPermission.View)
+            )
+        )
+            return Results.Forbid();
+        return Results.Ok(
+            new SignedUrlResponse(file.Id, await storage.GetSignedDownloadUrl(file.ObjectKey))
+        );
     }
 }

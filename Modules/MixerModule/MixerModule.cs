@@ -17,7 +17,7 @@ public sealed class MixerModule : IWBandModule
     public void AddServices(IHostApplicationBuilder builder)
     {
         builder.Services.AddHttpClient("mixer", client =>
-            client.Timeout = TimeSpan.FromHours(2));
+            client.Timeout = TimeSpan.FromMinutes(2));
     }
 
     public void ConfigureMarten(StoreOptions options)

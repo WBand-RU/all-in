@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BandService.Data;
 
-public interface IDataContext
+public interface DataContext
 {
     DbSet<Band> Bands { get; }
     DbSet<Invitation> Invitations { get; }

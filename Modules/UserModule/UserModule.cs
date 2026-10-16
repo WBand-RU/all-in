@@ -1,13 +1,15 @@
 using System.Reflection;
 using Marten;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Shared.Modules;
 using Shared.HealthChecks;
+using Shared.Modules;
+using WBand.Modules.UserModule.Data;
+using WBand.Modules.UserModule.Domain;
 using WBand.Modules.UserModule.Infrastructure;
 using WBand.Modules.UserModule.Infrastructure.Messaging;
-using WBand.Modules.UserModule.Domain;
 using Wolverine;
 using Wolverine.RabbitMQ;
 
@@ -18,44 +20,22 @@ namespace WBand.Modules.UserModule;
 /// </summary>
 public sealed class UserModule : IWBandModule
 {
-    private static readonly BrokerName KeycloakBroker = new("keycloak-events");
-
-    public string Name => "UserModule";
-
-    public Assembly Assembly => typeof(UserModule).Assembly;
-
-    public string MartenSchemaName => "users";
-
-    public void AddServices(IHostApplicationBuilder builder)
-    {
-        var events = KeycloakEventsOptions.FromConfiguration(builder.Configuration);
-
-        builder
-            .Services.AddOptions<KeycloakEventsOptions>()
-            .Configure(options => Copy(events, options))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
-        builder.Services.AddHealthChecks().AddCheck(
-            "keycloak-events-rabbitmq",
-            new TcpEndpointHealthCheck(events.Host, events.Port),
-            tags: ["ready"]
-        );
-    }
-
     public void ConfigureWolverine(WolverineOptions options, IConfiguration configuration)
     {
         var events = KeycloakEventsOptions.FromConfiguration(configuration);
 
-        var broker = options.AddNamedRabbitMqBroker(KeycloakBroker, factory =>
-        {
-            factory.HostName = events.Host;
-            factory.Port = events.Port;
-            factory.UserName = events.Username;
-            factory.Password = events.Password;
-            factory.VirtualHost = events.VirtualHost;
-            factory.Ssl.Enabled = events.SslEnabled;
-        });
+        var broker = options.AddNamedRabbitMqBroker(
+            KeycloakBroker,
+            factory =>
+            {
+                factory.HostName = events.Host;
+                factory.Port = events.Port;
+                factory.UserName = events.Username;
+                factory.Password = events.Password;
+                factory.VirtualHost = events.VirtualHost;
+                factory.Ssl.Enabled = events.SslEnabled;
+            }
+        );
 
         broker
             .AutoProvision()
@@ -69,7 +49,10 @@ public sealed class UserModule : IWBandModule
 
     public void ConfigureMarten(StoreOptions options)
     {
-        options.Schema.For<UserProfile>().DatabaseSchemaName(MartenSchemaName);
+        options
+            .Schema.For<UserProfile>()
+            .DatabaseSchemaName(MartenSchemaName)
+            .UseOptimisticConcurrency(true);
     }
 
     private static void Copy(KeycloakEventsOptions source, KeycloakEventsOptions target)

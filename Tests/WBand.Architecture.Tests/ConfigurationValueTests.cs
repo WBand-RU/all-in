@@ -10,7 +10,7 @@ public sealed class ConfigurationValueTests
     [Fact]
     public void GetRequired_PrefersEnvironmentVariable()
     {
-        var environmentVariable = $"WBAND_TEST_{Guid.NewGuid():N}";
+        var environmentVariable = $"TEST_{Guid.NewGuid():N}";
         Environment.SetEnvironmentVariable(environmentVariable, "production-value");
 
         try
@@ -38,7 +38,7 @@ public sealed class ConfigurationValueTests
     [Fact]
     public void GetRequired_UsesEnvironmentVariableWhenConfigurationIsMissing()
     {
-        var environmentVariable = $"WBAND_TEST_{Guid.NewGuid():N}";
+        var environmentVariable = $"TEST_{Guid.NewGuid():N}";
         Environment.SetEnvironmentVariable(environmentVariable, "production-value");
 
         try
@@ -62,7 +62,7 @@ public sealed class ConfigurationValueTests
     [Fact]
     public void ConfigurationSources_PrioritizeEnvironmentThenEnvironmentFileThenBaseFile()
     {
-        var environmentVariable = $"WBAND_TEST_{Guid.NewGuid():N}";
+        var environmentVariable = $"TEST_{Guid.NewGuid():N}";
         Environment.SetEnvironmentVariable(environmentVariable, "environment");
 
         try

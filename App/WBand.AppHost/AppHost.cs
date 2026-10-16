@@ -1,9 +1,20 @@
+using Microsoft.Extensions.Configuration;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgresUsername = builder.AddParameter("postgres-username", "postgres");
 var postgresPassword = builder.AddParameter("posthres-password", "postgres", secret: true);
 var postgresServer = builder
     .AddPostgres("postgres", postgresUsername, postgresPassword)
+    // Keep pooled database connections off the development TCP proxy.
+    .WithEndpoint(
+        "tcp",
+        endpoint =>
+        {
+            endpoint.Port = builder.Configuration.GetValue("Postgres:Port", 25432);
+            endpoint.IsProxied = false;
+        }
+    )
     .WithDataVolume("wband-postgres")
     .WithPgAdmin(x => x.WithLifetime(ContainerLifetime.Persistent))
     .WithLifetime(ContainerLifetime.Persistent);
@@ -13,6 +24,16 @@ var rabbitmqUsername = builder.AddParameter("rabbitmq-username", "guest");
 var rabbitmqPassword = builder.AddParameter("rabbitmq-password", "guest", secret: true);
 var rabbitmqServer = builder
     .AddRabbitMQ("rabbitmq", rabbitmqUsername, rabbitmqPassword)
+    // Keep long-lived AMQP connections off the development TCP proxy.
+    // An unproxied container endpoint requires an explicit published port.
+    .WithEndpoint(
+        "tcp",
+        endpoint =>
+        {
+            endpoint.Port = builder.Configuration.GetValue("RabbitMQ:Port", 25673);
+            endpoint.IsProxied = false;
+        }
+    )
     .WithDataVolume("wband-rabbitmq")
     .WithManagementPlugin()
     // Development-only: the provider connects from another container using the default guest account.
@@ -24,17 +45,22 @@ var cache = builder
     .WithDataVolume("wband-redis")
     .WithLifetime(ContainerLifetime.Persistent);
 
-var rustfs = builder
+var rustfsServer = builder
     .AddRustFs("rustfs")
     .WithDataVolume("wband-rustfs")
-    .WithLifetime(ContainerLifetime.Persistent)
-    .AddBucket("wband-bucket");
+    .WithLifetime(ContainerLifetime.Persistent);
+var rustfs = rustfsServer.AddBucket("wband-bucket");
 
 var keycloakUsername = builder.AddParameter("keycloak-username", "admin");
 var keycloakPassword = builder.AddParameter("keycloak-password", "qweQWE123!@#", secret: true);
 var bffClientSecret = builder.AddParameter(
     "bff-client-secret",
     "wband-local-development-only",
+    secret: true
+);
+var webapiClientSecret = builder.AddParameter(
+    "webapi-client-secret",
+    "wband-webapi-local-development-only",
     secret: true
 );
 var keycloak = builder
@@ -47,9 +73,15 @@ var keycloak = builder
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume()
     .WithBindMount("./keycloak/providers", "/opt/keycloak/providers", isReadOnly: true)
+    .WithBindMount(
+        "./keycloak/quarkus.properties",
+        "/opt/keycloak/conf/quarkus.properties",
+        isReadOnly: true
+    )
     .WithRealmImport("./keycloak/realms")
     .WaitFor(rabbitmqServer)
-    .WithEnvironment("WBAND_BFF_CLIENT_SECRET", bffClientSecret)
+    .WithEnvironment("BFF_CLIENT_SECRET", bffClientSecret)
+    .WithEnvironment("WEBAPI_CLIENT_SECRET", webapiClientSecret)
     .WithEnvironment(x =>
     {
         x.EnvironmentVariables.Add(
@@ -81,43 +113,51 @@ var webapi = builder
     .WaitFor(rustfs)
     .WithReference(keycloak)
     .WaitFor(keycloak)
-    .WithEnvironment("KEYCLOAK_URL", keycloakEndpoint)
+    .WithEnvironment("KEYCLOAK_URI", keycloakEndpoint)
     .WithEnvironment("KEYCLOAK_REALM", "wband-dev")
     .WithEnvironment("KEYCLOAK_CLIENT_ID", "webapi")
+    .WithEnvironment("KEYCLOAK_CLIENT_SECRET", webapiClientSecret)
     .WithEnvironment("KEYCLOAK_SSL_REQUIRED", "false")
     .WithEnvironment(
-        "MARTEN_DATABASE_CONNECTION_STRING",
+        "DATABASE_CONNECTION_STRING",
         postgresDatabase.Resource.ConnectionStringExpression
     )
     .WithEnvironment(
-        "MESSAGING_HOST",
+        "RABBITMQ_HOST",
         rabbitmqServer.Resource.PrimaryEndpoint.Property(EndpointProperty.Host)
     )
     .WithEnvironment(
-        "MESSAGING_PORT",
+        "RABBITMQ_PORT",
         rabbitmqServer.Resource.PrimaryEndpoint.Property(EndpointProperty.Port)
     )
-    .WithEnvironment("MESSAGING_USERNAME", rabbitmqUsername)
-    .WithEnvironment("MESSAGING_PASSWORD", rabbitmqPassword)
-    .WithEnvironment("MESSAGING_VIRTUAL_HOST", "/")
-    .WithEnvironment(
-        "WBAND_KEYCLOAK_EVENTS_HOST",
-        rabbitmqServer.Resource.PrimaryEndpoint.Property(EndpointProperty.Host)
-    )
-    .WithEnvironment(
-        "WBAND_KEYCLOAK_EVENTS_PORT",
-        rabbitmqServer.Resource.PrimaryEndpoint.Property(EndpointProperty.Port)
-    )
-    .WithEnvironment("WBAND_KEYCLOAK_EVENTS_USERNAME", rabbitmqUsername)
-    .WithEnvironment("WBAND_KEYCLOAK_EVENTS_PASSWORD", rabbitmqPassword)
-    .WithEnvironment("WBAND_KEYCLOAK_EVENTS_VIRTUAL_HOST", "/")
-    .WithEnvironment("WBAND_KEYCLOAK_EVENTS_SSL_ENABLED", "false")
-    .WithEnvironment("WBAND_KEYCLOAK_EVENTS_REALM", "wband-dev")
-    .WithEnvironment("WBAND_KEYCLOAK_EVENTS_EXCHANGE", "amq.topic")
+    .WithEnvironment("RABBITMQ_USERNAME", rabbitmqUsername)
+    .WithEnvironment("RABBITMQ_PASSWORD", rabbitmqPassword)
+    .WithEnvironment("RABBITMQ_VIRTUAL_HOST", "/")
+    .WithEnvironment("RABBITMQ_SSL_ENABLED", "false")
+    .WithEnvironment("KEYCLOAK_EVENTS_EXCHANGE", "amq.topic")
+    .WithEnvironment("KEYCLOAK_EVENTS_QUEUE", "wband-user-module-keycloak-events")
     .WithEnvironment("S3_HOST", rustfs.Resource.Parent.PrimaryEndpoint)
     .WithEnvironment("S3_BUCKET", "wband-bucket")
     .WithEnvironment("S3_ACCESS_KEY", rustfs.Resource.Parent.AccessKey)
     .WithEnvironment("S3_SECRET_KEY", rustfs.Resource.Parent.SecretKey);
+
+// builder
+//     .AddProject<Projects.WBand_MixerWorker>("mixer-worker")
+//     .WithReference(postgresDatabase)
+//     .WaitFor(postgresDatabase)
+//     .WithReference(rustfs)
+//     .WaitFor(rustfs)
+//     .WithEnvironment(
+//         "MARTEN_DATABASE_CONNECTION_STRING",
+//         postgresDatabase.Resource.ConnectionStringExpression
+//     )
+//     .WithEnvironment("MARTEN_DATABASE_SCHEMA_NAME", "marten")
+//     .WithEnvironment("S3_UPLOAD_EXPIRATION_SECONDS", "900")
+//     .WithEnvironment("S3_DOWNLOAD_EXPIRATION_SECONDS", "604800")
+//     .WithEnvironment("S3_HOST", rustfs.Resource.Parent.PrimaryEndpoint)
+//     .WithEnvironment("S3_BUCKET", "wband-bucket")
+//     .WithEnvironment("S3_ACCESS_KEY", rustfs.Resource.Parent.AccessKey)
+//     .WithEnvironment("S3_SECRET_KEY", rustfs.Resource.Parent.SecretKey);
 
 var web = builder.AddViteApp("web", "../web").WithBun().WithExternalHttpEndpoints();
 
@@ -140,5 +180,14 @@ var proxy = builder
     .WithEnvironment("AUTHORIZED_PROXY_OAUTH_AUTHORITY", authority)
     .WithEnvironment("AUTHORIZED_PROXY_OAUTH_CLIENT_ID", "spa-bff-client")
     .WithEnvironment("AUTHORIZED_PROXY_OAUTH_CLIENT_SECRET", bffClientSecret);
+
+// Signed uploads and downloads go from the browser directly to the S3 endpoint.
+// Use browser origins: Aspire rewrites endpoint hosts inside containers to aspire.dev.internal.
+rustfsServer.WithEnvironment(
+    "RUSTFS_CORS_ALLOWED_ORIGINS",
+    ReferenceExpression.Create(
+        $"http://localhost:{proxy.GetEndpoint("http").Property(EndpointProperty.Port)},http://localhost:{web.GetEndpoint("http").Property(EndpointProperty.Port)}"
+    )
+);
 
 builder.Build().Run();

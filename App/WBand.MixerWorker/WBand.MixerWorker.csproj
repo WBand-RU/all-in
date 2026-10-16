@@ -6,12 +6,11 @@
     <UserSecretsId>wband-webapi-development</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.19.1" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\Shared\Shared.csproj" />
     <ProjectReference Include="..\..\Modules\FileModule\WBand.Modules.FileModule.csproj" />
-    <ProjectReference Include="..\..\Modules\WBand.Modules.StemModule\WBand.Modules.StemModule.csproj" />
+    <ProjectReference Include="..\..\Modules\StemModule\WBand.Modules.StemModule.csproj" />
     <ProjectReference Include="..\..\Modules\MixerModule\WBand.Modules.MixerModule.csproj" />
   </ItemGroup>
 </Project>

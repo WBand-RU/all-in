@@ -9,6 +9,7 @@ using WBand.Modules.MixerModule.Domain;
 using WBand.Modules.StemModule;
 using Weasel.Core;
 using Wolverine;
+using Wolverine.Marten;
 
 var builder = Host.CreateApplicationBuilder(args);
 var fileModule = new FileModule();
@@ -22,6 +23,9 @@ mixerModule.AddServices(builder);
 var marten = MartenOptions.FromConfiguration(builder.Configuration);
 builder.UseWolverine(options =>
 {
+    // Quartz owns the durable mix queue and leases. Wolverine is only used for
+    // synchronous module calls here, so this host must not run messaging agents.
+    options.Durability.Mode = DurabilityMode.MediatorOnly;
     options.CodeGeneration.TypeLoadMode = JasperFx.CodeGeneration.TypeLoadMode.Dynamic;
     options.Discovery.IncludeAssembly(fileModule.Assembly);
     options.Discovery.IncludeAssembly(stemModule.Assembly);
@@ -35,6 +39,9 @@ builder.UseWolverine(options =>
         fileModule.ConfigureMarten(store);
         stemModule.ConfigureMarten(store);
         mixerModule.ConfigureMarten(store);
+    }).IntegrateWithWolverine(integration =>
+    {
+        integration.MessageStorageSchemaName = marten.SchemaName;
     });
 });
 

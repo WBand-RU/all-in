@@ -29,6 +29,10 @@ public sealed class MixBatch
     public DateTimeOffset? CompletedAt { get; set; }
     public Guid? LeaseId { get; set; }
     public DateTimeOffset? LeaseExpiresAt { get; set; }
+    /// <summary>Earliest time for retrying a transient processing failure.</summary>
+    public DateTimeOffset? NextAttemptAt { get; set; }
+    /// <summary>Counts transient failures independently of restarts and successful resumptions.</summary>
+    public int RetryCount { get; set; }
 }
 
 public sealed class MixArtifact

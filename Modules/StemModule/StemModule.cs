@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shared.Modules;
 using WBand.Modules.StemModule.Domain;
+using WBand.Modules.StemModule.Infrastructure;
 
 namespace WBand.Modules.StemModule;
 
@@ -15,11 +16,16 @@ public sealed class StemModule : IWBandModule
     public Assembly Assembly => typeof(StemModule).Assembly;
     public string MartenSchemaName => "stems";
 
-    public void AddServices(IHostApplicationBuilder builder) =>
+    public void AddServices(IHostApplicationBuilder builder)
+    {
         builder.Services.AddValidatorsFromAssembly(Assembly);
+        builder.Services.AddHostedService<StemUploadCleanupService>();
+    }
 
     public void ConfigureMarten(StoreOptions options)
     {
+        options.Schema.For<StemUploadBatch>().DatabaseSchemaName(MartenSchemaName)
+            .UseOptimisticConcurrency(true);
         options.Schema.For<Stem>().DatabaseSchemaName(MartenSchemaName);
         options.Schema.For<StemGroup>().DatabaseSchemaName(MartenSchemaName);
         options.Schema.For<StemCollection>().DatabaseSchemaName(MartenSchemaName)

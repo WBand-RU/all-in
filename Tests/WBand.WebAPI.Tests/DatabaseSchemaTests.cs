@@ -1,0 +1,42 @@
+using Xunit;
+
+namespace WBand.WebAPI.Tests;
+
+[Collection("Database")]
+public sealed class DatabaseSchemaTests(DatabaseFixture fixture)
+{
+    [Fact]
+    public async Task Migrations_WhenRunTwice_CreateAllTablesInPublic()
+    {
+        await using var db = fixture.CreateSession();
+        var tables = await db.QueryAsync<string>("select table_name from information_schema.tables where table_schema = 'public'");
+        foreach (var table in new[] { "users", "bands", "band_members", "band_invitations", "band_departures", "songs", "song_sections", "song_revisions" })
+            Assert.Contains(table, tables);
+        Assert.DoesNotContain("outbox", tables);
+        Assert.Equal(1, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.\"__EFMigrationsHistory\""));
+    }
+
+    [Theory]
+    [InlineData("bands", "created_by")]
+    [InlineData("band_members", "user_id")]
+    [InlineData("band_invitations", "inviter_id")]
+    [InlineData("band_departures", "user_id")]
+    [InlineData("songs", "created_by")]
+    [InlineData("songs", "updated_by")]
+    [InlineData("songs", "deleted_by")]
+    [InlineData("song_sections", "created_by")]
+    [InlineData("song_sections", "updated_by")]
+    [InlineData("song_revisions", "created_by")]
+    public async Task Schema_WhenEntityReferencesUser_HasForeignKeyToKeycloakId(string table, string column)
+    {
+        await using var db = fixture.CreateSession();
+        var definition = await db.SingleOrDefaultAsync<string>("""
+            select pg_get_constraintdef(c.oid) from pg_constraint c
+            join pg_class t on t.oid = c.conrelid
+            where c.contype = 'f' and t.relname = @table
+            and pg_get_constraintdef(c.oid) like '%' || @column || ') REFERENCES users(keycloak_id)%'
+            """, new { table, column });
+        Assert.NotNull(definition);
+        Assert.Contains("ON DELETE RESTRICT", definition);
+    }
+}

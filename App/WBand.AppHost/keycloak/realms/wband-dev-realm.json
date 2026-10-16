@@ -13,7 +13,7 @@
             "enabled": true,
             "protocol": "openid-connect",
             "publicClient": false,
-            "secret": "${WBAND_BFF_CLIENT_SECRET}",
+            "secret": "${BFF_CLIENT_SECRET}",
             "standardFlowEnabled": true,
             "directAccessGrantsEnabled": false,
             "redirectUris": ["http://localhost:4000/signin-oidc"],
@@ -39,8 +39,10 @@
             "clientId": "webapi",
             "enabled": true,
             "protocol": "openid-connect",
-            "bearerOnly": true,
+            "bearerOnly": false,
             "publicClient": false,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "${WEBAPI_CLIENT_SECRET}",
             "standardFlowEnabled": false,
             "directAccessGrantsEnabled": false
         }

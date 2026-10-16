@@ -19,7 +19,7 @@ internal static class MixGenerationLock
     }
 }
 
-public sealed record AudioTrack(Guid StemId, string Path, string Name, string Group);
+public sealed record AudioTrack(Guid StemId, string Path, string Name, string Group, string Kind = "Other");
 public enum MixPlanKind { Full, Focus, Minus }
 public sealed record MixInput(AudioTrack Track, double GainDb, bool Muted = false);
 public sealed record MixPlan(string Name, MixPlanKind Kind, AudioTrack? Target,
@@ -31,32 +31,25 @@ public static class MixPlanFactory
     public static IReadOnlyList<MixPlan> Create(IReadOnlyList<AudioTrack> tracks,
         double backgroundDb = -40)
     {
-        var click = tracks.FirstOrDefault(track => IsSupport(track.Name, "click", "клик"));
-        var guide = tracks.FirstOrDefault(track => IsSupport(track.Name, "guide", "гайд"));
-        var instruments = tracks.Where(track => track != click && track != guide).ToArray();
-        var plans = new List<MixPlan>
-        {
-            new("full-mix", MixPlanKind.Full, null,
-                tracks.Select(track => new MixInput(track, 0)).ToArray())
-        };
+        var instruments = tracks.Where(track => !IsSupport(track)).ToArray();
+        var plans = new List<MixPlan>();
         foreach (var target in instruments)
         {
-            plans.Add(new($"{SafeName(target.Name)}__focus", MixPlanKind.Focus, target,
+            plans.Add(new($"{target.StemId:N}__{SafeName(target.Name)}__focus", MixPlanKind.Focus, target,
                 tracks.Select(track => new MixInput(track,
-                    track == target || track == click || track == guide ? 0 : backgroundDb)).ToArray()));
-            plans.Add(new($"{SafeName(target.Name)}__minus", MixPlanKind.Minus, target,
+                    track == target || IsSupport(track) ? 0 : backgroundDb)).ToArray()));
+            plans.Add(new($"{target.StemId:N}__{SafeName(target.Name)}__minus", MixPlanKind.Minus, target,
                 tracks.Select(track => new MixInput(track, 0, track == target)).ToArray()));
         }
         return plans;
     }
 
-    private static bool IsSupport(string value, params string[] words) => words.Any(word =>
-        value.Contains(word, StringComparison.OrdinalIgnoreCase));
+    private static bool IsSupport(AudioTrack track) => track.Kind is "Click" or "Guide";
     private static string SafeName(string value)
     {
         var invalid = Path.GetInvalidFileNameChars();
         var result = new string(value.Select(character => invalid.Contains(character) ? '_' : character).ToArray());
-        return string.IsNullOrWhiteSpace(result) ? "track" : result.Trim();
+        return string.IsNullOrWhiteSpace(result) ? "track" : result.Trim()[..Math.Min(result.Trim().Length, 120)];
     }
 }
 

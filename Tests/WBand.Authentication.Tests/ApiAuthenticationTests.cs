@@ -130,8 +130,8 @@ public sealed class ApiAuthenticationTests
             "/protected",
             (ICurrentUser user) =>
             {
-                _ = user.GetUserId;
-                return user.GetUserEmail;
+                _ = user.Id;
+                return user.Email;
             }
         );
         app.MapGet("/moderation", () => "ok").RequireAuthorization(Shared.Roles.Moderator);

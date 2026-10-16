@@ -30,6 +30,12 @@ public sealed record FileDownloadAccess(Guid FileId, Guid BandId, string Downloa
 
 /// <summary>Completes and verifies an upload created by another module.</summary>
 public sealed record CompleteFileUpload(Guid FileId);
+
+/// <summary>Permanently deletes an owned file and its storage object. Repeated deletion is safe.</summary>
+public sealed record DeleteFile(Guid FileId, Guid BandId, string? ObjectKey = null);
+
+/// <summary>Reports whether deletion completed or the file belongs to another band.</summary>
+public sealed record DeleteFileResult(bool Deleted);
 public sealed record CompleteFileUploadResult(FileReference? File, string? Error)
 {
     public static CompleteFileUploadResult Success(FileReference file) => new(file, null);

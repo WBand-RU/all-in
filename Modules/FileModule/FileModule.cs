@@ -49,10 +49,8 @@ public sealed class FileModule : IWBandModule
                 options.WithRegion(storage.Region);
             }
 
-            if (uri.Scheme == Uri.UriSchemeHttps)
-            {
-                options.WithSSL();
-            }
+            // AddMinio enables TLS by default, so HTTP must explicitly disable it.
+            options.WithSSL(uri.Scheme == Uri.UriSchemeHttps);
         });
 
         builder.Services.AddScoped<IFileService, FileService>();

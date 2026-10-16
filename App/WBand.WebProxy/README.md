@@ -5,6 +5,15 @@ Keycloak is available at `https://localhost:28080`. Aspire passes the actual fro
 API, Redis and Keycloak addresses to the proxy. The Vite dev server forwards auth/API
 requests to the proxy as well.
 
+AppHost mounts `keycloak/quarkus.properties`, setting
+`quarkus.http.limits.max-header-size=64K` and the separate HTTP/2 limit
+`quarkus.http.limits.max-header-list-size=65536`, because
+browsers send cookies from all localhost ports to Keycloak. This prevents HTTP 431
+on the login redirect when development cookies exceed Keycloak's default limit.
+Restart AppHost after changing this setting so the persistent container is recreated
+with the new configuration; its realm data volume is preserved. Start a fresh login
+through `/auth/login` rather than reusing an expired OIDC `request_uri` URL.
+
 The proxy uses the confidential `spa-bff-client` with authorization code + PKCE.
 Access, refresh and ID tokens are stored in encrypted Redis session tickets. The
 browser gets an HttpOnly session cookie. Production cookies use the `__Host-` prefix,

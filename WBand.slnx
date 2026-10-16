@@ -1,17 +1,6 @@
 <Solution>
-    <Folder Name="/Modules/">
-        <Project Path="Modules/BandModule/WBand.Modules.BandModule.csproj" />
-        <Project Path="Modules/MixerModule/WBand.Modules.MixerModule.csproj" />
-        <Project Path="Modules/FileModule/WBand.Modules.FileModule.csproj" />
-        <Project Path="Modules/PlaylistModule/WBand.Modules.PlaylistModule.csproj" />
-        <Project Path="Modules/SongModule/WBand.Modules.SongModule.csproj" />
-        <Project Path="Modules/StemModule/WBand.Modules.StemModule.csproj" />
-        <Project Path="Modules/UserModule/WBand.Modules.UserModule.csproj" />
-    </Folder>
     <Folder Name="/App/">
-        <Project Path="App/WBand.AgentPlayer/WBand.AgentPlayer.csproj" />
         <Project Path="App/WBand.AppHost/WBand.AppHost.csproj" />
-        <Project Path="App/WBand.MixerWorker/WBand.MixerWorker.csproj" />
         <Project Path="App/WBand.WebAPI/WBand.WebAPI.csproj" />
         <Project Path="App/WBand.WebProxy/WBand.WebProxy.csproj" />
         <Project Path="App/web/" Type="Website" DisplayName="web">
@@ -38,14 +27,13 @@
         </Project>
     </Folder>
     <Folder Name="/Common/">
-        <Project Path="BandEvents/BandEvents.csproj" />
-        <Project Path="Common/Auth/Auth.csproj" />
-        <Project Path="Common/Shared/Shared.csproj" />
         <Project Path="Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
     </Folder>
     <Folder Name="/Tests/">
-        <Project Path="Tests/WBand.Authentication.Tests/WBand.Authentication.Tests.csproj" />
-        <Project Path="Tests/WBand.Architecture.Tests/WBand.Architecture.Tests.csproj" />
+        <Project Path="Tests/WBand.WebAPI.Tests/WBand.WebAPI.Tests.csproj" />
+    </Folder>
+    <Folder Name="/Utils/">
+        <Project Path="Utils/BandfixGrabber/BandfixGrabber.csproj" />
     </Folder>
     <Folder Name="/Элементы решения/">
         <File Path="AGENTS.md" />

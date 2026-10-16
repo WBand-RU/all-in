@@ -9,6 +9,19 @@ The project is a web application that allows users to create and manage their ow
 Run the application from the repository root with `aspire start --non-interactive`.
 The AppHost is `App/WBand.AppHost/WBand.AppHost.csproj`.
 
+### Database migrations
+
+WebAPI uses EF Core with PostgreSQL. Restore the EF CLI and create a migration:
+
+```sh
+dotnet tool restore
+bash scripts/add-migration.sh AddUserProfile
+```
+
+EF migrations in `App/WBand.WebAPI/Data/Migrations` run at API startup.
+See [WebAPI persistence documentation](App/WBand.WebAPI/README.md) for transaction,
+event publication and existing database baseline details.
+
 ### Infrastructure stuck in Unknown
 
 If Docker is running but all container resources remain `Unknown`, inspect DCP logs:

@@ -1,0 +1,32 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace WBand.WebAPI.Data.Configurations;
+
+/// <summary>Maps SongSection to PostgreSQL with explicit keys, columns and relationships.</summary>
+public sealed class SongSectionConfiguration : IEntityTypeConfiguration<SongSection>
+{
+    public void Configure(EntityTypeBuilder<SongSection> builder)
+    {
+        builder.ToTable("song_sections", "public");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.SongId).HasColumnName("song_id");
+        builder.Property(x => x.Name).HasColumnName("name");
+        builder.Property(x => x.Order).HasColumnName("order");
+        builder.Property(x => x.Lyrics).HasColumnName("lyrics");
+        builder.Property(x => x.Chords).HasColumnName("chords");
+        builder.Property(x => x.Revision).HasColumnName("revision");
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at");
+        builder.Property(x => x.CreatedBy).HasColumnName("created_by");
+        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+        builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
+        builder.HasIndex(x => new { x.SongId, x.Order });
+        builder.HasOne(x => x.CreatedByUser).WithMany(x => x.CreatedSongSections).HasForeignKey(x => x.CreatedBy)
+            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.UpdatedByUser).WithMany(x => x.UpdatedSongSections).HasForeignKey(x => x.UpdatedBy)
+            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.Song).WithMany(x => x.Sections).HasForeignKey(x => x.SongId).OnDelete(DeleteBehavior.Cascade);
+    }
+}

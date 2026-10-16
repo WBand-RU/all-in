@@ -49,35 +49,35 @@ internal sealed class KeycloakEventsOptions
     {
         return new KeycloakEventsOptions
         {
-            Host = GetRequired(configuration, "Host", "WBAND_KEYCLOAK_EVENTS_HOST"),
+            Host = GetRequired(configuration, "Host", "KEYCLOAK_EVENTS_HOST"),
             Port = ushort.Parse(
-                GetRequired(configuration, "Port", "WBAND_KEYCLOAK_EVENTS_PORT")
+                GetRequired(configuration, "Port", "KEYCLOAK_EVENTS_PORT")
             ),
             Username = GetRequired(
                 configuration,
                 "Username",
-                "WBAND_KEYCLOAK_EVENTS_USERNAME"
+                "KEYCLOAK_EVENTS_USERNAME"
             ),
             Password = GetRequired(
                 configuration,
                 "Password",
-                "WBAND_KEYCLOAK_EVENTS_PASSWORD"
+                "KEYCLOAK_EVENTS_PASSWORD"
             ),
             VirtualHost = GetRequired(
                 configuration,
                 "VirtualHost",
-                "WBAND_KEYCLOAK_EVENTS_VIRTUAL_HOST"
+                "KEYCLOAK_EVENTS_VIRTUAL_HOST"
             ),
             SslEnabled = bool.Parse(
-                GetRequired(configuration, "SslEnabled", "WBAND_KEYCLOAK_EVENTS_SSL_ENABLED")
+                GetRequired(configuration, "SslEnabled", "KEYCLOAK_EVENTS_SSL_ENABLED")
             ),
-            Realm = GetRequired(configuration, "Realm", "WBAND_KEYCLOAK_EVENTS_REALM"),
+            Realm = GetRequired(configuration, "Realm", "KEYCLOAK_EVENTS_REALM"),
             Exchange = GetRequired(
                 configuration,
                 "Exchange",
-                "WBAND_KEYCLOAK_EVENTS_EXCHANGE"
+                "KEYCLOAK_EVENTS_EXCHANGE"
             ),
-            Queue = GetRequired(configuration, "Queue", "WBAND_KEYCLOAK_EVENTS_QUEUE"),
+            Queue = GetRequired(configuration, "Queue", "KEYCLOAK_EVENTS_QUEUE"),
         };
     }
 

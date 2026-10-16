@@ -5,11 +5,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    <PackageReference Include="WolverineFx.Http" Version="6.43.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
+    <PackageReference Include="WolverineFx.Http" Version="6.49.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\Shared\Shared.csproj" />
     <ProjectReference Include="..\BandModule\WBand.Modules.BandModule.csproj" />
     <ProjectReference Include="..\FileModule\WBand.Modules.FileModule.csproj" />
     <ProjectReference Include="..\PlaylistModule\WBand.Modules.PlaylistModule.csproj" />
