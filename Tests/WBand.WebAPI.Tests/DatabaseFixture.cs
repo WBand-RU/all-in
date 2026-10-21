@@ -28,8 +28,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddLogging();
         services.AddDatabase(ConnectionString);
         Services = services.BuildServiceProvider();
-        DatabaseSetup.ApplyMigrations(ConnectionString);
-        DatabaseSetup.ApplyMigrations(ConnectionString);
+        await DatabaseSetup.ApplyMigrations(ConnectionString, default);
+        await DatabaseSetup.ApplyMigrations(ConnectionString, default);
     }
 
     public async Task DisposeAsync()

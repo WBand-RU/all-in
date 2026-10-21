@@ -38,7 +38,7 @@ public static class CreateSongSectionEndpoint
         var section = new SongSection
         {
             Id = Guid.CreateVersion7(), SongId = songId, Name = request.Name.Trim(), Order = request.Order,
-            Lyrics = request.Lyrics, Chords = request.Chords, CreatedAt = DateTimeOffset.UtcNow, CreatedBy = user.Id,
+            CreatedAt = DateTimeOffset.UtcNow, CreatedBy = user.Id,
         };
         await db.InsertAsync(section, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -66,8 +66,6 @@ public static class UpdateSongSectionEndpoint
             return Results.Conflict(new { code = "song_section_version_conflict", currentRevision = section.Revision });
         section.Name = request.Name.Trim();
         section.Order = request.Order;
-        section.Lyrics = request.Lyrics;
-        section.Chords = request.Chords;
         section.Revision++;
         section.UpdatedAt = DateTimeOffset.UtcNow;
         section.UpdatedBy = user.Id;

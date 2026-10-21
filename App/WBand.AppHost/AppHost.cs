@@ -162,11 +162,6 @@ var webapi = builder
 #pragma warning disable ASPIREJAVASCRIPT001
 var web = builder.AddNextJsApp("web", "../web", "dev").WithBun().WithExternalHttpEndpoints();
 
-builder
-    .AddExecutable("generate-api-clients", "bun", "../web", "generate-api-clients")
-    .WaitFor(webapi)
-    .WaitFor(web);
-
 #pragma warning restore
 
 var proxy = builder
@@ -188,6 +183,27 @@ var proxy = builder
     .WithEnvironment("AUTHORIZED_PROXY_OAUTH_AUTHORITY", authority)
     .WithEnvironment("AUTHORIZED_PROXY_OAUTH_CLIENT_ID", "spa-bff-client")
     .WithEnvironment("AUTHORIZED_PROXY_OAUTH_CLIENT_SECRET", bffClientSecret);
+
+// Server-rendered Next.js routes validate the same BFF session as browser requests.
+// An endpoint reference supplies the address without making web wait for proxy:
+// proxy already waits for web, so adding a lifecycle dependency would create a cycle.
+web.WithEnvironment("BFF_ORIGIN", proxy.GetEndpoint("http"));
+// Regenerate only after HTTP contract changes, never as a side effect of normal startup.
+if (builder.Configuration.GetValue<bool>("GenerateApiClients"))
+{
+    builder
+        .AddExecutable("generate-api-clients", "bun", "../web", "run", "generate-api-clients")
+        .WithEnvironment(
+            "WEBAPI_OPENAPI",
+            ReferenceExpression.Create($"{webapi.GetEndpoint("http")}/openapi/v1.json")
+        )
+        .WithEnvironment(
+            "AUTH_OPENAPI",
+            ReferenceExpression.Create($"{proxy.GetEndpoint("http")}/openapi/v1.json")
+        )
+        .WaitFor(webapi)
+        .WaitFor(proxy);
+}
 
 // Signed uploads and downloads go from the browser directly to the S3 endpoint.
 // Use browser origins: Aspire rewrites endpoint hosts inside containers to aspire.dev.internal.

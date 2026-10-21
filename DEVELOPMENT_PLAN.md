@@ -1,17 +1,22 @@
 # План развития WBand
 
+> Снимок актуального кода и проверок: [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md).
+> Хранение: **EF Core + PostgreSQL; Marten не используем**.
+> Ниже сохранены исторические статусы прежней реализации на Marten;
+> они не задают целевую архитектуру и требуют повторной приёмки.
+
 ## Исходная точка
 
-Цель — модульный монолит на ASP.NET Core (`App/WBand.WebAPI`) с доменными модулями `WBand.Modules.*`. Keycloak отвечает только за аутентификацию и управление учётными записями; прикладной профиль и права внутри бэнда принадлежат WBand. WolverineFX — единый механизм HTTP-обработчиков и событий, Marten/PostgreSQL — основное хранилище, RabbitMQ — транспорт сообщений. Каталоги `Services/` и `src/` не развивать.
+Цель — модульный монолит на ASP.NET Core (`App/WBand.WebAPI`) с доменными модулями `WBand.Modules.*`. Keycloak отвечает только за аутентификацию и управление учётными записями; прикладной профиль и права внутри бэнда принадлежат WBand. WolverineFX — единый механизм HTTP-обработчиков и событий, EF Core/PostgreSQL — хранение данных, RabbitMQ — транспорт сообщений. Marten не используем; прежние модули при подключении переводим на EF Core. Каталоги `Services/` и `src/` не развивать.
 
 ## 1. Укрепить основу приложения
 
 > Статус: базовая серверная основа реализована 11.08.2026; сборка и архитектурные тесты проходят. Для полного закрытия этапа остаются изолированные интеграционные тесты HTTP/Marten/Wolverine и исправление существующих ошибок frontend build/lint.
 
-1. Описать стандарт модуля: composition root, `Domain`, `Application`, `Contracts`, `Endpoints`, `Infrastructure`, изоляция схемы Marten и тестовый проект `WBand.Modules.<Name>.Tests`.
-2. Централизовать подключение Wolverine, Marten, RabbitMQ, OpenAPI, health checks и конфигурацию через options с валидацией при запуске.
+1. Описать стандарт модуля: composition root, `Domain`, `Application`, `Contracts`, `Endpoints`, `Infrastructure`, собственный `DbContext`, схема PostgreSQL, миграции EF Core и тестовый проект `WBand.Modules.<Name>.Tests`.
+2. Централизовать подключение Wolverine, EF Core/PostgreSQL, RabbitMQ, OpenAPI, health checks и конфигурацию через options с валидацией при запуске.
 3. Убрать ручное чтение RabbitMQ в `UserModule`, заменить его Wolverine-слушателем. Исправить конфигурацию `FileModule` (bucket сейчас читается из `S3_REGION`), добавить авторизацию и валидацию к файловым endpoint'ам.
-4. Настроить тестовую инфраструктуру: unit-тесты домена и интеграционные тесты HTTP/Marten/Wolverine с изолированным окружением.
+4. Настроить тестовую инфраструктуру: unit-тесты домена и интеграционные тесты HTTP/EF Core/PostgreSQL/Wolverine с изолированным окружением.
 
 **Готово, когда:** API запускается с проверенной конфигурацией, сообщения обрабатываются через Wolverine, а CI выполняет build, test, lint и frontend build.
 

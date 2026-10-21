@@ -10,10 +10,10 @@ public sealed class DatabaseSchemaTests(DatabaseFixture fixture)
     {
         await using var db = fixture.CreateSession();
         var tables = await db.QueryAsync<string>("select table_name from information_schema.tables where table_schema = 'public'");
-        foreach (var table in new[] { "users", "bands", "band_members", "band_invitations", "band_departures", "songs", "song_sections", "song_revisions" })
+        foreach (var table in new[] { "users", "bands", "band_members", "band_invitations", "band_departures", "songs", "song_partitions", "song_sections", "song_content_cells", "song_revisions" })
             Assert.Contains(table, tables);
         Assert.DoesNotContain("outbox", tables);
-        Assert.Equal(1, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.\"__EFMigrationsHistory\""));
+        Assert.Equal(3, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.\"__EFMigrationsHistory\""));
     }
 
     [Theory]
@@ -24,8 +24,12 @@ public sealed class DatabaseSchemaTests(DatabaseFixture fixture)
     [InlineData("songs", "created_by")]
     [InlineData("songs", "updated_by")]
     [InlineData("songs", "deleted_by")]
+    [InlineData("song_partitions", "created_by")]
+    [InlineData("song_partitions", "updated_by")]
     [InlineData("song_sections", "created_by")]
     [InlineData("song_sections", "updated_by")]
+    [InlineData("song_content_cells", "created_by")]
+    [InlineData("song_content_cells", "updated_by")]
     [InlineData("song_revisions", "created_by")]
     public async Task Schema_WhenEntityReferencesUser_HasForeignKeyToKeycloakId(string table, string column)
     {

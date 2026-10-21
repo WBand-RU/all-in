@@ -12,6 +12,8 @@ public sealed partial class DataContext(DbContextOptions<DataContext> options) :
     public DbSet<BandDeparture> BandDepartures => Set<BandDeparture>();
     public DbSet<Song> Songs => Set<Song>();
     public DbSet<SongSection> SongSections => Set<SongSection>();
+    public DbSet<SongContentCell> SongContentCells => Set<SongContentCell>();
+    public DbSet<Partition> SongPartitions => Set<Partition>();
     public DbSet<SongRevision> SongRevisions => Set<SongRevision>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -42,7 +42,7 @@ public sealed class EntityNavigationTests(DatabaseFixture fixture)
             UpdatedBy = editor.KeycloakId, UpdatedByUser = editor, UpdatedAt = now,
             DeletedBy = editor.KeycloakId, DeletedByUser = editor, DeletedAt = now,
         };
-        song.Sections.Add(new SongSection
+        song.Partitions.Add(new Partition
         {
             Id = Guid.CreateVersion7(), SongId = song.Id, Name = "Verse", CreatedAt = now,
             CreatedBy = creator.KeycloakId, CreatedByUser = creator,
@@ -69,8 +69,8 @@ public sealed class EntityNavigationTests(DatabaseFixture fixture)
             .Include(x => x.Songs).ThenInclude(x => x.CreatedByUser)
             .Include(x => x.Songs).ThenInclude(x => x.UpdatedByUser)
             .Include(x => x.Songs).ThenInclude(x => x.DeletedByUser)
-            .Include(x => x.Songs).ThenInclude(x => x.Sections).ThenInclude(x => x.CreatedByUser)
-            .Include(x => x.Songs).ThenInclude(x => x.Sections).ThenInclude(x => x.UpdatedByUser)
+            .Include(x => x.Songs).ThenInclude(x => x.Partitions).ThenInclude(x => x.CreatedByUser)
+            .Include(x => x.Songs).ThenInclude(x => x.Partitions).ThenInclude(x => x.UpdatedByUser)
             .Include(x => x.Songs).ThenInclude(x => x.Revisions).ThenInclude(x => x.CreatedByUser)
             .AsSplitQuery().SingleAsync(x => x.Id == band.Id);
 
@@ -78,7 +78,7 @@ public sealed class EntityNavigationTests(DatabaseFixture fixture)
         var loadedMember = Assert.Single(loaded.Members);
         var loadedEditor = loadedMember.User;
         var loadedSong = Assert.Single(loaded.Songs);
-        var loadedSection = Assert.Single(loadedSong.Sections);
+        var loadedSection = Assert.Single(loadedSong.Partitions);
         var loadedRevision = Assert.Single(loadedSong.Revisions);
         Assert.Equal(creator.Id, loadedCreator.Id);
         Assert.NotEqual(loadedCreator.Id, loaded.CreatedBy);
@@ -104,8 +104,8 @@ public sealed class EntityNavigationTests(DatabaseFixture fixture)
         Assert.Same(loadedSong, Assert.Single(loadedCreator.CreatedSongs));
         Assert.Same(loadedSong, Assert.Single(loadedEditor.UpdatedSongs));
         Assert.Same(loadedSong, Assert.Single(loadedEditor.DeletedSongs));
-        Assert.Same(loadedSection, Assert.Single(loadedCreator.CreatedSongSections));
-        Assert.Same(loadedSection, Assert.Single(loadedEditor.UpdatedSongSections));
+        Assert.Same(loadedSection, Assert.Single(loadedCreator.CreatedSongPartitions));
+        Assert.Same(loadedSection, Assert.Single(loadedEditor.UpdatedSongPartitions));
         Assert.Same(loadedRevision, Assert.Single(loadedCreator.CreatedSongRevisions));
 
         // Entities returned by existing HTTP endpoints retain their scalar JSON contracts.

@@ -85,7 +85,9 @@ public sealed class ProxyRoutingTests
         var user = (await client.GetFromJsonAsync<ForwardedRequest>("/api/user/me"))!;
         Assert.Equal("/api/user/me", user.Path);
         var web = (await client.GetFromJsonAsync<ForwardedRequest>("/app"))!;
-        Assert.Empty(web.Cookie);
+        Assert.Contains("WBand.Session=", web.Cookie);
+        Assert.DoesNotContain("session-access-token", web.Cookie);
+        Assert.Empty(web.Csrf);
         Assert.Empty(web.Authorization);
     }
 

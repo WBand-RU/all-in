@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using WBand.WebAPI.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -19,7 +20,7 @@ public sealed record MyBandAccessResponse(Guid BandId, BandMemberRole Role, bool
 public static class MyBandAccessEndpoint
 {
     [Authorize]
-    [WolverineGet("/band-api/user/band-access")]
+    [WolverineGet("/band-api/user/band-access", OperationId = "GetMyBandAccess")]
     public static async Task<ApiResponse<IReadOnlyList<MyBandAccessResponse>>> Get(
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
@@ -43,7 +44,8 @@ public static class MyBandAccessEndpoint
 public static class MembersEndpoint
 {
     [Authorize]
-    [WolverineGet("/band-api/bands/{bandId}/members")]
+    [WolverineGet("/band-api/bands/{bandId}/members", OperationId = "GetMembers")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<BandMember>>), StatusCodes.Status200OK)]
     public static async Task<IResult> Get(
         Guid bandId,
         ICurrentUser user,
@@ -61,7 +63,8 @@ public static class MembersEndpoint
 public static class UpdateMemberRoleEndpoint
 {
     [Authorize]
-    [WolverinePut("/band-api/bands/{bandId}/members/{memberId}/role")]
+    [WolverinePut("/band-api/bands/{bandId}/members/{memberId}/role", OperationId = "UpdateMemberRole")]
+    [ProducesResponseType(typeof(ApiResponse<BandMember>), StatusCodes.Status200OK)]
     public static async Task<IResult> Put(
         Guid bandId,
         Guid memberId,
@@ -94,7 +97,8 @@ public static class UpdateMemberRoleEndpoint
 public static class RemoveMemberEndpoint
 {
     [Authorize]
-    [WolverineDelete("/band-api/bands/{bandId}/members/{memberId}")]
+    [WolverineDelete("/band-api/bands/{bandId}/members/{memberId}", OperationId = "RemoveMember")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public static async Task<IResult> Delete(
         Guid bandId,
         Guid memberId,
@@ -133,7 +137,8 @@ public static class RemoveMemberEndpoint
 public static class LeaveBandEndpoint
 {
     [Authorize]
-    [WolverineDelete("/band-api/bands/{bandId}/membership")]
+    [WolverineDelete("/band-api/bands/{bandId}/membership", OperationId = "LeaveBand")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public static async Task<IResult> Delete(
         Guid bandId,
         ICurrentUser user,
@@ -173,7 +178,7 @@ public sealed record FormerBandResponse(Guid BandId, string BandName, DateTimeOf
 public static class FormerBandsEndpoint
 {
     [Authorize]
-    [WolverineGet("/band-api/user/former-bands")]
+    [WolverineGet("/band-api/user/former-bands", OperationId = "GetFormerBands")]
     public static async Task<ApiResponse<IReadOnlyList<FormerBandResponse>>> Get(
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
@@ -222,7 +227,8 @@ public static class FormerBandsEndpoint
 public static class RejoinBandEndpoint
 {
     [Authorize]
-    [WolverinePost("/band-api/bands/{bandId}/membership/rejoin")]
+    [WolverinePost("/band-api/bands/{bandId}/membership/rejoin", OperationId = "RejoinBand")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public static async Task<IResult> Post(
         Guid bandId,
         ICurrentUser user,

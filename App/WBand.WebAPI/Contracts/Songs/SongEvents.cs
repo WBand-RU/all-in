@@ -10,6 +10,10 @@ public sealed record SongDeleted(Guid SongId, Guid BandId, long ContentVersion);
 public sealed record SongRestored(Guid SongId, Guid BandId, long ContentVersion);
 /// <summary>A song integration contract handled through Wolverine.</summary>
 public sealed record SongSectionsChanged(Guid SongId, Guid BandId);
+/// <summary>Content at a section/partition intersection was edited.</summary>
+public sealed record SongContentChanged(Guid SongId, Guid BandId, Guid SectionId, Guid PartitionId, long Revision);
+/// <summary>A partition was added, renamed, reordered or removed.</summary>
+public sealed record SongPartitionsChanged(Guid SongId, Guid BandId);
 
 /// <summary>A song integration contract handled through Wolverine.</summary>
 public sealed record GetSongReferences(IReadOnlyList<Guid> SongIds);

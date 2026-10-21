@@ -15,11 +15,13 @@ internal sealed class SessionTokenTransform : ITransformProvider
     {
         builder.AddRequestTransform(async context =>
         {
-            context.ProxyRequest.Headers.Remove("Cookie");
             context.ProxyRequest.Headers.Remove("Authorization");
             context.ProxyRequest.Headers.Remove("X-CSRF-TOKEN");
             if (builder.Route.ClusterId == "api")
             {
+                // The API authenticates only the BFF bearer. Next.js is a trusted server
+                // destination and needs the opaque session cookie to verify SSR requests.
+                context.ProxyRequest.Headers.Remove("Cookie");
                 var token = await context.HttpContext.GetTokenAsync("access_token");
                 context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue(
                     "Bearer",

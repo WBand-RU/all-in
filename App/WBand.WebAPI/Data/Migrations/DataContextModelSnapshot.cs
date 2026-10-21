@@ -191,6 +191,56 @@ namespace WBand.WebAPI.Data.Migrations
                     b.ToTable("band_members", "public");
                 });
 
+            modelBuilder.Entity("WBand.WebAPI.Data.Partition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer")
+                        .HasColumnName("order");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint")
+                        .HasColumnName("revision");
+
+                    b.Property<Guid>("SongId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("song_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.HasIndex("SongId", "Order");
+
+                    b.ToTable("song_partitions", "public");
+                });
+
             modelBuilder.Entity("WBand.WebAPI.Data.Song", b =>
                 {
                     b.Property<Guid>("Id")
@@ -264,6 +314,65 @@ namespace WBand.WebAPI.Data.Migrations
                     b.ToTable("songs", "public");
                 });
 
+            modelBuilder.Entity("WBand.WebAPI.Data.SongContentCell", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("PartitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("partition_id");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint")
+                        .HasColumnName("revision");
+
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("section_id");
+
+                    b.Property<Guid>("SongId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("song_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.HasIndex("SectionId", "PartitionId")
+                        .IsUnique();
+
+                    b.HasIndex("SongId", "PartitionId");
+
+                    b.HasIndex("SongId", "SectionId");
+
+                    b.ToTable("song_content_cells", "public");
+                });
+
             modelBuilder.Entity("WBand.WebAPI.Data.SongRevision", b =>
                 {
                     b.Property<Guid>("Id")
@@ -324,10 +433,6 @@ namespace WBand.WebAPI.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("Chords")
-                        .HasColumnType("text")
-                        .HasColumnName("chords");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -335,10 +440,6 @@ namespace WBand.WebAPI.Data.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
-
-                    b.Property<string>("Lyrics")
-                        .HasColumnType("text")
-                        .HasColumnName("lyrics");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -422,126 +523,277 @@ namespace WBand.WebAPI.Data.Migrations
 
             modelBuilder.Entity("WBand.WebAPI.Data.Band", b =>
                 {
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "CreatedByUser")
+                        .WithMany("CreatedBands")
                         .HasForeignKey("CreatedBy")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("WBand.WebAPI.Data.BandDeparture", b =>
                 {
-                    b.HasOne("WBand.WebAPI.Data.Band", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.Band", "Band")
+                        .WithMany("Departures")
                         .HasForeignKey("BandId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "User")
+                        .WithMany("BandDepartures")
                         .HasForeignKey("UserId")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Band");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WBand.WebAPI.Data.BandInvitation", b =>
                 {
-                    b.HasOne("WBand.WebAPI.Data.Band", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.Band", "Band")
+                        .WithMany("Invitations")
                         .HasForeignKey("BandId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "Inviter")
+                        .WithMany("SentBandInvitations")
                         .HasForeignKey("InviterId")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Band");
+
+                    b.Navigation("Inviter");
                 });
 
             modelBuilder.Entity("WBand.WebAPI.Data.BandMember", b =>
                 {
-                    b.HasOne("WBand.WebAPI.Data.Band", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.Band", "Band")
+                        .WithMany("Members")
                         .HasForeignKey("BandId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "User")
+                        .WithMany("BandMemberships")
                         .HasForeignKey("UserId")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Band");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WBand.WebAPI.Data.Partition", b =>
+                {
+                    b.HasOne("WBand.WebAPI.Data.User", "CreatedByUser")
+                        .WithMany("CreatedSongPartitions")
+                        .HasForeignKey("CreatedBy")
+                        .HasPrincipalKey("KeycloakId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("WBand.WebAPI.Data.Song", "Song")
+                        .WithMany("Partitions")
+                        .HasForeignKey("SongId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WBand.WebAPI.Data.User", "UpdatedByUser")
+                        .WithMany("UpdatedSongPartitions")
+                        .HasForeignKey("UpdatedBy")
+                        .HasPrincipalKey("KeycloakId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Song");
+
+                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("WBand.WebAPI.Data.Song", b =>
                 {
-                    b.HasOne("WBand.WebAPI.Data.Band", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.Band", "Band")
+                        .WithMany("Songs")
                         .HasForeignKey("BandId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "CreatedByUser")
+                        .WithMany("CreatedSongs")
                         .HasForeignKey("CreatedBy")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "DeletedByUser")
+                        .WithMany("DeletedSongs")
                         .HasForeignKey("DeletedBy")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("WBand.WebAPI.Data.User", "UpdatedByUser")
+                        .WithMany("UpdatedSongs")
+                        .HasForeignKey("UpdatedBy")
+                        .HasPrincipalKey("KeycloakId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Band");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("DeletedByUser");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
+            modelBuilder.Entity("WBand.WebAPI.Data.SongContentCell", b =>
+                {
+                    b.HasOne("WBand.WebAPI.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .HasPrincipalKey("KeycloakId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("WBand.WebAPI.Data.User", null)
                         .WithMany()
                         .HasForeignKey("UpdatedBy")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("WBand.WebAPI.Data.Partition", "Partition")
+                        .WithMany("Cells")
+                        .HasForeignKey("SongId", "PartitionId")
+                        .HasPrincipalKey("SongId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WBand.WebAPI.Data.SongSection", "Section")
+                        .WithMany("Cells")
+                        .HasForeignKey("SongId", "SectionId")
+                        .HasPrincipalKey("SongId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Partition");
+
+                    b.Navigation("Section");
                 });
 
             modelBuilder.Entity("WBand.WebAPI.Data.SongRevision", b =>
                 {
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "CreatedByUser")
+                        .WithMany("CreatedSongRevisions")
                         .HasForeignKey("CreatedBy")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("WBand.WebAPI.Data.Song", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.Song", "Song")
+                        .WithMany("Revisions")
                         .HasForeignKey("SongId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Song");
                 });
 
             modelBuilder.Entity("WBand.WebAPI.Data.SongSection", b =>
                 {
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "CreatedByUser")
+                        .WithMany("CreatedSongSections")
                         .HasForeignKey("CreatedBy")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("WBand.WebAPI.Data.Song", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.Song", "Song")
+                        .WithMany("Sections")
                         .HasForeignKey("SongId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WBand.WebAPI.Data.User", null)
-                        .WithMany()
+                    b.HasOne("WBand.WebAPI.Data.User", "UpdatedByUser")
+                        .WithMany("UpdatedSongSections")
                         .HasForeignKey("UpdatedBy")
                         .HasPrincipalKey("KeycloakId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Song");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
+            modelBuilder.Entity("WBand.WebAPI.Data.Band", b =>
+                {
+                    b.Navigation("Departures");
+
+                    b.Navigation("Invitations");
+
+                    b.Navigation("Members");
+
+                    b.Navigation("Songs");
+                });
+
+            modelBuilder.Entity("WBand.WebAPI.Data.Partition", b =>
+                {
+                    b.Navigation("Cells");
+                });
+
+            modelBuilder.Entity("WBand.WebAPI.Data.Song", b =>
+                {
+                    b.Navigation("Partitions");
+
+                    b.Navigation("Revisions");
+
+                    b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("WBand.WebAPI.Data.SongSection", b =>
+                {
+                    b.Navigation("Cells");
+                });
+
+            modelBuilder.Entity("WBand.WebAPI.Data.User", b =>
+                {
+                    b.Navigation("BandDepartures");
+
+                    b.Navigation("BandMemberships");
+
+                    b.Navigation("CreatedBands");
+
+                    b.Navigation("CreatedSongPartitions");
+
+                    b.Navigation("CreatedSongRevisions");
+
+                    b.Navigation("CreatedSongSections");
+
+                    b.Navigation("CreatedSongs");
+
+                    b.Navigation("DeletedSongs");
+
+                    b.Navigation("SentBandInvitations");
+
+                    b.Navigation("UpdatedSongPartitions");
+
+                    b.Navigation("UpdatedSongSections");
+
+                    b.Navigation("UpdatedSongs");
                 });
 #pragma warning restore 612, 618
         }

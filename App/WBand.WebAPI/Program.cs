@@ -17,6 +17,7 @@ using WBand.WebAPI.Services;
 using WBand.WebAPI.Services.Implementations;
 using WBand.WebAPI.Shared;
 using Wolverine;
+using WBand.Modules.EventModule;
 using Wolverine.ErrorHandling;
 using Wolverine.FluentValidation;
 using Wolverine.Http;
@@ -35,9 +36,13 @@ try
 
     builder.Services.AddDatabase(configuration.DatabaseConnectionString);
 
+    builder.Services.AddEventModule(configuration.DatabaseConnectionString);
+
     var app = builder.Build();
 
     await DatabaseSetup.ApplyMigrations(configuration.DatabaseConnectionString, default);
+
+    await app.Services.MigrateEvents();
 
     if (app.Environment.IsDevelopment())
     {
@@ -173,7 +178,9 @@ static WebApplicationBuilder AddWBandFoundation(
             tags: ["ready"]
         );
     builder.Services.AddWolverineHttp();
-    builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+    // These validators contain only immutable rules and no request-scoped dependencies.
+    // Wolverine resolves the validator collection while building its cached HTTP handlers.
+    builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, ServiceLifetime.Singleton);
 
     Log.Logger = new LoggerConfiguration().WriteTo.Debug().WriteTo.Console().CreateLogger();
     builder.Services.AddSerilog(Log.Logger);
@@ -218,12 +225,15 @@ static WebApplicationBuilder AddWBandFoundation(
         options.PublishMessage<SongDeleted>().ToRabbitExchange("song-deleted").SendInline();
         options.PublishMessage<SongRestored>().ToRabbitExchange("song-restored").SendInline();
         options
-            .PublishMessage<SongSectionsChanged>()
-            .ToRabbitExchange("song-sections-changed")
+            .PublishMessage<SongPartitionsChanged>()
+            .ToRabbitExchange("song-partitions-changed")
             .SendInline();
+        options.PublishMessage<SongSectionsChanged>().ToRabbitExchange("song-sections-changed").SendInline();
+        options.PublishMessage<SongContentChanged>().ToRabbitExchange("song-content-changed").SendInline();
         options.EnvelopeIdGeneration = EnvelopeIdGeneration.GuidV7;
 
         options.Discovery.IncludeAssembly(typeof(Program).Assembly);
+        options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
 
         ConfigureWolverine();
         void ConfigureWolverine()
@@ -292,7 +302,10 @@ static WebApplication UseWBandFoundation(WebApplication app)
         )
         .AllowAnonymous();
 
-    app.MapWolverineEndpoints(options => options.UseFluentValidationProblemDetailMiddleware());
+    app.MapWolverineEndpoints(options =>
+    {
+        options.UseFluentValidationProblemDetailMiddleware();
+    });
 
     return app;
 }

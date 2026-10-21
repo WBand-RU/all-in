@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using WBand.WebAPI.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -49,7 +50,8 @@ public sealed class CreateInvitationRequestValidator : AbstractValidator<CreateI
 public static class BandInvitationsEndpoint
 {
     [Authorize]
-    [WolverineGet("/band-api/bands/{bandId}/invitations")]
+    [WolverineGet("/band-api/bands/{bandId}/invitations", OperationId = "GetBandInvitationList")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<BandInvitation>>), StatusCodes.Status200OK)]
     public static async Task<IResult> Get(
         Guid bandId,
         ICurrentUser user,
@@ -64,7 +66,8 @@ public static class BandInvitationsEndpoint
     }
 
     [Authorize]
-    [WolverinePost("/band-api/bands/{bandId}/invitations")]
+    [WolverinePost("/band-api/bands/{bandId}/invitations", OperationId = "CreateBandInvitation")]
+    [ProducesResponseType(typeof(ApiResponse<BandInvitation>), StatusCodes.Status200OK)]
     public static async Task<IResult> Post(
         Guid bandId,
         CreateInvitationRequest request,
@@ -119,7 +122,8 @@ public static class BandInvitationsEndpoint
 public static class RevokeInvitationEndpoint
 {
     [Authorize]
-    [WolverineDelete("/band-api/bands/{bandId}/invitations/{invitationId}")]
+    [WolverineDelete("/band-api/bands/{bandId}/invitations/{invitationId}", OperationId = "RevokeInvitation")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public static async Task<IResult> Delete(
         Guid bandId,
         Guid invitationId,
@@ -148,7 +152,7 @@ public static class RevokeInvitationEndpoint
 public static class MyInvitationsEndpoint
 {
     [Authorize]
-    [WolverineGet("/band-api/user/invitations")]
+    [WolverineGet("/band-api/user/invitations", OperationId = "GetMyInvitations")]
     public static async Task<ApiResponse<IReadOnlyList<MyInvitationResponse>>> Get(
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
@@ -189,7 +193,7 @@ public static class MyInvitationsEndpoint
 public static class InvitationCountEndpoint
 {
     [Authorize]
-    [WolverineGet("/band-api/user/invitations/count")]
+    [WolverineGet("/band-api/user/invitations/count", OperationId = "GetMyInvitationsCount")]
     public static async Task<ApiResponse<int>> Get(
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
@@ -205,7 +209,8 @@ public static class InvitationCountEndpoint
 public static class RespondInvitationEndpoint
 {
     [Authorize]
-    [WolverinePut("/band-api/user/invitations/{invitationId}")]
+    [WolverinePut("/band-api/user/invitations/{invitationId}", OperationId = "RespondInvitation")]
+    [ProducesResponseType(typeof(ApiResponse<BandInvitation>), StatusCodes.Status200OK)]
     public static async Task<IResult> Put(
         Guid invitationId,
         RespondInvitationRequest request,

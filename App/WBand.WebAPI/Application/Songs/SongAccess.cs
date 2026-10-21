@@ -11,7 +11,7 @@ internal static class SongAccess
         return edit ? member?.Role is BandMemberRole.Owner or BandMemberRole.Admin : member is not null;
     }
 
-    // All song writers take the band lock before the song lock, including section writers.
+    // All song writers take the band lock before the song lock, including partition writers.
     // This also serializes edits against membership removal and band deletion.
     public static async Task<Song?> Load(DataContext db, Guid songId, CancellationToken ct, bool includeDeleted = false)
     {

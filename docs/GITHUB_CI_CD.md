@@ -4,6 +4,12 @@ Workflow `.github/workflows/ci-cd.yml` validates only applications affected by a
 Pushes to `staging` and `release` additionally publish immutable Docker images and update the
 corresponding Docker Swarm services.
 
+Backend validation now restores and tests `WBand.slnx`, including the active
+`WBand.WebAPI.Tests` suite with PostgreSQL Testcontainers. Routing regression
+tests run with `python3 .github/scripts/test-detect-affected.py`.
+See [current project state](PROJECT_STATE.md) for packaging blockers; this
+workflow is not yet evidence that the active application can be deployed.
+
 ## Repository configuration
 
 Create repository variables:

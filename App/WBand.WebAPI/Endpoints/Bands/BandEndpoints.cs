@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using WBand.WebAPI.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -30,7 +31,7 @@ public sealed class UpdateBandRequestValidator : AbstractValidator<UpdateBandReq
 public static class CreateBandEndpoint
 {
     [Authorize]
-    [WolverinePost("/band-api/bands")]
+    [WolverinePost("/band-api/bands", OperationId = "CreateBand")]
     public static async Task<ApiResponse<Band>> Post(
         CreateBandRequest request,
         ICurrentUser currentUser,
@@ -69,7 +70,7 @@ public static class CreateBandEndpoint
 public static class ListBandsEndpoint
 {
     [Authorize]
-    [WolverineGet("/band-api/bands")]
+    [WolverineGet("/band-api/bands", OperationId = "GetListOfBands")]
     public static async Task<ApiResponse<IReadOnlyList<Band>>> Get(
         ICurrentUser currentUser,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
@@ -84,7 +85,8 @@ public static class ListBandsEndpoint
 public static class GetBandEndpoint
 {
     [Authorize]
-    [WolverineGet("/band-api/bands/{bandId}")]
+    [WolverineGet("/band-api/bands/{bandId}", OperationId = "GetBand")]
+    [ProducesResponseType(typeof(ApiResponse<Band>), StatusCodes.Status200OK)]
     public static async Task<IResult> Get(
         Guid bandId,
         ICurrentUser currentUser,
@@ -107,7 +109,8 @@ public static class GetBandEndpoint
 public static class UpdateBandEndpoint
 {
     [Authorize]
-    [WolverinePut("/band-api/bands/{bandId}")]
+    [WolverinePut("/band-api/bands/{bandId}", OperationId = "UpdateBand")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public static async Task<IResult> Put(
         Guid bandId,
         UpdateBandRequest request,
@@ -134,7 +137,8 @@ public static class UpdateBandEndpoint
 public static class DeleteBandEndpoint
 {
     [Authorize]
-    [WolverineDelete("/band-api/bands/{bandId}")]
+    [WolverineDelete("/band-api/bands/{bandId}", OperationId = "DeleteBand")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public static async Task<IResult> Delete(
         Guid bandId,
         ICurrentUser currentUser,

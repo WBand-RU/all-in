@@ -2,7 +2,7 @@
 
 Open the application through the proxy, locally at `http://localhost:4000/app`.
 Keycloak is available at `https://localhost:28080`. Aspire passes the actual frontend,
-API, Redis and Keycloak addresses to the proxy. The Vite dev server forwards auth/API
+API, Redis and Keycloak addresses to the proxy. The Next.js dev server can forward auth/API
 requests to the proxy as well.
 
 AppHost mounts `keycloak/quarkus.properties`, setting
@@ -29,7 +29,11 @@ Concurrent requests, including requests to different replicas, share one token r
 - Every unsafe API request requires the same CSRF token. Missing/invalid tokens return 403.
   API paths retain their prefixes (`/api`, `/band-api`, `/song-api`, etc.).
   Only API destinations receive the session's Bearer token. Browser cookies and
-  caller-supplied Authorization headers are removed before forwarding.
+  caller-supplied Authorization headers are removed before forwarding to API destinations.
+  The trusted Next.js destination receives browser cookies for server-side session
+  verification and language preferences, but never the session Bearer or caller-supplied
+  Authorization/CSRF headers. Each protected Next.js page verifies the opaque cookie
+  through the BFF `/auth/me` endpoint with `cache: no-store`.
 
 React's `useAuthContext()` exposes the profile, all realm roles, `platformRoles`,
 `hasRole`, authentication/loading/error state, and `login`, `logout`, `refresh`.
@@ -39,7 +43,7 @@ Generate the proxy's client after contract changes:
 
 ```sh
 cd App/web
-bun run generate-api -- --config orval.auth.config.mjs
+bun run generate-api-clients
 ```
 
 ## Keycloak and API configuration

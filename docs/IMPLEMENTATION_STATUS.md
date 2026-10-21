@@ -1,5 +1,9 @@
 # WBand MVP Implementation Status
 
+> Historical implementation report, including legacy services and frontend.
+> It does not certify readiness of the active application. See
+> [current project state](PROJECT_STATE.md) for verified scope and remaining work.
+
 ## ✅ Completed Features
 
 ### Backend Microservices

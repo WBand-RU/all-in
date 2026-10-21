@@ -18,6 +18,12 @@ public static class PlaybackInvalidationHandlers
     public static PlaybackCacheInvalidated Handle(SongSectionsChanged message) =>
         new(message.BandId, "song-sections", message.SongId, 0, "song_sections_changed");
 
+    public static PlaybackCacheInvalidated Handle(SongContentChanged message) =>
+        new(message.BandId, "song-content", message.SongId, message.Revision, "song_content_changed");
+
+    public static PlaybackCacheInvalidated Handle(SongPartitionsChanged message) =>
+        new(message.BandId, "song-partitions", message.SongId, 0, "song_partitions_changed");
+
     public static PlaybackCacheInvalidated Handle(PlaylistChanged message) =>
         new(message.BandId, "playlist", message.PlaylistId, message.ContentVersion,
             "playlist_changed");

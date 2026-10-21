@@ -1,6 +1,8 @@
 # Стандарт серверного модуля WBand
 
-Каждый серверный модуль — отдельный проект `WBand.Modules.<НазваниеМодуля>` и реализует `IWBandModule`. `App/WBand.WebAPI` знает только публичный composition root модуля и его контракты. Прямые ссылки одного модуля на внутренние типы другого запрещены.
+Каждый серверный модуль — отдельный проект `WBand.Modules.<НазваниеМодуля>` с публичным composition root. `App/WBand.WebAPI` знает только публичный composition root модуля и его контракты. Прямые ссылки одного модуля на внутренние типы другого запрещены.
+
+Для хранения прикладных данных используйте **EF Core и PostgreSQL**. **Marten не используем**; его пакеты, document sessions и прежние API конфигурации не должны становиться зависимостями новых или переносимых модулей.
 
 ## Рекомендуемая структура
 
@@ -10,17 +12,17 @@ WBand.Modules.ExampleModule/
 ├── Contracts/         # Публичные сообщения и HTTP DTO
 ├── Domain/            # Агрегаты, value objects и доменные правила
 ├── Endpoints/         # Wolverine HTTP endpoints
-├── Infrastructure/    # Marten, внешние клиенты и конфигурация
-├── ExampleModule.cs   # Composition root (IWBandModule)
+├── Infrastructure/    # EF Core, миграции, внешние клиенты и конфигурация
+├── ExampleModule.cs   # Публичный composition root
 └── WBand.Modules.ExampleModule.csproj
 ```
 
-Тесты размещаются в `Tests/WBand.Modules.<НазваниеМодуля>.Tests`. Чистую доменную логику покрывайте unit-тестами; HTTP, Marten и Wolverine — интеграционными тестами с изолированной инфраструктурой.
+Тесты размещаются в `Tests/WBand.Modules.<НазваниеМодуля>.Tests`. Чистую доменную логику покрывайте unit-тестами; HTTP, EF Core/PostgreSQL и Wolverine — интеграционными тестами с изолированной инфраструктурой.
 
 ## Границы и данные
 
-- Модуль владеет своей схемой PostgreSQL/Marten и не читает таблицы другого модуля.
-- Имя схемы задаётся свойством `IWBandModule.MartenSchemaName`. Все документы модуля регистрируйте в `ConfigureMarten`, например: `options.Schema.For<Song>().DatabaseSchemaName(MartenSchemaName)`. Общая схема из `Marten:SchemaName` предназначена только для инфраструктуры Wolverine.
+- Модуль владеет своим `DbContext`, схемой PostgreSQL и миграциями EF Core и не читает таблицы другого модуля.
+- Таблицы и связи настраиваются через EF Core; история миграций изолируется для каждого модуля. Не используйте прежние `MartenSchemaName` и `ConfigureMarten` как шаблон нового модуля.
 - Межмодульное взаимодействие выполняется явными Wolverine-сообщениями.
 - Публичные контракты стабильны, версионируются и не содержат persistence-моделей.
 - Внешние события обрабатываются идемпотентно; побочные сообщения отправляются через durable outbox.

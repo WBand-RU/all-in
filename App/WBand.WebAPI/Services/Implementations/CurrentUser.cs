@@ -20,12 +20,14 @@ public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICur
 
     public string FirstName =>
         httpContextAccessor.HttpContext?.User?.FindFirstValue("firstName")
+        ?? httpContextAccessor.HttpContext?.User?.FindFirstValue("given_name")
         ?? httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.GivenName)
         ?? httpContextAccessor.HttpContext?.User?.FindFirstValue("preferred_firstname")
         ?? string.Empty;
 
     public string LastName =>
         httpContextAccessor.HttpContext?.User?.FindFirstValue("lastName")
+        ?? httpContextAccessor.HttpContext?.User?.FindFirstValue("family_name")
         ?? httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Surname)
         ?? httpContextAccessor.HttpContext?.User?.FindFirstValue("preferred_lastname")
         ?? string.Empty;

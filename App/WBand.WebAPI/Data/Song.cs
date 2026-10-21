@@ -5,7 +5,7 @@ namespace WBand.WebAPI.Data;
 /// <summary>The editorial status of a song.</summary>
 public enum SongStatus { Draft, Band, Catalog }
 
-/// <summary>Band-owned song metadata; lyrics and chords live in separate text sections.</summary>
+/// <summary>Band-owned song metadata; content is a matrix of shared sections and named partitions.</summary>
 public sealed class Song
 {
     public Guid Id { get; set; }
@@ -42,9 +42,13 @@ public sealed class Song
     [JsonIgnore]
     public User? DeletedByUser { get; set; }
 
-    /// <summary>Text sections belonging to the song.</summary>
+    /// <summary>Ordered song sections shared by all partitions.</summary>
     [JsonIgnore]
     public ICollection<SongSection> Sections { get; set; } = [];
+
+    /// <summary>Partitions belonging to the song.</summary>
+    [JsonIgnore]
+    public ICollection<Partition> Partitions { get; set; } = [];
 
     /// <summary>Metadata revision history of the song.</summary>
     [JsonIgnore]

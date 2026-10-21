@@ -6,6 +6,7 @@
         <Project Path="App/web/" Type="Website" DisplayName="web">
             <BuildType Project="Debug" />
             <Build Solution="Debug|*" Project="false" />
+            <Build Solution="Release|*" Project="false" />
             <Properties Name="WebsiteProperties">
                 <Property Name="Debug.AspNetCompiler.Debug" Value="&quot;True&quot;" />
                 <Property Name="Debug.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
@@ -25,6 +26,9 @@
                 <Property Name="VWDPort" Value="&quot;62008&quot;" />
             </Properties>
         </Project>
+    </Folder>
+    <Folder Name="/Modules/">
+        <Project Path="Modules/WBand.Modules.EventModule/WBand.Modules.EventModule.csproj" />
     </Folder>
     <Folder Name="/Common/">
         <Project Path="Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />

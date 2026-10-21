@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
+using WBand.WebAPI.Application;
+using Wolverine;
 using WBand.WebAPI.Data;
 using WBand.WebAPI.Services;
 using Wolverine.Http;
@@ -19,11 +21,11 @@ public static class CurrentUserEndpoint
     public static async Task<CurrentUserResponse> Get(
         ICurrentUser currentUser,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        IMessageBus bus,
         CancellationToken cancellationToken
     )
     {
-        var user =
-            await db.SingleOrDefaultAsync<User>("select * from public.users where keycloak_id = @id", new { id = currentUser.Id }, cancellationToken) ?? throw new InvalidOperationException("User is not found in database");
+        var user = await UserProfileSynchronization.EnsureProfile(currentUser, db, bus, cancellationToken);
 
         var roles = new List<string>();
         if (currentUser.IsInRole(Shared.Roles.SuperAdmin))

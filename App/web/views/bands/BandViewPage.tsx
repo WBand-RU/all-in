@@ -1,0 +1,148 @@
+"use client";
+
+import { hasId } from "@/lib/api-data";
+import { useParams } from "next/navigation";
+import { useGetBand } from "@/lib/generated/web-api/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon, CalendarIcon, UsersIcon, MailIcon } from "lucide-react";
+import { useNavigator } from "@/services/navigator";
+import { ApiCodes } from "@/lib/generated/web-api/models";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InviteMember } from "../../widgets/bands/ui/InviteMember";
+import { MemberList } from "../../widgets/bands/ui/MemberList";
+import { InvitationList } from "../../widgets/bands/ui/InvitationList";
+import { useBandAccess } from "@/hooks/use-band-access";
+import { useTranslation } from "react-i18next";
+import { BandCardSkeleton } from "../../features/bands/BandCardSkeleton";
+import { BandInformationCard } from "../../widgets/bands/ui/BandInformationCard";
+
+export function BandViewPage() {
+    const { id } = useParams<{ id: string }>();
+    const { data, isLoading } = useGetBand(id!);
+    const { go } = useNavigator();
+    const { access } = useBandAccess();
+    const { t, i18n } = useTranslation();
+
+    if (isLoading) {
+        return <BandCardSkeleton />;
+    }
+
+    if (
+        !data ||
+        data.code !== ApiCodes.Success ||
+        !data.value ||
+        !hasId(data.value)
+    ) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => go("..")}
+                    >
+                        <ArrowLeftIcon className="h-4 w-4" />
+                    </Button>
+                    <h1 className="text-2xl font-bold">{t("band.notFound")}</h1>
+                </div>
+                <Card>
+                    <CardContent className="pt-6">
+                        <p className="text-muted-foreground">
+                            {t("band.notFoundHint")}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    const band = data.value!;
+    const isOwner = access.some(
+        (item) => item.bandId === band.id && item.role === "Owner"
+    );
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => go("..")}>
+                    <ArrowLeftIcon className="h-4 w-4" />
+                </Button>
+                <h1 className="text-2xl font-bold">{band.name}</h1>
+                <Badge variant="outline">{t("common.band")}</Badge>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+                <BandInformationCard band={band} isOwner={isOwner} />
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <CalendarIcon className="h-5 w-5" />
+                            {t("band.creationDetails")}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">
+                                {t("band.createdAt")}
+                            </span>
+                            <span>
+                                {band.createdAt
+                                    ? new Date(
+                                          band.createdAt
+                                      ).toLocaleDateString(
+                                          i18n.resolvedLanguage
+                                      )
+                                    : "—"}
+                            </span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">
+                                {t("band.createdBy")}
+                            </span>
+                            <span className="font-mono text-sm">
+                                {band.createdBy}
+                            </span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Member Management */}
+            <Tabs defaultValue="members" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger
+                        value="members"
+                        className="flex items-center gap-2"
+                    >
+                        <UsersIcon className="h-4 w-4" />
+                        {t("band.members")}
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="invitations"
+                        className="flex items-center gap-2"
+                    >
+                        <MailIcon className="h-4 w-4" />
+                        {t("band.invitations")}
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="members" className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">
+                            {t("band.bandMembers")}
+                        </h3>
+                        {isOwner && <InviteMember bandId={band.id} />}
+                    </div>
+                    <MemberList bandId={band.id} />
+                </TabsContent>
+
+                <TabsContent value="invitations" className="space-y-4">
+                    <InvitationList bandId={band.id} />
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}

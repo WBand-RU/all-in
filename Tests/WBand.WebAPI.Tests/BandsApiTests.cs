@@ -14,6 +14,29 @@ namespace WBand.WebAPI.Tests;
 public sealed class BandsApiTests(BandsApiFixture fixture)
 {
     [Fact]
+    public async Task OpenApi_WhenBandEndpointsReturnResults_DescribesSuccessPayloads()
+    {
+        using var client = fixture.CreateClient();
+        using var document = System.Text.Json.JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
+        var paths = document.RootElement.GetProperty("paths");
+        var contracts = new[]
+        {
+            ("/band-api/bands/{bandId}", "get", "ApiResponseOfBand"),
+            ("/band-api/bands/{bandId}", "put", "ApiResponse"),
+            ("/band-api/bands/{bandId}/members", "get", "ApiResponseOfIReadOnlyListOfBandMember"),
+            ("/band-api/bands/{bandId}/invitations", "get", "ApiResponseOfIReadOnlyListOfBandInvitation"),
+            ("/band-api/bands/{bandId}/invitations", "post", "ApiResponseOfBandInvitation"),
+            ("/band-api/user/invitations/{invitationId}", "put", "ApiResponseOfBandInvitation"),
+        };
+        foreach (var (path, method, schema) in contracts)
+        {
+            var response = paths.GetProperty(path).GetProperty(method).GetProperty("responses")
+                .GetProperty("200").GetProperty("content").GetProperty("application/json").GetProperty("schema");
+            Assert.Equal($"#/components/schemas/{schema}", response.GetProperty("$ref").GetString());
+        }
+    }
+
+    [Fact]
     public async Task CreateBand_WhenNameIsValid_PersistsBandAndOwner()
     {
         var ownerId = Guid.NewGuid();
@@ -184,7 +207,8 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         var band = await CreateBand(owner);
         var invitation = await Invite(owner, band.Id, $"{adminId:N}@example.com", BandMemberRole.Admin);
         (await admin.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).EnsureSuccessStatusCode();
-        var bus = fixture.Services.GetRequiredService<IMessageBus>();
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         Assert.True(await bus.InvokeAsync<bool>(new CheckBandPermission(band.Id, ownerId, BandPermission.ManageBand)));
         Assert.True(await bus.InvokeAsync<bool>(new CheckBandPermission(band.Id, adminId, BandPermission.EditContent)));
         Assert.False(await bus.InvokeAsync<bool>(new CheckBandPermission(band.Id, adminId, BandPermission.ManageBand)));

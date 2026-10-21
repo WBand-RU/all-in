@@ -43,11 +43,19 @@ public class User
     [JsonIgnore]
     public ICollection<Song> DeletedSongs { get; set; } = [];
 
-    /// <summary>Song sections created by this user.</summary>
+    /// <summary>Song partitions created by this user.</summary>
+    [JsonIgnore]
+    public ICollection<Partition> CreatedSongPartitions { get; set; } = [];
+
+    /// <summary>Song partitions last updated by this user.</summary>
+    [JsonIgnore]
+    public ICollection<Partition> UpdatedSongPartitions { get; set; } = [];
+
+    /// <summary>Shared song sections created by this user.</summary>
     [JsonIgnore]
     public ICollection<SongSection> CreatedSongSections { get; set; } = [];
 
-    /// <summary>Song sections last updated by this user.</summary>
+    /// <summary>Shared song sections last updated by this user.</summary>
     [JsonIgnore]
     public ICollection<SongSection> UpdatedSongSections { get; set; } = [];
 

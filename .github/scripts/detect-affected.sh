@@ -28,7 +28,7 @@ while IFS= read -r file; do
         App/web/*)
             web=true
             ;;
-        Tests/WBand.Architecture.Tests/*)
+        Tests/WBand.WebAPI.Tests/*|App/WBand.WebProxy/*|App/WBand.AppHost/*|Common/WBand.ServiceDefaults/*)
             backend_tests=true
             ;;
         App/WBand.WebAPI/*|Common/Auth/*|Common/Shared/*|Modules/WBand.Modules.*/*)

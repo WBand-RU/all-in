@@ -34,6 +34,8 @@ public sealed partial class DataContext
             var type when type == typeof(BandDeparture) => await Read<BandDeparture>(sql, args, ct),
             var type when type == typeof(Song) => await Read<Song>(sql, args, ct),
             var type when type == typeof(SongSection) => await Read<SongSection>(sql, args, ct),
+            var type when type == typeof(SongContentCell) => await Read<SongContentCell>(sql, args, ct),
+            var type when type == typeof(Partition) => await Read<Partition>(sql, args, ct),
             var type when type == typeof(SongRevision) => await Read<SongRevision>(sql, args, ct),
             _ => await Database.SqlQueryRaw<T>(sql, args).ToListAsync(ct),
         };

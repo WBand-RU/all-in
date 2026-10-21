@@ -67,23 +67,33 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         using var anonymous = fixture.CreateClient();
         var band = await CreateBand(owner);
         var song = await CreateSong(owner, band.Id);
-        var section = await CreateSection(owner, song.Id);
+        var section = await CreatePartition(owner, song.Id);
+        var sharedSectionResponse = await owner.PostAsJsonAsync($"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Куплет", 0));
+        sharedSectionResponse.EnsureSuccessStatusCode();
+        var sharedSection = (await sharedSectionResponse.Content.ReadFromJsonAsync<SongSectionResponse>())!;
         var invite = await owner.PostAsJsonAsync($"/band-api/bands/{band.Id}/invitations", new CreateInvitationRequest(email, BandMemberRole.Member));
         invite.EnsureSuccessStatusCode();
         var invitation = (await invite.Content.ReadFromJsonAsync<ApiResponse<BandInvitation>>())!.Value;
         (await member.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/song-api/songs/{song.Id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/song-api/songs/{song.Id}/sections")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/song-api/songs/{song.Id}/partitions")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/song-api/songs/{song.Id}/versions")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/song-api/songs/{song.Id}/content")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await member.GetAsync($"/song-api/songs/{song.Id}/sections")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.PostAsJsonAsync($"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Denied", 0))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.PutAsJsonAsync($"/song-api/sections/{sharedSection.Id}", new UpdateSongSectionRequest("Denied", 0, 1))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.DeleteAsync($"/song-api/sections/{sharedSection.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.PutAsJsonAsync($"/song-api/songs/{song.Id}/sections/{sharedSection.Id}/partitions/{section.Id}", new UpdateSongContentCellRequest("Denied", 0))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.PutAsJsonAsync($"/song-api/songs/{song.Id}/partitions/{section.Id}/content", new UpdatePartitionContentRequest([new(sharedSection.Id, "Denied", 0)]))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await member.PostAsJsonAsync("/song-api/songs", new CreateSongRequest(band.Id, "Denied"))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await member.PutAsJsonAsync($"/song-api/songs/{song.Id}", Update(song))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await member.DeleteAsync($"/song-api/songs/{song.Id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await member.PostAsJsonAsync($"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Denied", 0))).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await member.PutAsJsonAsync($"/song-api/sections/{section.Id}", new UpdateSongSectionRequest("Denied", 0, null, null, 1))).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await member.DeleteAsync($"/song-api/sections/{section.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.PostAsJsonAsync($"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Denied", 0))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.PutAsJsonAsync($"/song-api/partitions/{section.Id}", new UpdatePartitionRequest("Denied", 0, 1))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.DeleteAsync($"/song-api/partitions/{section.Id}")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await member.PostAsync($"/song-api/songs/{song.Id}/versions/1/restore", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await outsider.GetAsync($"/song-api/songs/{song.Id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await outsider.GetAsync($"/song-api/songs/{song.Id}/sections")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await outsider.GetAsync($"/song-api/songs/{song.Id}/partitions")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync($"/song-api/songs/{song.Id}")).StatusCode);
         (await owner.DeleteAsync($"/song-api/songs/{song.Id}")).EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.Forbidden, (await member.GetAsync($"/song-api/songs/trash?bandId={band.Id}")).StatusCode);
@@ -91,7 +101,7 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
     }
 
     [Fact]
-    public async Task Song_WhenAdminEdits_AllowsMetadataAndSectionChanges()
+    public async Task Song_WhenAdminEdits_AllowsMetadataAndPartitionChanges()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var adminId = Guid.NewGuid();
@@ -104,7 +114,7 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         (await admin.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).EnsureSuccessStatusCode();
         var song = await CreateSong(admin, band.Id);
         (await admin.PutAsJsonAsync($"/song-api/songs/{song.Id}", Update(song))).EnsureSuccessStatusCode();
-        await CreateSection(admin, song.Id);
+        await CreatePartition(admin, song.Id);
     }
 
     [Theory]
@@ -136,72 +146,87 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
     }
 
     [Fact]
-    public async Task Sections_WhenEditedAndDeleted_PreservePlainTextAndDisplayOrder()
+    public async Task Partitions_WhenEditedAndDeleted_PreservePlainTextAndDisplayOrder()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var song = await CreateSong(owner, (await CreateBand(owner)).Id);
-        var chorus = await CreateSection(owner, song.Id, "Chorus", 10);
-        var verse = await CreateSection(owner, song.Id, "Verse", 0);
-        const string lyrics = "  First line\nSecond line  \n";
-        const string chords = "  Am  G\nC     F  ";
-        var response = await owner.PutAsJsonAsync($"/song-api/sections/{verse.Id}", new UpdateSongSectionRequest("Verse 1", 0, lyrics, chords, 1));
+        var chorus = await CreatePartition(owner, song.Id, "Chorus", 10);
+        var verse = await CreatePartition(owner, song.Id, "Verse", 0);
+        var response = await owner.PutAsJsonAsync($"/song-api/partitions/{verse.Id}", new UpdatePartitionRequest("Drum notes", 0, 1));
         response.EnsureSuccessStatusCode();
-        var updated = (await response.Content.ReadFromJsonAsync<SongSectionResponse>())!;
-        Assert.Equal(lyrics, updated.Lyrics);
-        Assert.Equal(chords, updated.Chords);
+        var updated = (await response.Content.ReadFromJsonAsync<PartitionResponse>())!;
+        Assert.Equal("Drum notes", updated.Name);
         Assert.Equal(2, updated.Revision);
-        var sections = (await owner.GetFromJsonAsync<SongSectionResponse[]>($"/song-api/songs/{song.Id}/sections"))!;
+        var sections = (await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!;
         Assert.Equal([verse.Id, chorus.Id], sections.Select(x => x.Id));
-        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/song-api/sections/{verse.Id}")).StatusCode);
-        Assert.Equal(chorus.Id, Assert.Single((await owner.GetFromJsonAsync<SongSectionResponse[]>($"/song-api/songs/{song.Id}/sections"))!).Id);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/song-api/partitions/{verse.Id}")).StatusCode);
+        Assert.Equal(chorus.Id, Assert.Single((await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!).Id);
         await using var db = fixture.CreateContext();
-        Assert.Equal(4, await EventCount(song.Id, "song-sections-changed.v1", 4));
+        Assert.Equal(4, await EventCount(song.Id, "song-partitions-changed.v1", 4));
     }
 
     [Fact]
-    public async Task UpdateSection_WhenTwoEditorsUseSameRevision_OnlyOneSucceeds()
+    public async Task CreatePartition_WhenNameIsCustom_CreatesEmptyIndependentlyEditablePart()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var song = await CreateSong(owner, (await CreateBand(owner)).Id);
-        var section = await CreateSection(owner, song.Id);
-        var first = new UpdateSongSectionRequest("Verse", 0, "first", null, 1);
-        var results = await Task.WhenAll(owner.PutAsJsonAsync($"/song-api/sections/{section.Id}", first),
-            owner.PutAsJsonAsync($"/song-api/sections/{section.Id}", first with { Lyrics = "second" }));
+        var response = await owner.PostAsJsonAsync($"/song-api/songs/{song.Id}/partitions",
+            new CreatePartitionRequest("  Заметки клавишника  ", 0));
+        response.EnsureSuccessStatusCode();
+        var partition = (await response.Content.ReadFromJsonAsync<PartitionResponse>())!;
+        Assert.Equal("Заметки клавишника", partition.Name);
+        Assert.Equal(1, partition.Revision);
+        Assert.Equal(song.Id, partition.SongId);
+        var retained = Assert.Single((await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!);
+        Assert.Equal(partition.Id, retained.Id);
+        Assert.Equal(partition.Name, retained.Name);
+        Assert.Equal(partition.Revision, retained.Revision);
+    }
+
+    [Fact]
+    public async Task UpdatePartition_WhenTwoEditorsUseSameRevision_OnlyOneSucceeds()
+    {
+        using var owner = fixture.CreateClient(Guid.NewGuid());
+        var song = await CreateSong(owner, (await CreateBand(owner)).Id);
+        var section = await CreatePartition(owner, song.Id);
+        var first = new UpdatePartitionRequest("Verse", 0, 1);
+        var results = await Task.WhenAll(owner.PutAsJsonAsync($"/song-api/partitions/{section.Id}", first),
+            owner.PutAsJsonAsync($"/song-api/partitions/{section.Id}", first with { Name = "Second" }));
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.OK);
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.Conflict);
         await using var db = fixture.CreateContext();
-        Assert.Equal(2, (await db.FindAsync<SongSection>(section.Id))!.Revision);
-        Assert.Equal(2, await EventCount(song.Id, "song-sections-changed.v1", 2));
+        Assert.Equal(2, (await db.FindAsync<Partition>(section.Id))!.Revision);
+        Assert.Equal(2, await EventCount(song.Id, "song-partitions-changed.v1", 2));
     }
 
     [Fact]
-    public async Task CreateSection_WhenNameOrderOrTextIsInvalid_RejectsRequest()
+    public async Task CreatePartition_WhenNameOrderOrTextIsInvalid_RejectsRequest()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var song = await CreateSong(owner, (await CreateBand(owner)).Id);
-        foreach (var input in new[] { new CreateSongSectionRequest(" ", 0), new CreateSongSectionRequest("Verse", -1),
-            new CreateSongSectionRequest("Verse", 0, new string('a', 50_001)) })
-            Assert.Equal(HttpStatusCode.BadRequest, (await owner.PostAsJsonAsync($"/song-api/songs/{song.Id}/sections", input)).StatusCode);
+        foreach (var input in new[] { new CreatePartitionRequest(" ", 0), new CreatePartitionRequest("Verse", -1),
+            new CreatePartitionRequest(new string('a', 101), 0) })
+            Assert.Equal(HttpStatusCode.BadRequest, (await owner.PostAsJsonAsync($"/song-api/songs/{song.Id}/partitions", input)).StatusCode);
     }
 
     [Fact]
-    public async Task DeletedSong_WhenRestored_RetainsSectionsAndRecordsLifecycleEvents()
+    public async Task DeletedSong_WhenRestored_RetainsPartitionsAndRecordsLifecycleEvents()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var band = await CreateBand(owner);
         var song = await CreateSong(owner, band.Id);
-        var section = await CreateSection(owner, song.Id);
+        var section = await CreatePartition(owner, song.Id);
         (await owner.DeleteAsync($"/song-api/songs/{song.Id}")).EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/song-api/songs/{song.Id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/song-api/songs/{song.Id}/sections")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await owner.PutAsJsonAsync($"/song-api/sections/{section.Id}", new UpdateSongSectionRequest("Denied", 0, "text", null, 1))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await owner.DeleteAsync($"/song-api/sections/{section.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/song-api/songs/{song.Id}/partitions")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.PutAsJsonAsync($"/song-api/partitions/{section.Id}", new UpdatePartitionRequest("Denied", 0, 1))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.DeleteAsync($"/song-api/partitions/{section.Id}")).StatusCode);
         Assert.Empty((await owner.GetFromJsonAsync<ApiResponse<TableResponse<SongResponse>>>("/song-api/songs?page=1&pageSize=50"))!.Value.Data);
         Assert.Equal(song.Id, Assert.Single((await owner.GetFromJsonAsync<ApiResponse<SongResponse[]>>($"/song-api/songs/trash?bandId={band.Id}"))!.Value).Id);
         var restore = await owner.PostAsync($"/song-api/songs/{song.Id}/restore", null);
         restore.EnsureSuccessStatusCode();
         Assert.Equal(3, (await restore.Content.ReadFromJsonAsync<ApiResponse<SongResponse>>())!.Value.ContentVersion);
-        Assert.Equal(section.Id, Assert.Single((await owner.GetFromJsonAsync<SongSectionResponse[]>($"/song-api/songs/{song.Id}/sections"))!).Id);
+        Assert.Equal(section.Id, Assert.Single((await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!).Id);
         await using var db = fixture.CreateContext();
         Assert.Equal(1, await EventCount(song.Id, "song-deleted.v1"));
         Assert.Equal(1, await EventCount(song.Id, "song-restored.v1"));
@@ -211,11 +236,11 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
     }
 
     [Fact]
-    public async Task Versions_WhenRestoringMetadata_CreatesNewVersionWithoutChangingSectionText()
+    public async Task Versions_WhenRestoringMetadata_CreatesNewVersionWithoutChangingPartitionContent()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var song = await CreateSong(owner, (await CreateBand(owner)).Id, "Original");
-        var section = await CreateSection(owner, song.Id);
+        var section = await CreatePartition(owner, song.Id);
         (await owner.PutAsJsonAsync($"/song-api/songs/{song.Id}", Update(song) with { Title = "Edited", Bpm = 140 })).EnsureSuccessStatusCode();
         var versions = (await owner.GetFromJsonAsync<ApiResponse<SongVersionResponse[]>>($"/song-api/songs/{song.Id}/versions"))!.Value;
         Assert.Equal([2L, 1L], versions.Select(x => x.ContentVersion));
@@ -227,10 +252,8 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         var restored = (await response.Content.ReadFromJsonAsync<ApiResponse<SongResponse>>())!.Value;
         Assert.Equal("Original", restored.Title);
         Assert.Equal(3, restored.ContentVersion);
-        var retained = Assert.Single((await owner.GetFromJsonAsync<SongSectionResponse[]>($"/song-api/songs/{song.Id}/sections"))!);
+        var retained = Assert.Single((await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!);
         Assert.Equal(section.Id, retained.Id);
-        Assert.Equal(section.Lyrics, retained.Lyrics);
-        Assert.Equal(section.Chords, retained.Chords);
         Assert.Equal(section.Revision, retained.Revision);
     }
 
@@ -265,22 +288,26 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
     }
 
     [Fact]
-    public async Task OpenApi_WhenSongsAreDiscovered_DescribesTextSectionsWithoutStructure()
+    public async Task OpenApi_WhenSongsAreDiscovered_DescribesPartitionsWithOneContentField()
     {
         using var client = fixture.CreateClient();
         var json = await client.GetStringAsync("/openapi/v1.json");
         using var document = JsonDocument.Parse(json);
         var paths = document.RootElement.GetProperty("paths");
         Assert.True(paths.TryGetProperty("/song-api/songs", out _));
-        Assert.True(paths.TryGetProperty("/song-api/songs/{songId}/sections", out _));
+        Assert.True(paths.TryGetProperty("/song-api/songs/{songId}/partitions", out _));
         var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
         var song = schemas.GetProperty("SongResponse").GetProperty("properties");
         Assert.False(song.TryGetProperty("tempoTrack", out _));
         Assert.False(song.TryGetProperty("timeSignatureTrack", out _));
         Assert.False(song.TryGetProperty("countInBars", out _));
-        var section = schemas.GetProperty("SongSectionResponse").GetProperty("properties");
+        var section = schemas.GetProperty("PartitionResponse").GetProperty("properties");
         Assert.False(section.TryGetProperty("barCount", out _));
-        Assert.True(section.TryGetProperty("lyrics", out _));
+        Assert.False(section.TryGetProperty("content", out _));
+        Assert.True(paths.TryGetProperty("/song-api/songs/{songId}/content", out _));
+        Assert.True(schemas.GetProperty("SongContentCellResponse").GetProperty("properties").TryGetProperty("content", out _));
+        Assert.False(section.TryGetProperty("lyrics", out _));
+        Assert.False(section.TryGetProperty("chords", out _));
         if (Environment.GetEnvironmentVariable("WEBAPI_OPENAPI_EXPORT") is { Length: > 0 } path)
             await File.WriteAllTextAsync(path, json);
     }
@@ -299,11 +326,11 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         return (await response.Content.ReadFromJsonAsync<ApiResponse<SongResponse>>())!.Value;
     }
 
-    private static async Task<SongSectionResponse> CreateSection(HttpClient client, Guid songId, string name = "Verse", int order = 0)
+    private static async Task<PartitionResponse> CreatePartition(HttpClient client, Guid songId, string name = "Verse", int order = 0)
     {
-        var response = await client.PostAsJsonAsync($"/song-api/songs/{songId}/sections", new CreateSongSectionRequest(name, order, "Lyrics", "Am G"));
+        var response = await client.PostAsJsonAsync($"/song-api/songs/{songId}/partitions", new CreatePartitionRequest(name, order));
         response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<SongSectionResponse>())!;
+        return (await response.Content.ReadFromJsonAsync<PartitionResponse>())!;
     }
 
     private static UpdateSongRequest Update(SongResponse song) => new(song.Title, song.Authors, null, song.Key, song.Bpm, song.Status, song.ContentVersion);
@@ -321,7 +348,7 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
                 ("song-changed.v1", SongChanged changed) => changed.SongId == songId,
                 ("song-deleted.v1", SongDeleted deleted) => deleted.SongId == songId,
                 ("song-restored.v1", SongRestored restored) => restored.SongId == songId,
-                ("song-sections-changed.v1", SongSectionsChanged sections) => sections.SongId == songId,
+                ("song-partitions-changed.v1", SongPartitionsChanged sections) => sections.SongId == songId,
                 _ => false,
             });
             if (count >= expected) return count;

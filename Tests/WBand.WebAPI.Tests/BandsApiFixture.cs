@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 using Testcontainers.PostgreSql;
 using WBand.WebAPI.Data;
 using WBand.WebAPI.Endpoints.Bands;
@@ -23,6 +24,7 @@ using Wolverine.FluentValidation;
 using Wolverine.Http;
 using Wolverine.Http.FluentValidation;
 using Xunit;
+using WBand.Modules.EventModule;
 
 namespace WBand.WebAPI.Tests;
 
@@ -63,31 +65,39 @@ public sealed class BandsApiFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await postgres.StartAsync();
-        DatabaseSetup.ApplyMigrations(ConnectionString);
-        DatabaseSetup.ApplyMigrations(ConnectionString);
+        await DatabaseSetup.ApplyMigrations(ConnectionString, default);
+        await DatabaseSetup.ApplyMigrations(ConnectionString, default);
         await using (var db = CreateContext())
             await db.ExecuteAsync("ALTER TABLE public.bands ADD CONSTRAINT test_commit_failure CHECK (name <> 'fail_commit')");
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
+        builder.Host.UseDefaultServiceProvider(options =>
+        {
+            options.ValidateScopes = true;
+            options.ValidateOnBuild = true;
+        });
         builder.Services.AddAuthentication("Test")
             .AddScheme<AuthenticationSchemeOptions, BandsTestAuthenticationHandler>("Test", _ => { });
         builder.Services.AddAuthorization();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-        builder.Services.AddValidatorsFromAssembly(typeof(CreateBandEndpoint).Assembly);
+        builder.Services.AddValidatorsFromAssembly(typeof(CreateBandEndpoint).Assembly, ServiceLifetime.Singleton);
         builder.Services.AddWolverineHttp();
         builder.Services.AddProblemDetails();
         builder.Services.AddOpenApi();
         builder.Services.AddSingleton(Events);
         builder.Services.AddDatabase(ConnectionString);
+        builder.Services.AddEventModule(ConnectionString);
         builder.UseWolverine(options =>
         {
             options.Discovery.IncludeAssembly(typeof(CreateBandEndpoint).Assembly);
+            options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
             options.Discovery.IncludeAssembly(typeof(BandEventCaptureHandler).Assembly);
             options.UseFluentValidation();
         });
         app = builder.Build();
+        await app.Services.MigrateEvents();
         app.UseExceptionHandler();
         app.UseAuthentication();
         app.UseAuthorization();
@@ -131,6 +141,8 @@ public static class BandEventCaptureHandler
     public static void Handle(WBand.Modules.SongModule.Contracts.SongDeleted message, BandEventRecorder events) => events.Capture(message);
     public static void Handle(WBand.Modules.SongModule.Contracts.SongRestored message, BandEventRecorder events) => events.Capture(message);
     public static void Handle(WBand.Modules.SongModule.Contracts.SongSectionsChanged message, BandEventRecorder events) => events.Capture(message);
+    public static void Handle(WBand.Modules.SongModule.Contracts.SongContentChanged message, BandEventRecorder events) => events.Capture(message);
+    public static void Handle(WBand.Modules.SongModule.Contracts.SongPartitionsChanged message, BandEventRecorder events) => events.Capture(message);
 
     public static void Handle(BandCreated message, BandEventRecorder events) => events.Capture(message);
     public static void Handle(MemberInvited message, BandEventRecorder events) => events.Capture(message);

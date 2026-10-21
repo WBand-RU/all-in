@@ -1,24 +1,34 @@
 import { defineConfig } from "orval";
 
 export default defineConfig({
-    songApi: {
+    webApi: {
         input: {
             target:
                 process.env.WEBAPI_OPENAPI ??
                 "http://localhost:5000/openapi/v1.json",
         },
         output: {
-            mode: "tags",
-            target: "./lib/generated/song-api/client.ts",
-            schemas: "./lib/generated/song-api/models",
+            mode: "single",
+            target: "./lib/generated/web-api/client.ts",
+            schemas: "./lib/generated/web-api/models",
             client: "react-query",
-            httpClient: "fetch",
+            httpClient: "axios",
             clean: true,
             formatter: "prettier",
+            override: {
+                mutator: {
+                    path: "./lib/axios-instance.ts",
+                    name: "customInstance",
+                },
+            },
         },
     },
     auth: {
-        input: { target: "http://localhost:4000/openapi/v1.json" },
+        input: {
+            target:
+                process.env.AUTH_OPENAPI ??
+                "http://localhost:4000/openapi/v1.json",
+        },
         output: {
             target: "./lib/generated/auth-api/client.ts",
             schemas: "./lib/generated/auth/models",

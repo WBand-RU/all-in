@@ -1,0 +1,5 @@
+# Browser profiles contain private session data.
+store/
+~/
+songs/
+chrome-profile/
