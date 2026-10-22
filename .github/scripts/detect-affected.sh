@@ -35,7 +35,7 @@ while IFS= read -r file; do
             proxy=true
             backend_tests=true
             ;;
-        App/WBand.WebAPI/*|Common/WBand.Persistence/*|Modules/WBand.Modules.EventModule/*|Modules/WBand.Modules.BandModule/*|Modules/WBand.Modules.SongModule/*|Modules/WBand.Modules.UserModule/*)
+        App/WBand.WebAPI/*|Common/WBand.Persistence/*|Common/WBand.Contracts/*|Modules/WBand.Modules.EventModule/*|Modules/WBand.Modules.BandModule/*|Modules/WBand.Modules.SongModule/*|Modules/WBand.Modules.UserModule/*)
             webapi=true
             backend_tests=true
             ;;
