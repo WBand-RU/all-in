@@ -1,3 +1,4 @@
+using FluentValidation;
 using Wolverine;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ public static class BandModule
     /// <summary>Registers scoped module persistence with an immutable PostgreSQL configuration.</summary>
     public static IServiceCollection AddBandModule(this IServiceCollection services, string connectionString)
     {
+        services.AddValidatorsFromAssembly(typeof(BandModule).Assembly, ServiceLifetime.Singleton);
         services.AddDbContext<BandDataContext>(options => ConfigurePersistence(options, connectionString),
             optionsLifetime: ServiceLifetime.Singleton);
         return services;
@@ -33,7 +35,7 @@ public static class BandModule
             postgres => postgres.MigrationsHistoryTable("__band_migrations", "bands"));
     }
 
-    /// <summary>Includes module-owned message handlers in Wolverine discovery.</summary>
+    /// <summary>Includes module-owned HTTP endpoints and message handlers in Wolverine discovery.</summary>
     public static void Configure(WolverineOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);

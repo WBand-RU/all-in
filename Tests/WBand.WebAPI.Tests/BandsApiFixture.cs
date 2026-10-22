@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule.Endpoints;
 using BandDataContext = WBand.Modules.BandModule.Data.BandDataContext;
 using WBand.Modules.BandModule;
 using System.Security.Claims;
@@ -86,7 +87,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
         builder.Services.AddAuthorization();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-        builder.Services.AddValidatorsFromAssembly(typeof(CreateBandEndpoint).Assembly, ServiceLifetime.Singleton);
+        builder.Services.AddValidatorsFromAssembly(typeof(WBand.WebAPI.Data.DataContext).Assembly, ServiceLifetime.Singleton);
         builder.Services.AddWolverineHttp();
         builder.Services.AddProblemDetails();
         builder.Services.AddOpenApi();
@@ -98,7 +99,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
             options.MetadataRules.Add(new RejectingOutgoingRule(() => RejectPublications));
             // Keep the failure path observable even without test event subscribers.
             options.PublishAllMessages().ToLocalQueue("test-outgoing");
-            options.Discovery.IncludeAssembly(typeof(CreateBandEndpoint).Assembly);
+            options.Discovery.IncludeAssembly(typeof(WBand.WebAPI.Data.DataContext).Assembly);
             BandModule.Configure(options);
             options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
             options.UseFluentValidation();

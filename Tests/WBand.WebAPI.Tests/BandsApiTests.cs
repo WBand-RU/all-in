@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule.Endpoints;
 using System.Net;
 using System.Net.Http.Json;
 using WBand.Modules.BandModule.Data;

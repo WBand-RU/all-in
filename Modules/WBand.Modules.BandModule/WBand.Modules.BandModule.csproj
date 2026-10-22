@@ -5,6 +5,9 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <PackageReference Include="WolverineFx.Http" Version="6.49.0" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
         <ProjectReference Include="../../Common/WBand.Contracts/WBand.Contracts.csproj" />
         <Compile Remove="Contracts/**/*.cs" />
         <ProjectReference Include="Contracts/WBand.Modules.BandModule.Contracts.csproj" />

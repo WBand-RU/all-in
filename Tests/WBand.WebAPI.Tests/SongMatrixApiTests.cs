@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule.Endpoints;
 using Band = WBand.Modules.BandModule.Data.Band;
 using BandInvitation = WBand.Modules.BandModule.Data.BandInvitation;
 using System.Net;

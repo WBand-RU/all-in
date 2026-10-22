@@ -3,11 +3,10 @@ using FluentValidation;
 using WBand.Modules.BandModule.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using WBand.WebAPI.Shared;
-using WBand.WebAPI.Services;
+using WBand.Contracts;
 using Wolverine.Http;
 
-namespace WBand.WebAPI.Endpoints.Bands;
+namespace WBand.Modules.BandModule.Endpoints;
 
 /// <summary>The name of a new band.</summary>
 public sealed record CreateBandRequest(string Name);
