@@ -57,6 +57,10 @@ class DetectAffectedTests(unittest.TestCase):
         result = self.detect(["Common/WBand.Persistence/RelationalDataContext.cs"])
         self.assertEqual((result["webapi"], result["backend"]), ("true", "true"))
 
+    def test_song_module_changes_trigger_api_and_backend(self):
+        result = self.detect(["Modules/WBand.Modules.SongModule/Data/SongDataContext.cs"])
+        self.assertEqual((result["webapi"], result["backend"]), ("true", "true"))
+
     def test_shared_contracts_trigger_api_and_backend(self):
         result = self.detect(["Common/WBand.Contracts/ICurrentUser.cs"])
         self.assertEqual((result["webapi"], result["backend"]), ("true", "true"))
