@@ -3,7 +3,7 @@ using WBand.Modules.BandModule.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WBand.WebAPI.Application.Songs;
-using WBand.WebAPI.Data;
+using DataContext = WBand.Modules.SongModule.Data.SongDataContext;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Shared;
 using Wolverine.Http;
@@ -44,7 +44,7 @@ public static class ListSongsEndpoint
         pageSize = Math.Clamp(pageSize, 1, 100);
         var allowedBands = await bus.InvokeAsync<Guid[]>(new GetUserBandIds(user.Id), cancellationToken);
         const string filter = """
-            from public.songs s where s.deleted_at is null
+            from songs s where s.deleted_at is null
             and (@bandId is null or s.band_id = @bandId)
             and s.band_id = any(@allowedBands)
             and (@search is null or strpos(lower(s.title), lower(@search)) > 0)

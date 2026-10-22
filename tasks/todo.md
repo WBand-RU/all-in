@@ -167,7 +167,7 @@
       - [x] T12.3c: интеграционная запись матрицы/ревизии и общая блокировка с BandModule.
     - [ ] T12.4: переключить persistence потребителей семействами: общие helpers, metadata/history, partitions, sections/cells, public query; все writers сохраняют общий lock/transaction.
       - [x] T12.4a: временно принимать RelationalDataContext в трёх общих helpers, сохранив virtual mapping и контракт блокировки для обоих контекстов.
-      - [ ] T12.4b: metadata/history используют SongDataContext и unqualified SQL.
+      - [x] T12.4b: metadata/history используют SongDataContext и unqualified SQL.
       - [ ] T12.4c: partitions используют SongDataContext и прежнюю атомарную запись.
       - [ ] T12.4d: sections/cells используют SongDataContext; проверка ревизий/общей транзакции.
       - [ ] T12.4e: public reference query и строгие SongDataContext-параметры helpers; временный bridge удалён, полный Release.

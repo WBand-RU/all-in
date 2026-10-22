@@ -3,7 +3,7 @@ using WBand.Modules.BandModule.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WBand.WebAPI.Application.Songs;
-using WBand.WebAPI.Data;
+using DataContext = WBand.Modules.SongModule.Data.SongDataContext;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Shared;
 using Wolverine.Http;
@@ -21,7 +21,7 @@ public static class ListSongVersionsEndpoint
         if (!await SongAccess.Check(db, bus, song.BandId, user.Id, false, cancellationToken)) return Results.Forbid();
         var versions = await db.QueryAsync<VersionRow>("""
             select r.content_version, r.created_at, r.created_by
-            from public.song_revisions r
+            from song_revisions r
             where r.song_id = @songId order by r.content_version desc
             """, new { songId }, cancellationToken);
         var contributors = (await bus.InvokeAsync<BandContributorInfo[]>(
@@ -57,7 +57,7 @@ public static class GetSongVersionEndpoint
         if (song is null) return Results.NotFound();
         if (!await SongAccess.Check(db, bus, song.BandId, user.Id, false, cancellationToken)) return Results.Forbid();
         var revision = await db.SingleOrDefaultAsync<SongRevision>(
-            "select * from public.song_revisions where song_id = @songId and content_version = @contentVersion", new { songId, contentVersion }, cancellationToken);
+            "select * from song_revisions where song_id = @songId and content_version = @contentVersion", new { songId, contentVersion }, cancellationToken);
         if (revision is null) return Results.NotFound();
         return Results.Ok(ApiResponse<SongVersionDetailsResponse>.Success(new(revision.ContentVersion,
             revision.CreatedAt, revision.CreatedBy, revision.Title, revision.Authors, revision.Key, revision.Bpm, revision.Status)));
@@ -76,7 +76,7 @@ public static class RestoreSongVersionEndpoint
         if (song is null) return Results.NotFound();
         if (!await SongAccess.Check(db, bus, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
         var revision = await db.SingleOrDefaultAsync<SongRevision>(
-            "select * from public.song_revisions where song_id = @songId and content_version = @contentVersion", new { songId, contentVersion }, cancellationToken);
+            "select * from song_revisions where song_id = @songId and content_version = @contentVersion", new { songId, contentVersion }, cancellationToken);
         if (revision is null) return Results.NotFound();
         SongVersioning.Apply(song, revision);
         SongVersioning.Changed(song, user.Id);
@@ -94,7 +94,7 @@ public static class ListDeletedSongsEndpoint
     public static async Task<IResult> Get(Guid bandId, ICurrentUser user, [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
     {
         if (!await SongAccess.Check(db, bus, bandId, user.Id, true, cancellationToken)) return Results.Forbid();
-        var songs = await db.QueryAsync<Song>("select * from public.songs where band_id = @bandId and deleted_at is not null order by deleted_at desc, id", new { bandId }, cancellationToken);
+        var songs = await db.QueryAsync<Song>("select * from songs where band_id = @bandId and deleted_at is not null order by deleted_at desc, id", new { bandId }, cancellationToken);
         return Results.Ok(ApiResponse<IReadOnlyList<SongResponse>>.Success(songs.Select(SongResponse.From).ToArray()));
     }
 }
