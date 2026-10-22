@@ -1,3 +1,5 @@
+using Band = WBand.Modules.BandModule.Data.Band;
+using BandInvitation = WBand.Modules.BandModule.Data.BandInvitation;
 using System.Net;
 using System.Net.Http.Json;
 using WBand.WebAPI.Data;

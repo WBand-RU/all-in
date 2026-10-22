@@ -1,3 +1,5 @@
+using Band = WBand.Modules.BandModule.Data.Band;
+using BandInvitation = WBand.Modules.BandModule.Data.BandInvitation;
 using BandMemberRole = WBand.Modules.BandModule.Data.BandMemberRole;
 using System.Net;
 using System.Net.Http.Json;
