@@ -12,6 +12,7 @@ builder.Configuration["AUTHORIZED_PROXY_OAUTH_VALID_ISSUERS"] = builder.Configur
 ];
 builder.AddAutorizedProxy(GetRoutes, GetClusters);
 builder.AddWBandAuthentication();
+builder.Services.AddHealthChecks();
 builder.Services.AddSingleton<
     Yarp.ReverseProxy.Transforms.Builder.ITransformProvider,
     SessionTokenTransform
@@ -21,6 +22,7 @@ var app = builder.Build();
 app.UseWBandAuthentication();
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();
+app.MapHealthChecks("/health").AllowAnonymous();
 app.MapReverseProxy();
 await app.RunAsync();
 
