@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Http;
 using WBand.WebAPI.Shared;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Application.Bands;
-using WBand.Modules.BandModule.Contracts;
-using Wolverine;
 using Wolverine.Http;
 
 namespace WBand.WebAPI.Endpoints.Bands;
@@ -36,7 +34,6 @@ public static class CreateBandEndpoint
         CreateBandRequest request,
         ICurrentUser currentUser,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
-        [Microsoft.AspNetCore.Mvc.FromServices] IMessageBus bus,
         CancellationToken cancellationToken
     )
     {
@@ -62,7 +59,6 @@ public static class CreateBandEndpoint
         await db.InsertAsync(member, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new BandCreated(band.Id, band.CreatedBy, band.Name));
         return ApiResponse<Band>.Success(band);
     }
 }

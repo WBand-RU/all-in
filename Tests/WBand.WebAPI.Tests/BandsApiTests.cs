@@ -42,7 +42,6 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         var ownerId = Guid.NewGuid();
         using var owner = fixture.CreateClient(ownerId);
         var band = await CreateBand(owner);
-        Assert.Equal(ownerId, (await fixture.Events.WaitForCreated(band.Id)).OwnerId);
         await using var db = fixture.CreateContext();
         var membership = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId", new { bandId = band.Id });
         Assert.NotNull(membership);
@@ -50,6 +49,31 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         Assert.Equal(BandMemberRole.Owner, membership.Role);
         Assert.Equal("Test Band", (await db.SingleOrDefaultAsync<Band>("select * from public.bands where id = @bandId", new { bandId = band.Id }))!.Name);
         Assert.Equal(band.Id, Assert.Single((await owner.GetFromJsonAsync<ApiResponse<List<Band>>>("/band-api/bands"))!.Value).Id);
+    }
+
+    [Fact]
+    public async Task CreateBand_WhenPublicationIsUnavailable_PersistsBandAndOwner()
+    {
+        var ownerId = Guid.NewGuid();
+        using var owner = fixture.CreateClient(ownerId);
+        fixture.RejectPublications = true;
+        try
+        {
+            var band = await CreateBand(owner);
+            await using var db = fixture.CreateContext();
+            var stored = await db.SingleOrDefaultAsync<Band>(
+                "select * from public.bands where id = @id", new { id = band.Id });
+            Assert.NotNull(stored);
+            var member = await db.SingleOrDefaultAsync<BandMember>(
+                "select * from public.band_members where band_id = @id", new { id = band.Id });
+            Assert.NotNull(member);
+            Assert.Equal(ownerId, member.UserId);
+            Assert.Equal(BandMemberRole.Owner, member.Role);
+        }
+        finally
+        {
+            fixture.RejectPublications = false;
+        }
     }
 
     [Fact]

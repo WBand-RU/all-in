@@ -40,6 +40,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
         .Build();
     private WebApplication app = null!;
     public BandEventRecorder Events { get; } = new();
+    public bool RejectPublications { get; set; }
 
     public string ConnectionString => postgres.GetConnectionString();
     public IServiceProvider Services => app.Services;
@@ -93,6 +94,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
         builder.Services.AddEventModule(ConnectionString);
         builder.UseWolverine(options =>
         {
+            options.MetadataRules.Add(new RejectingOutgoingRule(() => RejectPublications));
             options.Discovery.IncludeAssembly(typeof(CreateBandEndpoint).Assembly);
             options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
             options.Discovery.IncludeAssembly(typeof(BandEventCaptureHandler).Assembly);
