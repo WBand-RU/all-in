@@ -12,11 +12,6 @@ public sealed partial class DataContext
         // Mapped entities must use their configured column names and conversions.
         object rows = typeof(T) switch
         {
-            var type when type == typeof(User) => await Read<User>(sql, args, ct),
-            var type when type == typeof(Band) => await Read<Band>(sql, args, ct),
-            var type when type == typeof(BandMember) => await Read<BandMember>(sql, args, ct),
-            var type when type == typeof(BandInvitation) => await Read<BandInvitation>(sql, args, ct),
-            var type when type == typeof(BandDeparture) => await Read<BandDeparture>(sql, args, ct),
             var type when type == typeof(Song) => await Read<Song>(sql, args, ct),
             var type when type == typeof(SongSection) => await Read<SongSection>(sql, args, ct),
             var type when type == typeof(SongContentCell) => await Read<SongContentCell>(sql, args, ct),

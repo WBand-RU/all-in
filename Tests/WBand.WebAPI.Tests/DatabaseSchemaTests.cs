@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace WBand.WebAPI.Tests;
@@ -13,7 +14,7 @@ public sealed class DatabaseSchemaTests(DatabaseFixture fixture)
         foreach (var table in new[] { "users", "bands", "band_members", "band_invitations", "band_departures", "songs", "song_partitions", "song_sections", "song_content_cells", "song_revisions" })
             Assert.Contains(table, tables);
         Assert.DoesNotContain("outbox", tables);
-        Assert.Equal(3, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.\"__EFMigrationsHistory\""));
+        Assert.Equal(db.Database.GetMigrations(), await db.Database.GetAppliedMigrationsAsync());
     }
 
     [Theory]
