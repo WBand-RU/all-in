@@ -29,12 +29,5 @@ public sealed class SongConfiguration : IEntityTypeConfiguration<Song>
         builder.Ignore(x => x.PurgeAfter);
         builder.HasIndex(x => new { x.BandId, x.Title });
         builder.Property(x => x.Authors).HasColumnType("text[]");
-        builder.HasOne(x => x.CreatedByUser).WithMany(x => x.CreatedSongs).HasForeignKey(x => x.CreatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(x => x.UpdatedByUser).WithMany(x => x.UpdatedSongs).HasForeignKey(x => x.UpdatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(x => x.DeletedByUser).WithMany(x => x.DeletedSongs).HasForeignKey(x => x.DeletedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(x => x.Band).WithMany(x => x.Songs).HasForeignKey(x => x.BandId).OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -22,10 +22,6 @@ public sealed class PartitionConfiguration : IEntityTypeConfiguration<Partition>
         builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
         builder.HasIndex(x => new { x.SongId, x.Order });
         builder.HasAlternateKey(x => new { x.SongId, x.Id });
-        builder.HasOne(x => x.CreatedByUser).WithMany(x => x.CreatedSongPartitions).HasForeignKey(x => x.CreatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(x => x.UpdatedByUser).WithMany(x => x.UpdatedSongPartitions).HasForeignKey(x => x.UpdatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Song).WithMany(x => x.Partitions).HasForeignKey(x => x.SongId).OnDelete(DeleteBehavior.Cascade);
     }
 }

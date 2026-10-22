@@ -26,21 +26,7 @@ public sealed class Song
     public bool IsDeleted => DeletedAt is not null;
     public DateTimeOffset? PurgeAfter => DeletedAt?.AddDays(30);
 
-    /// <summary>Band that owns the song.</summary>
-    [JsonIgnore]
-    public Band Band { get; set; } = null!;
 
-    /// <summary>User who created the song.</summary>
-    [JsonIgnore]
-    public User CreatedByUser { get; set; } = null!;
-
-    /// <summary>User who last updated the song, when recorded.</summary>
-    [JsonIgnore]
-    public User? UpdatedByUser { get; set; }
-
-    /// <summary>User who deleted the song, when recorded.</summary>
-    [JsonIgnore]
-    public User? DeletedByUser { get; set; }
 
     /// <summary>Ordered song sections shared by all partitions.</summary>
     [JsonIgnore]

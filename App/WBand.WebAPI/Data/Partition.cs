@@ -25,11 +25,5 @@ public sealed class Partition
     [JsonIgnore]
     public Song Song { get; set; } = null!;
 
-    /// <summary>User who created the partition.</summary>
-    [JsonIgnore]
-    public User CreatedByUser { get; set; } = null!;
 
-    /// <summary>User who last updated the partition, when recorded.</summary>
-    [JsonIgnore]
-    public User? UpdatedByUser { get; set; }
 }
