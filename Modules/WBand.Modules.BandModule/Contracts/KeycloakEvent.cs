@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WBand.WebAPI.Events;
+namespace WBand.Modules.BandModule.Contracts;
 
 /// <summary>
 /// Represents a raw event emitted by the Keycloak RabbitMQ event listener plugin.

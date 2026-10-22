@@ -7,7 +7,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using WBand.WebAPI.Configuration;
 using WBand.WebAPI.Data;
-using WBand.WebAPI.Events;
+using WBand.Modules.BandModule.Contracts;
 using WBand.WebAPI.HealthChecks;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Services.Implementations;

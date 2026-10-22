@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule.Application;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using WBand.Modules.BandModule.Data;
@@ -7,7 +8,7 @@ using Xunit;
 using Moq;
 using Wolverine;
 using WBand.WebAPI.Application;
-using WBand.WebAPI.Events;
+using WBand.Modules.BandModule.Contracts;
 using WBand.Modules.UserModule.Events;
 
 namespace WBand.WebAPI.Tests;

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using WBand.WebAPI.Application;
+using WBand.Modules.BandModule.Application;
 using WBand.Modules.BandModule.Data;
-using WBand.WebAPI.Events;
+using WBand.Modules.BandModule.Contracts;
 using Xunit;
 using Moq;
 using Wolverine;

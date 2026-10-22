@@ -1,8 +1,8 @@
 using Wolverine;
 using WBand.Modules.BandModule.Data;
-using WBand.WebAPI.Events;
+using WBand.Modules.BandModule.Contracts;
 
-namespace WBand.WebAPI.Application;
+namespace WBand.Modules.BandModule.Application;
 
 /// <summary>
 /// Creates local profiles on registration and updates existing profiles on login.

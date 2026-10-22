@@ -145,7 +145,7 @@
       - [x] T11.5a: HTTP членства в module Endpoints; проверки прав/владельца/выходов.
       - [x] T11.5b: HTTP приглашений/validator; удалить прежний namespace из тестов, проверить TTL/параллельное принятие.
     - [ ] T11.6: Keycloak contract/handler, синхронизация и HTTP профиля отдельными семействами.
-      - [ ] T11.6a: raw Keycloak contract в Contracts, handler в module Application; брокер и profile tests используют новый тип.
+      - [x] T11.6a: raw Keycloak contract в Contracts, handler в module Application; брокер и profile tests используют новый тип.
       - [ ] T11.6b: синхронизация и HTTP /api/user/me принадлежат модулю; прежние fallback/idempotency tests.
     - [ ] T11.7: архитектурная проверка, OpenAPI parity, полный Release/Docker/runtime; хост не обращается к BandDataContext вне composition root.
 
