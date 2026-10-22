@@ -1,3 +1,4 @@
+using Wolverine;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WBand.WebAPI.Application.Songs;
@@ -11,11 +12,11 @@ public static class ListSongPartitionsEndpoint
 {
     [Authorize, Tags("SongPartitions"), ProducesResponseType<PartitionResponse[]>(200)]
     [WolverineGet("/song-api/songs/{songId}/partitions", OperationId = "GetSongPartitions")]
-    public static async Task<IResult> Get(Guid songId, ICurrentUser user, [FromServices] DataContext db, CancellationToken cancellationToken)
+    public static async Task<IResult> Get(Guid songId, ICurrentUser user, [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
     {
         var song = await SongAccess.Load(db, songId, cancellationToken);
         if (song is null) return Results.NotFound();
-        if (!await SongAccess.Check(db, song.BandId, user.Id, false, cancellationToken)) return Results.Forbid();
+        if (!await SongAccess.Check(db, bus, song.BandId, user.Id, false, cancellationToken)) return Results.Forbid();
         var partitions = await db.QueryAsync<Partition>(
             "select * from public.song_partitions where song_id = @songId order by \"order\", created_at, id", new { songId }, cancellationToken);
         return Results.Ok(partitions.Select(PartitionResponse.From).ToArray());
@@ -27,12 +28,12 @@ public static class CreatePartitionEndpoint
     [Authorize, Tags("SongPartitions"), ProducesResponseType<PartitionResponse>(200)]
     [WolverinePost("/song-api/songs/{songId}/partitions", OperationId = "CreatePartition")]
     public static async Task<IResult> Post(Guid songId, CreatePartitionRequest request, ICurrentUser user,
-        [FromServices] DataContext db, CancellationToken cancellationToken)
+        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
         if (song is null) return Results.NotFound();
-        if (!await SongAccess.Check(db, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
+        if (!await SongAccess.Check(db, bus, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
         var partition = new Partition
         {
             Id = Guid.CreateVersion7(), SongId = songId, Name = request.Name.Trim(), Order = request.Order,
@@ -49,14 +50,14 @@ public static class UpdatePartitionEndpoint
     [Authorize, Tags("SongPartitions"), ProducesResponseType<PartitionResponse>(200)]
     [WolverinePut("/song-api/partitions/{partitionId}", OperationId = "UpdatePartition")]
     public static async Task<IResult> Put(Guid partitionId, UpdatePartitionRequest request, ICurrentUser user,
-        [FromServices] DataContext db, CancellationToken cancellationToken)
+        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var partition = await db.FindAsync<Partition>(partitionId, cancellationToken);
         if (partition is null) return Results.NotFound();
         var song = await SongAccess.Load(db, partition.SongId, cancellationToken);
         if (song is null) return Results.NotFound();
-        if (!await SongAccess.Check(db, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
+        if (!await SongAccess.Check(db, bus, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
         partition = await db.FindAsync<Partition>(partitionId, cancellationToken);
         if (partition is null) return Results.NotFound();
         if (partition.Revision != request.ExpectedRevision)
@@ -77,14 +78,14 @@ public static class DeletePartitionEndpoint
     [Authorize, Tags("SongPartitions"), ProducesResponseType(204)]
     [WolverineDelete("/song-api/partitions/{partitionId}", OperationId = "DeletePartition")]
     public static async Task<IResult> Delete(Guid partitionId, ICurrentUser user,
-        [FromServices] DataContext db, CancellationToken cancellationToken)
+        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var partition = await db.FindAsync<Partition>(partitionId, cancellationToken);
         if (partition is null) return Results.NotFound();
         var song = await SongAccess.Load(db, partition.SongId, cancellationToken);
         if (song is null) return Results.NotFound();
-        if (!await SongAccess.Check(db, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
+        if (!await SongAccess.Check(db, bus, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
         if (await db.DeleteAsync<Partition>(partitionId, cancellationToken) == 0) return Results.NotFound();
         await transaction.CommitAsync(cancellationToken);
         return Results.NoContent();
