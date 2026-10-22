@@ -27,6 +27,7 @@ public sealed class UpdateBandRequestValidator : AbstractValidator<UpdateBandReq
 public static class CreateBandEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.CreateBandEndpoint")]
     [WolverinePost("/band-api/bands", OperationId = "CreateBand")]
     public static async Task<ApiResponse<Band>> Post(
         CreateBandRequest request,
@@ -64,6 +65,7 @@ public static class CreateBandEndpoint
 public static class ListBandsEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.ListBandsEndpoint")]
     [WolverineGet("/band-api/bands", OperationId = "GetListOfBands")]
     public static async Task<ApiResponse<IReadOnlyList<Band>>> Get(
         ICurrentUser currentUser,
@@ -79,6 +81,7 @@ public static class ListBandsEndpoint
 public static class GetBandEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.GetBandEndpoint")]
     [WolverineGet("/band-api/bands/{bandId}", OperationId = "GetBand")]
     [ProducesResponseType(typeof(ApiResponse<Band>), StatusCodes.Status200OK)]
     public static async Task<IResult> Get(
@@ -103,6 +106,7 @@ public static class GetBandEndpoint
 public static class UpdateBandEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.UpdateBandEndpoint")]
     [WolverinePut("/band-api/bands/{bandId}", OperationId = "UpdateBand")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public static async Task<IResult> Put(
@@ -131,6 +135,7 @@ public static class UpdateBandEndpoint
 public static class DeleteBandEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.DeleteBandEndpoint")]
     [WolverineDelete("/band-api/bands/{bandId}", OperationId = "DeleteBand")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public static async Task<IResult> Delete(

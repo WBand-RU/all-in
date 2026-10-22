@@ -16,6 +16,7 @@ public sealed record MyBandAccessResponse(Guid BandId, BandMemberRole Role, bool
 public static class MyBandAccessEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.MyBandAccessEndpoint")]
     [WolverineGet("/band-api/user/band-access", OperationId = "GetMyBandAccess")]
     public static async Task<ApiResponse<IReadOnlyList<MyBandAccessResponse>>> Get(
         ICurrentUser user,
@@ -40,6 +41,7 @@ public static class MyBandAccessEndpoint
 public static class MembersEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.MembersEndpoint")]
     [WolverineGet("/band-api/bands/{bandId}/members", OperationId = "GetMembers")]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<BandMember>>), StatusCodes.Status200OK)]
     public static async Task<IResult> Get(
@@ -59,6 +61,7 @@ public static class MembersEndpoint
 public static class UpdateMemberRoleEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.UpdateMemberRoleEndpoint")]
     [WolverinePut("/band-api/bands/{bandId}/members/{memberId}/role", OperationId = "UpdateMemberRole")]
     [ProducesResponseType(typeof(ApiResponse<BandMember>), StatusCodes.Status200OK)]
     public static async Task<IResult> Put(
@@ -93,6 +96,7 @@ public static class UpdateMemberRoleEndpoint
 public static class RemoveMemberEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.RemoveMemberEndpoint")]
     [WolverineDelete("/band-api/bands/{bandId}/members/{memberId}", OperationId = "RemoveMember")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public static async Task<IResult> Delete(
@@ -131,6 +135,7 @@ public static class RemoveMemberEndpoint
 public static class LeaveBandEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.LeaveBandEndpoint")]
     [WolverineDelete("/band-api/bands/{bandId}/membership", OperationId = "LeaveBand")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public static async Task<IResult> Delete(
@@ -170,6 +175,7 @@ public sealed record FormerBandResponse(Guid BandId, string BandName, DateTimeOf
 public static class FormerBandsEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.FormerBandsEndpoint")]
     [WolverineGet("/band-api/user/former-bands", OperationId = "GetFormerBands")]
     public static async Task<ApiResponse<IReadOnlyList<FormerBandResponse>>> Get(
         ICurrentUser user,
@@ -219,6 +225,7 @@ public static class FormerBandsEndpoint
 public static class RejoinBandEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.RejoinBandEndpoint")]
     [WolverinePost("/band-api/bands/{bandId}/membership/rejoin", OperationId = "RejoinBand")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public static async Task<IResult> Post(

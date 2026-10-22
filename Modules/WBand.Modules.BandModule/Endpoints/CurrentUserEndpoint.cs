@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using WBand.Modules.BandModule.Application;
 using Wolverine;
@@ -17,6 +18,7 @@ public static class CurrentUserEndpoint
     );
 
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.CurrentUserEndpoint")]
     [WolverineGet("/api/user/me")]
     public static async Task<CurrentUserResponse> Get(
         ICurrentUser currentUser,

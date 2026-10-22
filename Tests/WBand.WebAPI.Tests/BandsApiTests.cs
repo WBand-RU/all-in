@@ -19,6 +19,10 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         using var client = fixture.CreateClient();
         using var document = System.Text.Json.JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
         var paths = document.RootElement.GetProperty("paths");
+        Assert.Equal("WBand.WebAPI.Endpoints.Bands.CreateBandEndpoint",
+            paths.GetProperty("/band-api/bands").GetProperty("post").GetProperty("tags")[0].GetString());
+        Assert.Equal("WBand.WebAPI.Endpoints.CurrentUserEndpoint",
+            paths.GetProperty("/api/user/me").GetProperty("get").GetProperty("tags")[0].GetString());
         var contracts = new[]
         {
             ("/band-api/bands/{bandId}", "get", "ApiResponseOfBand"),

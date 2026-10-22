@@ -35,7 +35,8 @@ public sealed class ModuleBoundaryTests
     [InlineData(typeof(GetBandMemberInfo))]
     [InlineData(typeof(GetUserBandIds))]
     [InlineData(typeof(GetBandContributorInfo))]
-    public void BandQuery_WhenHandled_IsOwnedByBandModule(Type query)
+    [InlineData(typeof(KeycloakEvent))]
+    public void BandMessage_WhenHandled_IsOwnedByBandModule(Type query)
     {
         Assert.Single(HandlersFor(typeof(BandModule).Assembly, query));
         Assert.Empty(HandlersFor(typeof(WBand.WebAPI.Data.DataContext).Assembly, query));
@@ -48,6 +49,37 @@ public sealed class ModuleBoundaryTests
             reference.Name is "WBand.WebAPI" or "WBand.AppHost"
                 or "WBand.Modules.EventModule" or "WBand.Modules.SongModule");
     }
+
+    [Fact]
+    public void BandHttp_WhenDiscovered_IsOwnedByTheModuleAndAbsentFromTheHost()
+    {
+        var moduleRoutes = BandRoutes(typeof(BandModule).Assembly).ToArray();
+        Assert.Contains("/band-api/bands", moduleRoutes);
+        Assert.Contains("/band-api/user/band-access", moduleRoutes);
+        Assert.Contains("/api/user/me", moduleRoutes);
+        Assert.Empty(BandRoutes(typeof(WBand.WebAPI.Data.DataContext).Assembly));
+    }
+
+    [Fact]
+    public void Host_WhenBandFeaturesAreExtracted_DoesNotInjectBandPersistence()
+    {
+        var types = typeof(WBand.WebAPI.Data.DataContext).Assembly.GetTypes();
+        var storage = typeof(WBand.Modules.BandModule.Data.BandDataContext);
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic
+            | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+        Assert.DoesNotContain(types.SelectMany(type => type.GetMethods(flags)).SelectMany(method => method.GetParameters()),
+            parameter => parameter.ParameterType == storage);
+        Assert.DoesNotContain(types.SelectMany(type => type.GetConstructors(flags)).SelectMany(constructor => constructor.GetParameters()),
+            parameter => parameter.ParameterType == storage);
+        Assert.DoesNotContain(types.SelectMany(type => type.GetFields(flags)), field => field.FieldType == storage);
+    }
+
+    private static IEnumerable<string> BandRoutes(Assembly assembly) => assembly.GetTypes()
+        .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
+        .SelectMany(method => method.GetCustomAttributesData())
+        .Where(attribute => attribute.AttributeType.Namespace == "Wolverine.Http")
+        .Select(attribute => attribute.ConstructorArguments.FirstOrDefault().Value).OfType<string>()
+        .Where(route => route.StartsWith("/band-api/", StringComparison.Ordinal) || route == "/api/user/me");
 
     private static IEnumerable<MethodInfo> HandlersFor(Assembly assembly, Type messageType) =>
         assembly.GetTypes().SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))

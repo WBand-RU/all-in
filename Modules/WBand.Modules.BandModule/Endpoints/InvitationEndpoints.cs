@@ -46,6 +46,7 @@ public sealed class CreateInvitationRequestValidator : AbstractValidator<CreateI
 public static class BandInvitationsEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.BandInvitationsEndpoint")]
     [WolverineGet("/band-api/bands/{bandId}/invitations", OperationId = "GetBandInvitationList")]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<BandInvitation>>), StatusCodes.Status200OK)]
     public static async Task<IResult> Get(
@@ -62,6 +63,7 @@ public static class BandInvitationsEndpoint
     }
 
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.BandInvitationsEndpoint")]
     [WolverinePost("/band-api/bands/{bandId}/invitations", OperationId = "CreateBandInvitation")]
     [ProducesResponseType(typeof(ApiResponse<BandInvitation>), StatusCodes.Status200OK)]
     public static async Task<IResult> Post(
@@ -116,6 +118,7 @@ public static class BandInvitationsEndpoint
 public static class RevokeInvitationEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.RevokeInvitationEndpoint")]
     [WolverineDelete("/band-api/bands/{bandId}/invitations/{invitationId}", OperationId = "RevokeInvitation")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public static async Task<IResult> Delete(
@@ -146,6 +149,7 @@ public static class RevokeInvitationEndpoint
 public static class MyInvitationsEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.MyInvitationsEndpoint")]
     [WolverineGet("/band-api/user/invitations", OperationId = "GetMyInvitations")]
     public static async Task<ApiResponse<IReadOnlyList<MyInvitationResponse>>> Get(
         ICurrentUser user,
@@ -187,6 +191,7 @@ public static class MyInvitationsEndpoint
 public static class InvitationCountEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.InvitationCountEndpoint")]
     [WolverineGet("/band-api/user/invitations/count", OperationId = "GetMyInvitationsCount")]
     public static async Task<ApiResponse<int>> Get(
         ICurrentUser user,
@@ -203,6 +208,7 @@ public static class InvitationCountEndpoint
 public static class RespondInvitationEndpoint
 {
     [Authorize]
+    [Tags("WBand.WebAPI.Endpoints.Bands.RespondInvitationEndpoint")]
     [WolverinePut("/band-api/user/invitations/{invitationId}", OperationId = "RespondInvitation")]
     [ProducesResponseType(typeof(ApiResponse<BandInvitation>), StatusCodes.Status200OK)]
     public static async Task<IResult> Put(
