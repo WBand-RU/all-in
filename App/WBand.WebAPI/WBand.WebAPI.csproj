@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="../../Common/WBand.Persistence/WBand.Persistence.csproj" />
         <ProjectReference Include="../../Modules/WBand.Modules.EventModule/WBand.Modules.EventModule.csproj" />
         <ProjectReference Include="../../Modules/WBand.Modules.BandModule/WBand.Modules.BandModule.csproj" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
