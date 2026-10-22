@@ -24,6 +24,6 @@ public sealed class DatabaseDependencyInjectionTests
         Assert.Same(db, first.ServiceProvider.GetRequiredService<DataContext>());
         Assert.NotSame(db, second.ServiceProvider.GetRequiredService<DataContext>());
         Assert.Equal("Npgsql.EntityFrameworkCore.PostgreSQL", db.Database.ProviderName);
-        Assert.Equal(5, db.Model.GetEntityTypes().Count());
+        Assert.Empty(db.Model.GetEntityTypes());
     }
 }

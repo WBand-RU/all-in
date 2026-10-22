@@ -53,18 +53,19 @@ public sealed class BandModulePersistenceTests
     }
 
     [Fact]
-    public void HostModel_WhenOwnershipIsReleased_ContainsOnlySongEntitiesAndDoesNotDropStorage()
+    public void HostModel_WhenOwnershipIsReleased_IsEmptyAndDoesNotDropStorage()
     {
         using var context = new WBand.WebAPI.Data.DataContext(
             new DbContextOptionsBuilder<WBand.WebAPI.Data.DataContext>()
                 .UseNpgsql("Host=localhost;Database=unused;Username=unused").Options);
         var entities = context.Model.GetEntityTypes().ToArray();
-        Assert.Equal(5, entities.Length);
-        Assert.All(entities, entity => Assert.Contains(entity.GetTableName(),
-            new[] { "songs", "song_sections", "song_partitions", "song_content_cells", "song_revisions" }));
+        Assert.Empty(entities);
         var migration = new WBand.WebAPI.Data.Migrations.ReleaseBandOwnership();
         Assert.Empty(migration.UpOperations);
         Assert.Empty(migration.DownOperations);
+        var songRelease = new WBand.WebAPI.Data.Migrations.ReleaseSongOwnership();
+        Assert.Empty(songRelease.UpOperations);
+        Assert.Empty(songRelease.DownOperations);
         Assert.False(context.Database.HasPendingModelChanges());
     }
 
