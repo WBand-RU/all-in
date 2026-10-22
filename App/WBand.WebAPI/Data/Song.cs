@@ -26,8 +26,6 @@ public sealed class Song
     public bool IsDeleted => DeletedAt is not null;
     public DateTimeOffset? PurgeAfter => DeletedAt?.AddDays(30);
 
-
-
     /// <summary>Ordered song sections shared by all partitions.</summary>
     [JsonIgnore]
     public ICollection<SongSection> Sections { get; set; } = [];

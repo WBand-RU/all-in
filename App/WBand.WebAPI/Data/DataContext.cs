@@ -15,11 +15,5 @@ public sealed partial class DataContext(DbContextOptions<DataContext> options) :
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DataContext).Assembly);
-        // Tables and their database constraints remain intact; BandModule owns their EF model.
-        modelBuilder.Ignore<User>();
-        modelBuilder.Ignore<Band>();
-        modelBuilder.Ignore<BandMember>();
-        modelBuilder.Ignore<BandInvitation>();
-        modelBuilder.Ignore<BandDeparture>();
     }
 }

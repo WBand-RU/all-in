@@ -24,6 +24,4 @@ public sealed class Partition
     /// <summary>Song this partition belongs to.</summary>
     [JsonIgnore]
     public Song Song { get; set; } = null!;
-
-
 }
