@@ -25,6 +25,7 @@ public sealed class PartitionMigrationTests(DatabaseFixture fixture)
         {
             var connection = new NpgsqlConnectionStringBuilder(fixture.ConnectionString) { Database = database, Pooling = false };
             await using var db = new DataContext(new DbContextOptionsBuilder<DataContext>().UseNpgsql(connection.ConnectionString).Options);
+            await using var songs = new SongDataContext(new DbContextOptionsBuilder<SongDataContext>().UseNpgsql(connection.ConnectionString).Options);
             var migrator = db.GetService<IMigrator>();
             await migrator.MigrateAsync("20261013211033_InitialWebApi");
             var userId = Guid.NewGuid();
@@ -57,9 +58,9 @@ public sealed class PartitionMigrationTests(DatabaseFixture fixture)
                     """, new { songId, userId });
             }
             await migrator.MigrateAsync();
-            var sections = await db.QueryAsync<SongSection>("select * from public.song_sections order by \"order\"");
-            var partitions = await db.QueryAsync<Partition>("select * from public.song_partitions order by \"order\"");
-            var cells = await db.QueryAsync<SongContentCell>("select * from public.song_content_cells");
+            var sections = await songs.QueryAsync<SongSection>("select * from public.song_sections order by \"order\"");
+            var partitions = await songs.QueryAsync<Partition>("select * from public.song_partitions order by \"order\"");
+            var cells = await songs.QueryAsync<SongContentCell>("select * from public.song_content_cells");
             Assert.Equal(4, sections.Count);
             Assert.Equal(sectionId, sections[0].Id);
             Assert.Equal("Куплет", sections[0].Name);

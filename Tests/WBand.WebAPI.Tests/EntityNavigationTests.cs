@@ -44,12 +44,12 @@ public sealed class EntityNavigationTests(DatabaseFixture fixture)
             Id = Guid.CreateVersion7(), SongId = song.Id, Title = song.Title, ContentVersion = 1,
             CreatedAt = now, CreatedBy = creator.KeycloakId,
         });
-        await using (var writer = fixture.CreateSession())
+        await using (var writer = fixture.CreateSongSession())
         {
             writer.Songs.Add(song);
             await writer.SaveChangesAsync();
         }
-        await using var reader = fixture.CreateSession();
+        await using var reader = fixture.CreateSongSession();
         var loaded = await reader.Songs.Include(x => x.Partitions).Include(x => x.Revisions)
             .AsSplitQuery().SingleAsync(x => x.Id == song.Id);
         Assert.Equal(band.Id, loaded.BandId);
@@ -62,7 +62,7 @@ public sealed class EntityNavigationTests(DatabaseFixture fixture)
         Assert.False(json.RootElement.TryGetProperty("CreatedByUser", out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(Song.Partitions), out _));
 
-        await using var invalid = fixture.CreateSession();
+        await using var invalid = fixture.CreateSongSession();
         invalid.Songs.Add(new Song
         {
             Id = Guid.CreateVersion7(), BandId = Guid.NewGuid(), Title = "Missing band",
