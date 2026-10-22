@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using WBand.Modules.SongModule;
 using Xunit;
@@ -6,6 +7,21 @@ namespace WBand.WebAPI.Tests;
 
 public sealed class SongModulePersistenceTests
 {
+    [Fact]
+    public void AddSongModule_WhenScopesAreValidated_ResolvesOneContextPerScope()
+    {
+        using var services = new ServiceCollection().AddLogging()
+            .AddSongModule("Host=localhost;Database=unused;Username=unused")
+            .BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        Assert.Throws<InvalidOperationException>(() => services.GetRequiredService<SongDataContext>());
+        using var first = services.CreateScope();
+        using var second = services.CreateScope();
+        var context = first.ServiceProvider.GetRequiredService<SongDataContext>();
+        Assert.Same(context, first.ServiceProvider.GetRequiredService<SongDataContext>());
+        Assert.NotSame(context, second.ServiceProvider.GetRequiredService<SongDataContext>());
+        Assert.NotNull(services.GetRequiredService<DbContextOptions<SongDataContext>>());
+    }
+
     [Fact]
     public void Model_WhenMapped_OwnsFiveEntitiesAndPreservesCompositeCellReferences()
     {

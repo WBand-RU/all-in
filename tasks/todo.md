@@ -163,7 +163,7 @@
     - [x] T12.2b: перенести пять mapping-конфигураций; временный legacy-контекст использует ту же модель public до передачи владения.
     - [ ] T12.3: собственный SongDataContext, регистрация и проверки модели/транзакций на прежней схеме.
       - [x] T12.3a: контекст с пятью собственными моделями, SQL mapping и lock; unit-проверки границ/составных FK/transaction guard.
-      - [ ] T12.3b: scoped регистрация, design-time factory, composition root/fixtures; immutable options и lifetime.
+      - [x] T12.3b: scoped регистрация, design-time factory, composition root/fixtures; immutable options и lifetime.
       - [ ] T12.3c: интеграционная запись матрицы/ревизии и общая блокировка с BandModule.
     - [ ] T12.4: переключить persistence потребителей семействами: общие helpers, metadata/history, partitions, sections/cells, public query; все writers сохраняют общий lock/transaction.
     - [ ] T12.5: передать migration ownership без DROP; legacy-контекст только для исторических миграций, тесты используют владельца.

@@ -33,6 +33,7 @@ try
 
     builder.Services.AddDatabase(configuration.DatabaseConnectionString);
     builder.Services.AddBandModule(configuration.DatabaseConnectionString);
+    builder.Services.AddSongModule(configuration.DatabaseConnectionString);
 
     builder.Services.AddEventModule(configuration.DatabaseConnectionString);
 

@@ -49,6 +49,8 @@ public sealed class BandsApiFixture : IAsyncLifetime
 
     public BandDataContext CreateBandContext() => new(Services.GetRequiredService<DbContextOptions<BandDataContext>>());
 
+    public SongDataContext CreateSongContext() => new(Services.GetRequiredService<DbContextOptions<SongDataContext>>());
+
     public HttpClient CreateClient(Guid? userId = null, string email = "owner@example.com")
     {
         var client = app.GetTestClient();
@@ -93,6 +95,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
         builder.Services.AddOpenApi();
         builder.Services.AddDatabase(ConnectionString);
         builder.Services.AddBandModule(ConnectionString);
+        builder.Services.AddSongModule(ConnectionString);
         builder.Services.AddEventModule(ConnectionString);
         builder.UseWolverine(options =>
         {

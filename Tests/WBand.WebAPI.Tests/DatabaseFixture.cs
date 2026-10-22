@@ -1,3 +1,4 @@
+using WBand.Modules.SongModule;
 using WBand.Modules.BandModule;
 using BandDataContext = WBand.Modules.BandModule.Data.BandDataContext;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     public BandDataContext CreateBandSession() => new(Services.GetRequiredService<DbContextOptions<BandDataContext>>());
 
+    public SongDataContext CreateSongSession() => new(Services.GetRequiredService<DbContextOptions<SongDataContext>>());
+
     public async Task InitializeAsync()
     {
         await postgres.StartAsync();
@@ -31,6 +34,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddLogging();
         services.AddDatabase(ConnectionString);
         services.AddBandModule(ConnectionString);
+        services.AddSongModule(ConnectionString);
         Services = services.BuildServiceProvider();
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
