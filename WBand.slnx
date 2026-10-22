@@ -28,6 +28,7 @@
         </Project>
     </Folder>
     <Folder Name="/Modules/">
+        <Project Path="Modules/WBand.Modules.SongModule/WBand.Modules.SongModule.csproj" />
         <Project Path="Modules/WBand.Modules.SongModule/Contracts/WBand.Modules.SongModule.Contracts.csproj" />
         <Project Path="Modules/WBand.Modules.BandModule/WBand.Modules.BandModule.csproj" />
         <Project Path="Modules/WBand.Modules.BandModule/Contracts/WBand.Modules.BandModule.Contracts.csproj" />

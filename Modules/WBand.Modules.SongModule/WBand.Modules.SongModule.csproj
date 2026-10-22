@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Remove="Contracts/**/*.cs" />
+        <ProjectReference Include="Contracts/WBand.Modules.SongModule.Contracts.csproj" />
+        <ProjectReference Include="../WBand.Modules.BandModule/Contracts/WBand.Modules.BandModule.Contracts.csproj" />
+        <ProjectReference Include="../../Common/WBand.Contracts/WBand.Contracts.csproj" />
+        <ProjectReference Include="../../Common/WBand.Persistence/WBand.Persistence.csproj" />
+        <PackageReference Include="WolverineFx" Version="6.49.0" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3" PrivateAssets="all" />
+    </ItemGroup>
+</Project>

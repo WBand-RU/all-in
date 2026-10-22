@@ -7,6 +7,7 @@ COPY ["Modules/WBand.Modules.SongModule/Contracts/WBand.Modules.SongModule.Contr
 COPY ["Modules/WBand.Modules.EventModule/WBand.Modules.EventModule.csproj", "Modules/WBand.Modules.EventModule/"]
 COPY ["Modules/WBand.Modules.BandModule/Contracts/WBand.Modules.BandModule.Contracts.csproj", "Modules/WBand.Modules.BandModule/Contracts/"]
 COPY ["Modules/WBand.Modules.BandModule/WBand.Modules.BandModule.csproj", "Modules/WBand.Modules.BandModule/"]
+COPY ["Modules/WBand.Modules.SongModule/WBand.Modules.SongModule.csproj", "Modules/WBand.Modules.SongModule/"]
 COPY ["App/WBand.WebAPI/WBand.WebAPI.csproj", "App/WBand.WebAPI/"]
 RUN dotnet restore "App/WBand.WebAPI/WBand.WebAPI.csproj"
 
