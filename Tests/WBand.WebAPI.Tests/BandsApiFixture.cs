@@ -45,7 +45,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
     public string ConnectionString => postgres.GetConnectionString();
     public IServiceProvider Services => app.Services;
 
-    public DataContext CreateContext() => new(new DbContextOptionsBuilder<DataContext>().UseNpgsql(ConnectionString).Options);
+    public DataContext CreateLegacyContext() => new(new DbContextOptionsBuilder<DataContext>().UseNpgsql(ConnectionString).Options);
 
     public BandDataContext CreateBandContext() => new(Services.GetRequiredService<DbContextOptions<BandDataContext>>());
 
@@ -74,7 +74,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
         await postgres.StartAsync();
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
-        await using (var db = CreateContext())
+        await using (var db = CreateLegacyContext())
             await db.ExecuteAsync("ALTER TABLE bands.bands ADD CONSTRAINT test_commit_failure CHECK (name <> 'fail_commit')");
 
         var builder = WebApplication.CreateBuilder();
@@ -93,9 +93,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
         builder.Services.AddWolverineHttp();
         builder.Services.AddProblemDetails();
         builder.Services.AddOpenApi();
-        builder.Services.AddDatabase(ConnectionString);
-        builder.Services.AddBandModule(ConnectionString);
-        builder.Services.AddSongModule(ConnectionString);
+        builder.Services.AddApplicationPersistence(ConnectionString);
         builder.Services.AddEventModule(ConnectionString);
         builder.UseWolverine(options =>
         {

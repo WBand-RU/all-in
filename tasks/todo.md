@@ -171,11 +171,14 @@
       - [x] T12.4c: partitions используют SongDataContext и прежнюю атомарную запись.
       - [x] T12.4d: sections/cells используют SongDataContext; проверка ревизий/общей транзакции.
       - [x] T12.4e: public reference query и строгие SongDataContext-параметры helpers; временный bridge удалён, полный Release.
-    - [ ] T12.5: передать migration ownership без DROP; legacy-контекст только для исторических миграций, тесты используют владельца.
+    - [x] T12.5: передать migration ownership без DROP; legacy-контекст только для исторических миграций, тесты используют владельца.
       - [x] T12.5a: тесты навигаций/legacy matrix читают через SongDataContext; проверки lock остаются в SongModuleDataTests вместо retired legacy-контекста.
       - [x] T12.5b: пустая модель legacy-контекста, ReleaseSongOwnership без DDL и snapshot; архитектурная/миграционная проверка.
-      - [ ] T12.5c: runtime DI регистрирует только модульные контексты через composition root; legacy создаётся только для миграций/SQL диагностики.
+      - [x] T12.5c: runtime DI регистрирует только модульные контексты через composition root; legacy создаётся только для миграций/SQL диагностики.
     - [ ] T12.6: initial migration в songs для пяти таблиц, сохранение внешних FK и отказ при смешанной схеме.
+      - [ ] T12.6a: schema songs, initial snapshot и атомарное создание/adoption пяти таблиц; внешние FK к bands управляются явным SQL.
+      - [ ] T12.6b: миграции SongModule после legacy/Band; проверки собственных схем и двух независимых histories.
+      - [ ] T12.6c: миграционные тесты legacy/fresh/conflict/rollback, сохранение rows/OID/FK, включая составные ссылки матрицы.
     - [ ] T12.7: public→songs/пустая БД/повтор/откат/backup, ID и данные, полный Release/Docker/runtime; отдельная приёмка матрицы и прежних ревизий в T13/T14.
 
 - [ ] **T13. Данные матрицы** — зависимости: T12.

@@ -32,9 +32,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await postgres.StartAsync();
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddDatabase(ConnectionString);
-        services.AddBandModule(ConnectionString);
-        services.AddSongModule(ConnectionString);
+        services.AddApplicationPersistence(ConnectionString);
         Services = services.BuildServiceProvider();
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
