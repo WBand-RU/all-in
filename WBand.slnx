@@ -28,6 +28,8 @@
         </Project>
     </Folder>
     <Folder Name="/Modules/">
+        <Project Path="Modules/WBand.Modules.BandModule/WBand.Modules.BandModule.csproj" />
+        <Project Path="Modules/WBand.Modules.BandModule/Contracts/WBand.Modules.BandModule.Contracts.csproj" />
         <Project Path="Modules/WBand.Modules.EventModule/WBand.Modules.EventModule.csproj" />
     </Folder>
     <Folder Name="/Common/">

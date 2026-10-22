@@ -69,7 +69,7 @@
   - Пути: Modules/WBand.Modules.BandModule (новый); App/WBand.WebAPI.
   - Подзадачи перед изменениями:
     - [x] T07.1: отдельная сборка Contracts, перенос DTO без изменения namespace/полей; ссылка API и Docker restore (пять исходных файлов).
-    - [ ] T07.2: сборка реализации с публичной регистрацией Wolverine; подключение project/container/solution graph (пять исходных файлов).
+    - [x] T07.2: сборка реализации с публичной регистрацией Wolverine; подключение project/container/solution graph (пять исходных файлов).
     - [ ] T07.3: перенести проверку прав через GetBandMemberInfo, переключить discovery API/fixture и удалить прежний обработчик; архитектурные проверки, полный Release, Docker и runtime.
 
 
