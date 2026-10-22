@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Http;
 using WBand.WebAPI.Shared;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Application.Bands;
-using WBand.Modules.BandModule.Contracts;
-using Wolverine;
 using Wolverine.Http;
 
 namespace WBand.WebAPI.Endpoints.Bands;
@@ -73,7 +71,6 @@ public static class BandInvitationsEndpoint
         CreateInvitationRequest request,
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
-        [Microsoft.AspNetCore.Mvc.FromServices] IMessageBus bus,
         CancellationToken ct
     )
     {
@@ -114,7 +111,6 @@ public static class BandInvitationsEndpoint
 
         await db.InsertAsync(invitation, ct);
         await transaction.CommitAsync(ct);
-        await bus.PublishAsync(new MemberInvited(invitation.Id, bandId, email));
         return Results.Ok(ApiResponse<BandInvitation>.Success(invitation));
     }
 }
@@ -216,7 +212,6 @@ public static class RespondInvitationEndpoint
         RespondInvitationRequest request,
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
-        [Microsoft.AspNetCore.Mvc.FromServices] IMessageBus bus,
         CancellationToken ct
     )
     {
@@ -263,8 +258,6 @@ public static class RespondInvitationEndpoint
         }
 
         await transaction.CommitAsync(ct);
-        if (request.Accept)
-            await bus.PublishAsync(new MembershipChanged(invitation.BandId, user.Id, true));
         return Results.Ok(ApiResponse<BandInvitation>.Success(invitation));
     }
 }

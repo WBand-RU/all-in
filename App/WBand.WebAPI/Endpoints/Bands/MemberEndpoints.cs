@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Http;
 using WBand.WebAPI.Shared;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Application.Bands;
-using WBand.Modules.BandModule.Contracts;
-using Wolverine;
 using Wolverine.Http;
 
 namespace WBand.WebAPI.Endpoints.Bands;
@@ -104,7 +102,6 @@ public static class RemoveMemberEndpoint
         Guid memberId,
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
-        [Microsoft.AspNetCore.Mvc.FromServices] IMessageBus bus,
         CancellationToken ct
     )
     {
@@ -129,7 +126,6 @@ public static class RemoveMemberEndpoint
         await db.DeleteAsync<BandMember>(member.Id, ct);
 
         await transaction.CommitAsync(ct);
-        await bus.PublishAsync(new MembershipChanged(bandId, member.UserId, false));
         return Results.Ok(ApiResponse<bool>.Success(true));
     }
 }
@@ -143,7 +139,6 @@ public static class LeaveBandEndpoint
         Guid bandId,
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
-        [Microsoft.AspNetCore.Mvc.FromServices] IMessageBus bus,
         CancellationToken ct
     )
     {
@@ -167,7 +162,6 @@ public static class LeaveBandEndpoint
         await db.DeleteAsync<BandMember>(member.Id, ct);
 
         await transaction.CommitAsync(ct);
-        await bus.PublishAsync(new MembershipChanged(bandId, member.UserId, false));
         return Results.Ok(ApiResponse<bool>.Success(true));
     }
 }
@@ -233,7 +227,6 @@ public static class RejoinBandEndpoint
         Guid bandId,
         ICurrentUser user,
         [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
-        [Microsoft.AspNetCore.Mvc.FromServices] IMessageBus bus,
         CancellationToken ct
     )
     {
@@ -279,7 +272,6 @@ public static class RejoinBandEndpoint
             }, ct);
 
         await transaction.CommitAsync(ct);
-        await bus.PublishAsync(new MembershipChanged(bandId, user.Id, true));
         return Results.Ok(ApiResponse<bool>.Success(true));
     }
 }

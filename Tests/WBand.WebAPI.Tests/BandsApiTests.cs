@@ -114,29 +114,40 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
     }
 
     [Fact]
-    public async Task Invitation_WhenAccepted_AddsMemberAndAllowsVoluntaryRejoin()
+    public async Task Invitation_WhenPublicationIsUnavailable_PersistsMembershipAndRejoin()
     {
-        using var owner = fixture.CreateClient(Guid.NewGuid());
-        var inviteeId = Guid.NewGuid();
-        var email = $"{inviteeId:N}@example.com";
-        using var invitee = fixture.CreateClient(inviteeId, email.ToUpperInvariant());
-        var band = await CreateBand(owner);
-        var invitation = await Invite(owner, band.Id, email, BandMemberRole.Admin);
-        var count = await invitee.GetFromJsonAsync<ApiResponse<int>>("/band-api/user/invitations/count");
-        Assert.Equal(1, count!.Value);
-        Assert.Equal(HttpStatusCode.OK, (await invitee.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).StatusCode);
-        await using var db = fixture.CreateContext();
-        var member = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and user_id = @inviteeId", new { bandId = band.Id, inviteeId = inviteeId });
-        Assert.NotNull(member);
-        Assert.Equal(BandMemberRole.Admin, member.Role);
-        Assert.Equal(HttpStatusCode.Conflict, (await invitee.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await invitee.DeleteAsync($"/band-api/bands/{band.Id}/membership")).StatusCode);
-        Assert.Single((await invitee.GetFromJsonAsync<ApiResponse<List<FormerBandResponse>>>("/band-api/user/former-bands"))!.Value);
-        Assert.Equal(HttpStatusCode.OK, (await invitee.PostAsync($"/band-api/bands/{band.Id}/membership/rejoin", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.Conflict, (await invitee.PostAsync($"/band-api/bands/{band.Id}/membership/rejoin", null)).StatusCode);
+        fixture.RejectPublications = true;
+        try
+        {
+            using var owner = fixture.CreateClient(Guid.NewGuid());
+            var inviteeId = Guid.NewGuid();
+            var email = $"{inviteeId:N}@example.com";
+            using var invitee = fixture.CreateClient(inviteeId, email.ToUpperInvariant());
+            var band = await CreateBand(owner);
+            var invitation = await Invite(owner, band.Id, email, BandMemberRole.Admin);
+            var count = await invitee.GetFromJsonAsync<ApiResponse<int>>("/band-api/user/invitations/count");
+            Assert.Equal(1, count!.Value);
+            Assert.Equal(HttpStatusCode.OK, (await invitee.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).StatusCode);
+            await using var db = fixture.CreateContext();
+            var member = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and user_id = @inviteeId", new { bandId = band.Id, inviteeId = inviteeId });
+            Assert.NotNull(member);
+            Assert.Equal(BandMemberRole.Admin, member.Role);
+            Assert.Equal(HttpStatusCode.Conflict, (await invitee.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await invitee.DeleteAsync($"/band-api/bands/{band.Id}/membership")).StatusCode);
+            Assert.Single((await invitee.GetFromJsonAsync<ApiResponse<List<FormerBandResponse>>>("/band-api/user/former-bands"))!.Value);
+            Assert.Equal(HttpStatusCode.OK, (await invitee.PostAsync($"/band-api/bands/{band.Id}/membership/rejoin", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.Conflict, (await invitee.PostAsync($"/band-api/bands/{band.Id}/membership/rejoin", null)).StatusCode);
 
-        Assert.Equal(BandMemberRole.Member, (await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and user_id = @inviteeId", new { bandId = band.Id, inviteeId = inviteeId }))!.Role);
-        Assert.NotNull((await db.SingleOrDefaultAsync<BandDeparture>("select * from public.band_departures where band_id = @bandId", new { bandId = band.Id }))!.RejoinedAt);
+            var rejoined = (await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and user_id = @inviteeId", new { bandId = band.Id, inviteeId = inviteeId }))!;
+            Assert.Equal(BandMemberRole.Member, rejoined.Role);
+            Assert.NotNull((await db.SingleOrDefaultAsync<BandDeparture>("select * from public.band_departures where band_id = @bandId", new { bandId = band.Id }))!.RejoinedAt);
+            Assert.Equal(HttpStatusCode.OK, (await owner.DeleteAsync($"/band-api/bands/{band.Id}/members/{rejoined.Id}")).StatusCode);
+            Assert.Null(await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where id = @id", new { id = rejoined.Id }));
+        }
+        finally
+        {
+            fixture.RejectPublications = false;
+        }
     }
 
     [Fact]
