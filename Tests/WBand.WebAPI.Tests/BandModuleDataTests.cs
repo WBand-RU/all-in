@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule.Application;
 using WBand.Modules.BandModule.Contracts;
 using WBand.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -85,6 +86,33 @@ public sealed class BandModuleDataTests(DatabaseFixture fixture)
         Assert.False(await contender.SingleOrDefaultAsync<bool>(tryLock, parameters));
         await owner.RollbackAsync();
         Assert.True(await contender.SingleOrDefaultAsync<bool>(tryLock, parameters));
+    }
+
+    [Fact]
+    public async Task Contributors_WhenMembershipEnded_ReturnsProfileWithoutAnotherBandsRole()
+    {
+        await using var db = fixture.CreateBandSession();
+        var owner = Profile();
+        var contributor = Profile();
+        var band = new Band { Id = Guid.CreateVersion7(), Name = "History", CreatedBy = owner.KeycloakId, CreatedAt = owner.CreatedAt };
+        var other = new Band { Id = Guid.CreateVersion7(), Name = "Other", CreatedBy = contributor.KeycloakId, CreatedAt = contributor.CreatedAt };
+        await using (var transaction = await db.BeginTransactionAsync())
+        {
+            await db.InsertAsync(owner);
+            await db.InsertAsync(contributor);
+            await db.InsertAsync(band);
+            await db.InsertAsync(other);
+            await db.InsertAsync(new BandMember { Id = Guid.CreateVersion7(), BandId = band.Id, UserId = owner.KeycloakId, Email = owner.Email, Role = BandMemberRole.Owner, JoinedAt = band.CreatedAt });
+            await db.InsertAsync(new BandMember { Id = Guid.CreateVersion7(), BandId = other.Id, UserId = contributor.KeycloakId, Email = contributor.Email, Role = BandMemberRole.Owner, JoinedAt = other.CreatedAt });
+            await transaction.CommitAsync();
+        }
+        var result = await GetBandContributorInfoHandler.Handle(new(band.Id,
+            [owner.KeycloakId, contributor.KeycloakId, contributor.KeycloakId, Guid.NewGuid()]), db, default);
+        Assert.Equal(2, result.Length);
+        Assert.Equal("Owner", Assert.Single(result, row => row.UserId == owner.KeycloakId).Role);
+        var former = Assert.Single(result, row => row.UserId == contributor.KeycloakId);
+        Assert.Equal(contributor.Email, former.Email);
+        Assert.Null(former.Role);
     }
 
     private static User Profile()
