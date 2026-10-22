@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using WBand.WebAPI.Shared;
 using WBand.WebAPI.Services;
-using WBand.WebAPI.Application.Bands;
 using Wolverine.Http;
 
 namespace WBand.WebAPI.Endpoints.Bands;
@@ -21,11 +20,11 @@ public static class MyBandAccessEndpoint
     [WolverineGet("/band-api/user/band-access", OperationId = "GetMyBandAccess")]
     public static async Task<ApiResponse<IReadOnlyList<MyBandAccessResponse>>> Get(
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
-        var memberships = await db.QueryAsync<BandMember>("select * from public.band_members where user_id = @id", new { id = user.Id }, ct);
+        var memberships = await db.QueryAsync<BandMember>("select * from band_members where user_id = @id", new { id = user.Id }, ct);
         var access = memberships
             .GroupBy(x => x.BandId)
             .Select(group => group.OrderByDescending(x => x.JoinedAt).First())
@@ -47,13 +46,13 @@ public static class MembersEndpoint
     public static async Task<IResult> Get(
         Guid bandId,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
         if (await BandAccess.FindMembership(db, bandId, user.Id, ct) is null)
             return Results.Forbid();
-        var members = await db.QueryAsync<BandMember>("select * from public.band_members where band_id = @bandId", new { bandId }, ct);
+        var members = await db.QueryAsync<BandMember>("select * from band_members where band_id = @bandId", new { bandId }, ct);
         return Results.Ok(ApiResponse<IReadOnlyList<BandMember>>.Success(members));
     }
 }
@@ -68,7 +67,7 @@ public static class UpdateMemberRoleEndpoint
         Guid memberId,
         UpdateMemberRoleRequest request,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
@@ -101,7 +100,7 @@ public static class RemoveMemberEndpoint
         Guid bandId,
         Guid memberId,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
@@ -138,7 +137,7 @@ public static class LeaveBandEndpoint
     public static async Task<IResult> Delete(
         Guid bandId,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
@@ -175,11 +174,11 @@ public static class FormerBandsEndpoint
     [WolverineGet("/band-api/user/former-bands", OperationId = "GetFormerBands")]
     public static async Task<ApiResponse<IReadOnlyList<FormerBandResponse>>> Get(
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
-        var departures = await db.QueryAsync<BandDeparture>("select * from public.band_departures where user_id = @id and reason = 0 and rejoined_at is null", new { id = user.Id }, ct);
+        var departures = await db.QueryAsync<BandDeparture>("select * from band_departures where user_id = @id and reason = 0 and rejoined_at is null", new { id = user.Id }, ct);
         var result = new List<FormerBandResponse>();
         foreach (
             var departure in departures
@@ -194,9 +193,9 @@ public static class FormerBandsEndpoint
 
         // Compatibility for memberships left before departure reasons were introduced.
         var email = user.Email.Trim().ToLowerInvariant();
-        var acceptedInvitations = await db.QueryAsync<BandInvitation>("select * from public.band_invitations where invitee_email = @email and status = 1", new { email }, ct);
-        var activeMemberships = await db.QueryAsync<BandMember>("select * from public.band_members where user_id = @id", new { id = user.Id }, ct);
-        var allDepartures = await db.QueryAsync<BandDeparture>("select * from public.band_departures where user_id = @id", new { id = user.Id }, ct);
+        var acceptedInvitations = await db.QueryAsync<BandInvitation>("select * from band_invitations where invitee_email = @email and status = 1", new { email }, ct);
+        var activeMemberships = await db.QueryAsync<BandMember>("select * from band_members where user_id = @id", new { id = user.Id }, ct);
+        var allDepartures = await db.QueryAsync<BandDeparture>("select * from band_departures where user_id = @id", new { id = user.Id }, ct);
         foreach (var invitation in acceptedInvitations)
         {
             if (
@@ -226,7 +225,7 @@ public static class RejoinBandEndpoint
     public static async Task<IResult> Post(
         Guid bandId,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
@@ -234,7 +233,7 @@ public static class RejoinBandEndpoint
         if (await BandAccess.FindMembership(db, bandId, user.Id, ct) is not null)
             return Results.Conflict(new { code = "already_member" });
 
-        var departures = await db.QueryAsync<BandDeparture>("select * from public.band_departures where band_id = @bandId and user_id = @id", new { bandId, id = user.Id }, ct);
+        var departures = await db.QueryAsync<BandDeparture>("select * from band_departures where band_id = @bandId and user_id = @id", new { bandId, id = user.Id }, ct);
         var departure = departures.OrderByDescending(x => x.LeftAt).FirstOrDefault();
         if (
             departure is not null
@@ -247,7 +246,7 @@ public static class RejoinBandEndpoint
         if (departure is null)
         {
             var email = user.Email.Trim().ToLowerInvariant();
-            var acceptedInvitation = await db.SingleOrDefaultAsync<BandInvitation>("select * from public.band_invitations where band_id = @bandId and invitee_email = @email and status = 1", new { bandId, email }, ct);
+            var acceptedInvitation = await db.SingleOrDefaultAsync<BandInvitation>("select * from band_invitations where band_id = @bandId and invitee_email = @email and status = 1", new { bandId, email }, ct);
             if (acceptedInvitation is null)
                 return Results.Forbid();
         }

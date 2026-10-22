@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using WBand.WebAPI.Endpoints.Bands;
 using WBand.WebAPI.Shared;
 using WBand.Modules.BandModule.Contracts;
@@ -42,12 +42,12 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         var ownerId = Guid.NewGuid();
         using var owner = fixture.CreateClient(ownerId);
         var band = await CreateBand(owner);
-        await using var db = fixture.CreateContext();
-        var membership = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId", new { bandId = band.Id });
+        await using var db = fixture.CreateBandContext();
+        var membership = await db.SingleOrDefaultAsync<BandMember>("select * from band_members where band_id = @bandId", new { bandId = band.Id });
         Assert.NotNull(membership);
         Assert.Equal(ownerId, membership.UserId);
         Assert.Equal(BandMemberRole.Owner, membership.Role);
-        Assert.Equal("Test Band", (await db.SingleOrDefaultAsync<Band>("select * from public.bands where id = @bandId", new { bandId = band.Id }))!.Name);
+        Assert.Equal("Test Band", (await db.SingleOrDefaultAsync<Band>("select * from bands where id = @bandId", new { bandId = band.Id }))!.Name);
         Assert.Equal(band.Id, Assert.Single((await owner.GetFromJsonAsync<ApiResponse<List<Band>>>("/band-api/bands"))!.Value).Id);
     }
 
@@ -67,12 +67,12 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
                         .PublishAsync(new BandCreated(Guid.NewGuid(), ownerId, "Fault probe")));
             }
             var band = await CreateBand(owner);
-            await using var db = fixture.CreateContext();
+            await using var db = fixture.CreateBandContext();
             var stored = await db.SingleOrDefaultAsync<Band>(
-                "select * from public.bands where id = @id", new { id = band.Id });
+                "select * from bands where id = @id", new { id = band.Id });
             Assert.NotNull(stored);
             var member = await db.SingleOrDefaultAsync<BandMember>(
-                "select * from public.band_members where band_id = @id", new { id = band.Id });
+                "select * from band_members where band_id = @id", new { id = band.Id });
             Assert.NotNull(member);
             Assert.Equal(ownerId, member.UserId);
             Assert.Equal(BandMemberRole.Owner, member.Role);
@@ -104,9 +104,9 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         using var owner = fixture.CreateClient(ownerId);
         var response = await owner.PostAsJsonAsync("/band-api/bands", new CreateBandRequest("fail_commit"));
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        await using var db = fixture.CreateContext();
-        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.bands where created_by = @ownerId)", new { ownerId = ownerId }));
-        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.band_members where user_id = @ownerId)", new { ownerId = ownerId }));
+        await using var db = fixture.CreateBandContext();
+        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from bands where created_by = @ownerId)", new { ownerId = ownerId }));
+        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from band_members where user_id = @ownerId)", new { ownerId = ownerId }));
     }
 
     [Theory]
@@ -134,8 +134,8 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
             var count = await invitee.GetFromJsonAsync<ApiResponse<int>>("/band-api/user/invitations/count");
             Assert.Equal(1, count!.Value);
             Assert.Equal(HttpStatusCode.OK, (await invitee.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).StatusCode);
-            await using var db = fixture.CreateContext();
-            var member = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and user_id = @inviteeId", new { bandId = band.Id, inviteeId = inviteeId });
+            await using var db = fixture.CreateBandContext();
+            var member = await db.SingleOrDefaultAsync<BandMember>("select * from band_members where band_id = @bandId and user_id = @inviteeId", new { bandId = band.Id, inviteeId = inviteeId });
             Assert.NotNull(member);
             Assert.Equal(BandMemberRole.Admin, member.Role);
             Assert.Equal(HttpStatusCode.Conflict, (await invitee.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).StatusCode);
@@ -144,11 +144,11 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
             Assert.Equal(HttpStatusCode.OK, (await invitee.PostAsync($"/band-api/bands/{band.Id}/membership/rejoin", null)).StatusCode);
             Assert.Equal(HttpStatusCode.Conflict, (await invitee.PostAsync($"/band-api/bands/{band.Id}/membership/rejoin", null)).StatusCode);
 
-            var rejoined = (await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and user_id = @inviteeId", new { bandId = band.Id, inviteeId = inviteeId }))!;
+            var rejoined = (await db.SingleOrDefaultAsync<BandMember>("select * from band_members where band_id = @bandId and user_id = @inviteeId", new { bandId = band.Id, inviteeId = inviteeId }))!;
             Assert.Equal(BandMemberRole.Member, rejoined.Role);
-            Assert.NotNull((await db.SingleOrDefaultAsync<BandDeparture>("select * from public.band_departures where band_id = @bandId", new { bandId = band.Id }))!.RejoinedAt);
+            Assert.NotNull((await db.SingleOrDefaultAsync<BandDeparture>("select * from band_departures where band_id = @bandId", new { bandId = band.Id }))!.RejoinedAt);
             Assert.Equal(HttpStatusCode.OK, (await owner.DeleteAsync($"/band-api/bands/{band.Id}/members/{rejoined.Id}")).StatusCode);
-            Assert.Null(await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where id = @id", new { id = rejoined.Id }));
+            Assert.Null(await db.SingleOrDefaultAsync<BandMember>("select * from band_members where id = @id", new { id = rejoined.Id }));
         }
         finally
         {
@@ -167,12 +167,12 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         var band = await CreateBand(owner);
         var invitation = await Invite(owner, band.Id, email);
         Assert.Equal(HttpStatusCode.Forbidden, (await outsider.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).StatusCode);
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateBandContext();
         // ExpiresAt is immutable in application code; expire it through a SQL update for the scenario.
-        await db.ExecuteAsync("update public.band_invitations set expires_at = @expiresAt where id = @id", new { expiresAt = DateTimeOffset.UtcNow.AddDays(-1), id = invitation.Id });
+        await db.ExecuteAsync("update band_invitations set expires_at = @expiresAt where id = @id", new { expiresAt = DateTimeOffset.UtcNow.AddDays(-1), id = invitation.Id });
         Assert.Equal(HttpStatusCode.Conflict, (await invitee.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).StatusCode);
-        Assert.Equal(InvitationStatus.Expired, (await db.SingleOrDefaultAsync<BandInvitation>("select * from public.band_invitations where id = @invitationId", new { invitationId = invitation.Id }))!.Status);
-        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.band_members where user_id = @id)", new { id = id }));
+        Assert.Equal(InvitationStatus.Expired, (await db.SingleOrDefaultAsync<BandInvitation>("select * from band_invitations where id = @invitationId", new { invitationId = invitation.Id }))!.Status);
+        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from band_members where user_id = @id)", new { id = id }));
     }
 
     [Fact]
@@ -186,10 +186,10 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         var band = await CreateBand(owner);
         var invitation = await Invite(owner, band.Id, email);
         (await member.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).EnsureSuccessStatusCode();
-        await using var db = fixture.CreateContext();
-        var membership = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and user_id = @memberId", new { bandId = band.Id, memberId = memberId });
+        await using var db = fixture.CreateBandContext();
+        var membership = await db.SingleOrDefaultAsync<BandMember>("select * from band_members where band_id = @bandId and user_id = @memberId", new { bandId = band.Id, memberId = memberId });
         Assert.NotNull(membership);
-        var ownerMembership = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and user_id = @ownerId", new { bandId = band.Id, ownerId = ownerId });
+        var ownerMembership = await db.SingleOrDefaultAsync<BandMember>("select * from band_members where band_id = @bandId and user_id = @ownerId", new { bandId = band.Id, ownerId = ownerId });
         Assert.NotNull(ownerMembership);
         Assert.Equal(HttpStatusCode.OK, (await owner.PutAsJsonAsync($"/band-api/bands/{band.Id}/members/{membership.Id}/role", new UpdateMemberRoleRequest(BandMemberRole.Admin))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await owner.PutAsJsonAsync($"/band-api/bands/{band.Id}/members/{ownerMembership.Id}/role", new UpdateMemberRoleRequest(BandMemberRole.Member))).StatusCode);
@@ -207,11 +207,11 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         await Invite(owner, band.Id, $"{Guid.NewGuid():N}@example.com");
         (await owner.PutAsJsonAsync($"/band-api/bands/{band.Id}", new UpdateBandRequest("Renamed"))).EnsureSuccessStatusCode();
         (await owner.DeleteAsync($"/band-api/bands/{band.Id}")).EnsureSuccessStatusCode();
-        await using var db = fixture.CreateContext();
-        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.bands where id = @bandId)", new { bandId = band.Id }));
-        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.band_members where band_id = @bandId)", new { bandId = band.Id }));
-        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.band_invitations where band_id = @bandId)", new { bandId = band.Id }));
-        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.band_departures where band_id = @bandId)", new { bandId = band.Id }));
+        await using var db = fixture.CreateBandContext();
+        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from bands where id = @bandId)", new { bandId = band.Id }));
+        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from band_members where band_id = @bandId)", new { bandId = band.Id }));
+        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from band_invitations where band_id = @bandId)", new { bandId = band.Id }));
+        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from band_departures where band_id = @bandId)", new { bandId = band.Id }));
     }
 
     [Fact]
@@ -232,10 +232,10 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         var revoked = await Invite(owner, band.Id, otherEmail);
         (await owner.DeleteAsync($"/band-api/bands/{band.Id}/invitations/{revoked.Id}")).EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.Conflict, (await other.PutAsJsonAsync($"/band-api/user/invitations/{revoked.Id}", new RespondInvitationRequest(true))).StatusCode);
-        await using var db = fixture.CreateContext();
-        Assert.Equal(InvitationStatus.Declined, (await db.SingleOrDefaultAsync<BandInvitation>("select * from public.band_invitations where id = @invitationId", new { invitationId = invitation.Id }))!.Status);
-        Assert.Equal(InvitationStatus.Revoked, (await db.SingleOrDefaultAsync<BandInvitation>("select * from public.band_invitations where id = @revokedId", new { revokedId = revoked.Id }))!.Status);
-        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.band_members where user_id = @id or user_id = @otherId)", new { id = id, otherId = otherId }));
+        await using var db = fixture.CreateBandContext();
+        Assert.Equal(InvitationStatus.Declined, (await db.SingleOrDefaultAsync<BandInvitation>("select * from band_invitations where id = @invitationId", new { invitationId = invitation.Id }))!.Status);
+        Assert.Equal(InvitationStatus.Revoked, (await db.SingleOrDefaultAsync<BandInvitation>("select * from band_invitations where id = @revokedId", new { revokedId = revoked.Id }))!.Status);
+        Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from band_members where user_id = @id or user_id = @otherId)", new { id = id, otherId = otherId }));
     }
 
     [Fact]
@@ -272,8 +272,8 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var band = await CreateBand(owner);
-        await using var db = fixture.CreateContext();
-        var existing = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId", new { bandId = band.Id });
+        await using var db = fixture.CreateBandContext();
+        var existing = await db.SingleOrDefaultAsync<BandMember>("select * from band_members where band_id = @bandId", new { bandId = band.Id });
         await using var transaction = await db.BeginTransactionAsync();
         var duplicate = new BandMember
         {
@@ -297,8 +297,8 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
             member.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true)));
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.OK);
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.Conflict);
-        await using var db = fixture.CreateContext();
-        Assert.Equal(1, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.band_members where band_id = @bandId and user_id = @userId", new { bandId = band.Id, userId }));
+        await using var db = fixture.CreateBandContext();
+        Assert.Equal(1, await db.SingleOrDefaultAsync<int>("select count(*)::int from band_members where band_id = @bandId and user_id = @userId", new { bandId = band.Id, userId }));
     }
 
     [Theory]
@@ -312,7 +312,7 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         var band = await CreateBand(owner);
         var unknownUserId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateBandContext();
         object orphan = entity switch
         {
             "Band" => new Band { Id = Guid.NewGuid(), Name = "Orphan", CreatedBy = unknownUserId, CreatedAt = now },
@@ -341,13 +341,13 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         var ownerId = Guid.NewGuid();
         using var owner = fixture.CreateClient(ownerId);
         var band = await CreateBand(owner);
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateBandContext();
         await using var transaction = await db.BeginTransactionAsync();
-        await Assert.ThrowsAsync<Npgsql.PostgresException>(() => db.ExecuteAsync("delete from public.users where keycloak_id = @ownerId", new { ownerId }));
+        await Assert.ThrowsAsync<Npgsql.PostgresException>(() => db.ExecuteAsync("delete from users where keycloak_id = @ownerId", new { ownerId }));
 
-        await using var reader = fixture.CreateContext();
-        Assert.True(await reader.SingleOrDefaultAsync<bool>("select exists(select 1 from public.users where keycloak_id = @ownerId)", new { ownerId = ownerId }));
-        Assert.True(await reader.SingleOrDefaultAsync<bool>("select exists(select 1 from public.bands where id = @bandId)", new { bandId = band.Id }));
+        await using var reader = fixture.CreateBandContext();
+        Assert.True(await reader.SingleOrDefaultAsync<bool>("select exists(select 1 from users where keycloak_id = @ownerId)", new { ownerId = ownerId }));
+        Assert.True(await reader.SingleOrDefaultAsync<bool>("select exists(select 1 from bands where id = @bandId)", new { bandId = band.Id }));
     }
 
     internal static async Task<Band> CreateBand(HttpClient owner)

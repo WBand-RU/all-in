@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using WBand.WebAPI.Shared;
 using WBand.WebAPI.Services;
-using WBand.WebAPI.Application.Bands;
 using Wolverine.Http;
 
 namespace WBand.WebAPI.Endpoints.Bands;
@@ -53,13 +52,13 @@ public static class BandInvitationsEndpoint
     public static async Task<IResult> Get(
         Guid bandId,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
         if (!await BandAccess.IsOwner(db, bandId, user.Id, ct))
             return Results.Forbid();
-        var invitations = await db.QueryAsync<BandInvitation>("select * from public.band_invitations where band_id = @bandId", new { bandId }, ct);
+        var invitations = await db.QueryAsync<BandInvitation>("select * from band_invitations where band_id = @bandId", new { bandId }, ct);
         return Results.Ok(ApiResponse<IReadOnlyList<BandInvitation>>.Success(invitations));
     }
 
@@ -70,7 +69,7 @@ public static class BandInvitationsEndpoint
         Guid bandId,
         CreateInvitationRequest request,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
@@ -78,12 +77,12 @@ public static class BandInvitationsEndpoint
         if (!await BandAccess.IsOwner(db, bandId, user.Id, ct))
             return Results.Forbid();
         var email = request.InviteeEmail.Trim().ToLowerInvariant();
-        var existingMember = await db.SingleOrDefaultAsync<BandMember>("select * from public.band_members where band_id = @bandId and email = @email", new { bandId, email }, ct);
+        var existingMember = await db.SingleOrDefaultAsync<BandMember>("select * from band_members where band_id = @bandId and email = @email", new { bandId, email }, ct);
         if (existingMember is not null)
             return Results.Conflict(new InvitationConflictResponse("member_already_exists"));
 
         var now = DateTimeOffset.UtcNow;
-        var existingInvitation = await db.SingleOrDefaultAsync<BandInvitation>("select * from public.band_invitations where band_id = @bandId and invitee_email = @email", new { bandId, email }, ct);
+        var existingInvitation = await db.SingleOrDefaultAsync<BandInvitation>("select * from band_invitations where band_id = @bandId and invitee_email = @email", new { bandId, email }, ct);
         if (existingInvitation is not null)
         {
             var isPending =
@@ -124,7 +123,7 @@ public static class RevokeInvitationEndpoint
         Guid bandId,
         Guid invitationId,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
@@ -151,17 +150,17 @@ public static class MyInvitationsEndpoint
     [WolverineGet("/band-api/user/invitations", OperationId = "GetMyInvitations")]
     public static async Task<ApiResponse<IReadOnlyList<MyInvitationResponse>>> Get(
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
         await using var transaction = await db.BeginTransactionAsync(ct);
         var email = user.Email.Trim().ToLowerInvariant();
         await db.ExecuteAsync("""
-            update public.band_invitations set status = 4
+            update band_invitations set status = 4
             where invitee_email = @email and status = 0 and expires_at <= clock_timestamp()
             """, new { email }, ct);
-        var invitations = await db.QueryAsync<BandInvitation>("select * from public.band_invitations where invitee_email = @email order by band_id", new { email }, ct);
+        var invitations = await db.QueryAsync<BandInvitation>("select * from band_invitations where invitee_email = @email order by band_id", new { email }, ct);
         var result = new List<MyInvitationResponse>();
         foreach (var invitation in invitations)
         {
@@ -192,12 +191,12 @@ public static class InvitationCountEndpoint
     [WolverineGet("/band-api/user/invitations/count", OperationId = "GetMyInvitationsCount")]
     public static async Task<ApiResponse<int>> Get(
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
         var email = user.Email.Trim().ToLowerInvariant();
-        var count = await db.SingleOrDefaultAsync<int>("select count(*)::integer from public.band_invitations where invitee_email = @email and status = 0 and expires_at > clock_timestamp()", new { email }, ct);
+        var count = await db.SingleOrDefaultAsync<int>("select count(*)::integer from band_invitations where invitee_email = @email and status = 0 and expires_at > clock_timestamp()", new { email }, ct);
         return ApiResponse<int>.Success(count);
     }
 }
@@ -211,7 +210,7 @@ public static class RespondInvitationEndpoint
         Guid invitationId,
         RespondInvitationRequest request,
         ICurrentUser user,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken ct
     )
     {
