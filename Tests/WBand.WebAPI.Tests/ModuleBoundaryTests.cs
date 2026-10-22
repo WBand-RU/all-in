@@ -1,3 +1,5 @@
+using WBand.Modules.SongModule;
+using WBand.Modules.SongModule.Contracts;
 using System.Reflection;
 using WBand.Modules.BandModule;
 using WBand.Modules.BandModule.Contracts;
@@ -28,6 +30,26 @@ public sealed class ModuleBoundaryTests
             || reference.Name!.StartsWith("Microsoft.EntityFrameworkCore", StringComparison.Ordinal));
         Assert.All(contracts.GetExportedTypes(), type =>
             Assert.Equal("WBand.Modules.BandModule.Contracts", type.Namespace));
+    }
+
+    [Fact]
+    public void SongContracts_WhenReferenced_DoNotExposeHostOrPersistenceDependencies()
+    {
+        var contracts = typeof(GetSongReferences).Assembly;
+        Assert.Equal("WBand.Modules.SongModule.Contracts", contracts.GetName().Name);
+        Assert.DoesNotContain(contracts.GetReferencedAssemblies(), reference =>
+            reference.Name is "WBand.WebAPI" or "WBand.Modules.SongModule"
+            || reference.Name!.StartsWith("Microsoft.EntityFrameworkCore", StringComparison.Ordinal));
+        Assert.All(contracts.GetExportedTypes(), type =>
+            Assert.Equal("WBand.Modules.SongModule.Contracts", type.Namespace));
+    }
+
+    [Fact]
+    public void SongModule_WhenReferenced_DoesNotDependOnHostOrOtherModuleImplementations()
+    {
+        Assert.DoesNotContain(typeof(SongModule).Assembly.GetReferencedAssemblies(), reference =>
+            reference.Name is "WBand.WebAPI" or "WBand.AppHost"
+                or "WBand.Modules.EventModule" or "WBand.Modules.BandModule");
     }
 
     [Theory]

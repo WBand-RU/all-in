@@ -1,3 +1,4 @@
+using WBand.Modules.SongModule;
 using WBand.Modules.BandModule;
 using FluentValidation;
 using JasperFx;
@@ -118,6 +119,7 @@ static WebApplicationBuilder AddWBandFoundation(
 
         options.Discovery.IncludeAssembly(typeof(Program).Assembly);
         BandModule.Configure(options);
+        SongModule.Configure(options);
         options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
 
         ConfigureWolverine();

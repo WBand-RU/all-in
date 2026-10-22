@@ -1,3 +1,4 @@
+using WBand.Modules.SongModule;
 using WBand.Modules.BandModule.Endpoints;
 using BandDataContext = WBand.Modules.BandModule.Data.BandDataContext;
 using WBand.Modules.BandModule;
@@ -100,6 +101,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
             options.PublishAllMessages().ToLocalQueue("test-outgoing");
             options.Discovery.IncludeAssembly(typeof(WBand.WebAPI.Data.DataContext).Assembly);
             BandModule.Configure(options);
+            SongModule.Configure(options);
             options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
             options.UseFluentValidation();
         });
