@@ -45,3 +45,21 @@ Next.js фиксирует rewrites при сборке, поэтому runtime-
 
 Источник поведения standalone: [Next.js output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output)
 и документация установленного пакета `next/dist/docs`.
+
+## CI
+
+Активные jobs проверяют API, BFF, Next.js и все .NET-тесты решения.
+Изменения legacy worker, `Services`, `src`, `App/web-vite` не запускают MVP-сборки.
+Глобальные конфигурации и изменения workflow запускают все проверки.
+
+Для backend-тестов и сборки BFF репозиторию нужен GitHub Actions secret
+`NUGET_CONFIG`: полный XML NuGet.Config с доступом к приватному feed.
+Скрипт `.github/scripts/configure-nuget.sh` создаёт файл вне checkout с правами
+0600; Docker получает его через `secret-files`. Содержимое не выводится в журнал.
+Без секрета job завершается с понятной ошибкой. Секреты fork PR автоматически
+недоступны; такие PR требуют проверки в доверенном окружении с доступом к feed.
+
+Публикация использует прежние ветки staging/release и registry secrets.
+Для BFF добавлена переменная `SWARM_PROXY_SERVICE`; остальные имена сервисов
+задаются `SWARM_WEBAPI_SERVICE` и `SWARM_WEB_SERVICE`. Публикация и deployment
+в текущей локальной проверке не запускались; repository secrets не изменялись.

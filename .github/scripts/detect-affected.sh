@@ -5,7 +5,7 @@ base_sha="${1:-}"
 head_sha="${2:-HEAD}"
 
 webapi=false
-worker=false
+proxy=false
 web=false
 backend_tests=false
 
@@ -21,25 +21,22 @@ while IFS= read -r file; do
     case "$file" in
         .github/workflows/*|.github/scripts/*|.dockerignore|.editorconfig|WBand.slnx|global.json|NuGet.Config|Directory.Build.*|Directory.Packages.props)
             webapi=true
-            worker=true
+            proxy=true
             web=true
             backend_tests=true
             ;;
         App/web/*)
             web=true
             ;;
-        Tests/WBand.WebAPI.Tests/*|App/WBand.WebProxy/*|App/WBand.AppHost/*|Common/WBand.ServiceDefaults/*)
+        Tests/WBand.WebAPI.Tests/*|Tests/WBand.Authentication.Tests/*|App/WBand.AppHost/*|Common/WBand.ServiceDefaults/*)
             backend_tests=true
             ;;
-        App/WBand.WebAPI/*|Common/Auth/*|Common/Shared/*|Modules/WBand.Modules.*/*)
+        App/WBand.WebProxy/*)
+            proxy=true
+            backend_tests=true
+            ;;
+        App/WBand.WebAPI/*|Modules/WBand.Modules.EventModule/*|Modules/WBand.Modules.BandModule/*|Modules/WBand.Modules.SongModule/*|Modules/WBand.Modules.UserModule/*)
             webapi=true
-            backend_tests=true
-            ;;
-    esac
-
-    case "$file" in
-        App/WBand.MixerWorker/*|Common/Shared/*|Modules/WBand.Modules.BandModule/*|Modules/WBand.Modules.FileModule/*|Modules/WBand.Modules.MixerModule/*|Modules/WBand.Modules.PlaylistModule/*|Modules/WBand.Modules.SongModule/*|Modules/WBand.Modules.StemModule/*)
-            worker=true
             backend_tests=true
             ;;
     esac
@@ -47,7 +44,7 @@ done <<< "$changed_files"
 
 {
     echo "webapi=$webapi"
-    echo "worker=$worker"
+    echo "proxy=$proxy"
     echo "web=$web"
     echo "backend=$backend_tests"
 } >> "$GITHUB_OUTPUT"
@@ -57,7 +54,7 @@ done <<< "$changed_files"
     echo "| Project | Changed |"
     echo "| --- | --- |"
     echo "| WBand.WebAPI | $webapi |"
-    echo "| WBand.MixerWorker | $worker |"
+    echo "| WBand.WebProxy | $proxy |"
     echo "| web | $web |"
     echo "| Backend tests | $backend_tests |"
 } >> "$GITHUB_STEP_SUMMARY"

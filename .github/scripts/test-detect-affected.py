@@ -40,7 +40,7 @@ class DetectAffectedTests(unittest.TestCase):
 
     def test_web_changes_only_trigger_web(self):
         self.assertEqual(self.detect(["App/web/app/page.tsx"]), {
-            "webapi": "false", "worker": "false", "web": "true", "backend": "false",
+            "webapi": "false", "proxy": "false", "web": "true", "backend": "false",
         })
 
     def test_documentation_does_not_trigger_builds(self):
@@ -48,6 +48,20 @@ class DetectAffectedTests(unittest.TestCase):
 
     def test_workflow_changes_trigger_all_checks(self):
         self.assertTrue(all(value == "true" for value in self.detect([".github/workflows/ci-cd.yml"]).values()))
+
+    def test_proxy_changes_trigger_proxy_image_and_backend(self):
+        result = self.detect(["App/WBand.WebProxy/Program.cs"])
+        self.assertEqual((result["proxy"], result["backend"], result["webapi"]), ("true", "true", "false"))
+
+    def test_auth_tests_trigger_backend_gate(self):
+        self.assertEqual(self.detect(["Tests/WBand.Authentication.Tests/ProxyRoutingTests.cs"])["backend"], "true")
+
+    def test_legacy_projects_do_not_trigger_mvp(self):
+        files = ["App/WBand.MixerWorker/Program.cs", "Modules/StemModule/Program.cs",
+                 "Services/Users/User.cs", "src/App.tsx", "App/web-vite/src/App.tsx"]
+        for file in files:
+            with self.subTest(file=file):
+                self.assertTrue(all(value == "false" for value in self.detect([file]).values()))
 
     def test_first_push_scans_all_files(self):
         self.assertEqual(self.detect(["App/web/app/page.tsx"], base="")["web"], "true")
