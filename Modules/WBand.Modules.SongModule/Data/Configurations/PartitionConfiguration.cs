@@ -8,7 +8,7 @@ public sealed class PartitionConfiguration : IEntityTypeConfiguration<Partition>
 {
     public void Configure(EntityTypeBuilder<Partition> builder)
     {
-        builder.ToTable("song_partitions", "public");
+        builder.ToTable("song_partitions", SongSchema.Name);
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Id).HasColumnName("id");

@@ -8,7 +8,7 @@ public sealed class SongContentCellConfiguration : IEntityTypeConfiguration<Song
 {
     public void Configure(EntityTypeBuilder<SongContentCell> builder)
     {
-        builder.ToTable("song_content_cells", "public");
+        builder.ToTable("song_content_cells", SongSchema.Name);
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
         builder.Property(x => x.SongId).HasColumnName("song_id");

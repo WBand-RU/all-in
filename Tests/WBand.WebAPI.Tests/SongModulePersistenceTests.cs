@@ -30,7 +30,7 @@ public sealed class SongModulePersistenceTests
         Assert.All(db.Model.GetEntityTypes(), entity =>
         {
             Assert.Equal(typeof(SongModule).Assembly, entity.ClrType.Assembly);
-            Assert.Equal("public", entity.GetSchema());
+            Assert.Equal("songs", entity.GetSchema());
         });
         var keys = db.Model.FindEntityType(typeof(SongContentCell))!.GetForeignKeys().ToArray();
         Assert.Equal(2, keys.Length);

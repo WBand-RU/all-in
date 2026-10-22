@@ -8,7 +8,7 @@ public sealed class SongConfiguration : IEntityTypeConfiguration<Song>
 {
     public void Configure(EntityTypeBuilder<Song> builder)
     {
-        builder.ToTable("songs", "public");
+        builder.ToTable("songs", SongSchema.Name);
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Id).HasColumnName("id");

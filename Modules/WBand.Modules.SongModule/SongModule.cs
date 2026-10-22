@@ -17,6 +17,15 @@ public static class SongModule
         return services;
     }
 
+    /// <summary>Applies song migrations after legacy and band storage migrations.</summary>
+    public static async Task ApplyMigrationsAsync(string connectionString, CancellationToken ct = default)
+    {
+        var options = new DbContextOptionsBuilder<SongDataContext>();
+        ConfigurePersistence(options, connectionString);
+        await using var db = new SongDataContext(options.Options);
+        await db.Database.MigrateAsync(ct);
+    }
+
     internal static void ConfigurePersistence(DbContextOptionsBuilder options, string connectionString)
     {
         var configured = new NpgsqlConnectionStringBuilder(connectionString) { SearchPath = "songs,public" };

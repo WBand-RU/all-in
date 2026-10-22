@@ -176,8 +176,8 @@
       - [x] T12.5b: пустая модель legacy-контекста, ReleaseSongOwnership без DDL и snapshot; архитектурная/миграционная проверка.
       - [x] T12.5c: runtime DI регистрирует только модульные контексты через composition root; legacy создаётся только для миграций/SQL диагностики.
     - [ ] T12.6: initial migration в songs для пяти таблиц, сохранение внешних FK и отказ при смешанной схеме.
-      - [ ] T12.6a: schema songs, initial snapshot и атомарное создание/adoption пяти таблиц; внешние FK к bands управляются явным SQL.
-      - [ ] T12.6b: миграции SongModule после legacy/Band; проверки собственных схем и двух независимых histories.
+      - [x] T12.6a: schema songs, initial snapshot и атомарное создание/adoption пяти таблиц; внешние FK к bands управляются явным SQL.
+      - [x] T12.6b: миграции SongModule после legacy/Band; проверки собственных схем и двух независимых histories.
       - [ ] T12.6c: миграционные тесты legacy/fresh/conflict/rollback, сохранение rows/OID/FK, включая составные ссылки матрицы.
     - [ ] T12.7: public→songs/пустая БД/повтор/откат/backup, ID и данные, полный Release/Docker/runtime; отдельная приёмка матрицы и прежних ревизий в T13/T14.
 

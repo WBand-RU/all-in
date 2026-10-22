@@ -22,5 +22,6 @@ public static class DatabaseSetup
         );
         await db.Database.MigrateAsync(cancellationToken);
         await BandModule.ApplyMigrationsAsync(connectionString, cancellationToken);
+        await SongModule.ApplyMigrationsAsync(connectionString, cancellationToken);
     }
 }

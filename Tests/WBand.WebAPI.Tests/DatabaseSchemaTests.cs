@@ -10,7 +10,7 @@ public sealed class DatabaseSchemaTests(DatabaseFixture fixture)
     public async Task Migrations_WhenRunTwice_CreateTablesInTheirOwnedSchemas()
     {
         await using var db = fixture.CreateSession();
-        var tables = await db.QueryAsync<string>("select table_name from information_schema.tables where table_schema = 'public'");
+        var tables = await db.QueryAsync<string>("select table_name from information_schema.tables where table_schema = 'songs'");
         foreach (var table in new[] { "songs", "song_partitions", "song_sections", "song_content_cells", "song_revisions" })
             Assert.Contains(table, tables);
         var owned = await db.QueryAsync<string>("select table_name from information_schema.tables where table_schema = 'bands'");
@@ -22,6 +22,12 @@ public sealed class DatabaseSchemaTests(DatabaseFixture fixture)
         await using var bands = fixture.CreateBandSession();
         Assert.Equal(bands.Database.GetMigrations(), await bands.Database.GetAppliedMigrationsAsync());
         Assert.False(bands.Database.HasPendingModelChanges());
+        await using var songs = fixture.CreateSongSession();
+        Assert.Equal(songs.Database.GetMigrations(), await songs.Database.GetAppliedMigrationsAsync());
+        Assert.False(songs.Database.HasPendingModelChanges());
+        var legacy = await db.QueryAsync<string>("select table_name from information_schema.tables where table_schema = 'public'");
+        Assert.DoesNotContain("songs", legacy);
+        Assert.DoesNotContain("song_content_cells", legacy);
         Assert.DoesNotContain("outbox", tables);
         Assert.Equal(db.Database.GetMigrations(), await db.Database.GetAppliedMigrationsAsync());
     }
