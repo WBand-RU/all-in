@@ -82,12 +82,12 @@
     - [x] T08.1: CI учитывает общую persistence-сборку; регрессионная проверка маршрутизации.
     - [x] T08.2: общая EF/SQL/transaction-обвязка без доменных моделей; project/container graph.
     - [x] T08.3: перевести DataContext на общую обвязку без изменения поведения; полный Release.
-    - [ ] T08.4: добавить собственные BandDataContext, модели и mapping небольшими семействами (profiles/bands, membership/departures, invitations); сначала существующие таблицы public.
+    - [x] T08.4: добавить собственные BandDataContext, модели и mapping небольшими семействами (profiles/bands, membership/departures, invitations); сначала существующие таблицы public.
       - [x] T08.4a: зависимости persistence и скалярные модели User/Band.
       - [x] T08.4b: модели membership/departures и их enum.
       - [x] T08.4e: модели invitations/status.
-      - [ ] T08.4c: mappings profiles/bands, membership/departures, invitations отдельными семействами.
-      - [ ] T08.4d: BandDataContext, поиск таблиц bands/public и регистрация; проверка модели и scoped lifetime.
+      - [x] T08.4c: mappings profiles/bands, membership/departures, invitations отдельными семействами.
+      - [x] T08.4d: BandDataContext, поиск таблиц bands/public и регистрация; проверка модели и scoped lifetime.
 
     - [ ] T08.5: переключить профиль/Keycloak и обработчики групп на BandDataContext; создание группы с Owner остаётся одной транзакцией.
     - [ ] T08.6: заменить чтение членства из song persistence публичными Wolverine-запросами; проверить разрешения и повторы.
