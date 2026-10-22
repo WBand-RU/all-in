@@ -1,5 +1,4 @@
 using Wolverine;
-using WBand.Modules.UserModule.Events;
 using WBand.WebAPI.Data;
 using WBand.WebAPI.Events;
 
@@ -11,7 +10,7 @@ namespace WBand.WebAPI.Application;
 public static class KeycloakEventHandler
 {
     /// <summary>
-    /// Saves profile changes with EF Core, then publishes the corresponding event.
+    /// Saves profile changes idempotently without requiring an outgoing notification.
     /// </summary>
     public static async Task Handle(
         KeycloakEvent message,
@@ -42,13 +41,11 @@ public static class KeycloakEventHandler
         var occurredAt = DateTimeOffset.FromUnixTimeMilliseconds(message.Time);
         var user = await db.SingleOrDefaultAsync<User>(
             "select * from public.users where keycloak_id = @id", new { id = message.UserId }, cancellationToken);
-        object outgoing;
         if (message.Type == "REGISTER")
         {
             if (user is not null) return;
             user = CreateUser(message, occurredAt);
             await db.InsertAsync(user, cancellationToken);
-            outgoing = new UserCreated(user.Id, user.Email);
         }
         else
         {
@@ -58,10 +55,8 @@ public static class KeycloakEventHandler
             user.LastLoginAt = occurredAt;
             if (user.UpdatedAt < occurredAt) user.UpdatedAt = occurredAt;
             await db.UpdateAsync(user, cancellationToken);
-            outgoing = new UserLoggedIn(user.Id, user.Email, user.LastLoginAt);
         }
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(outgoing);
     }
 
     private static User CreateUser(KeycloakEvent message, DateTimeOffset occurredAt)

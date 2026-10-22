@@ -60,6 +60,8 @@ public sealed class CurrentUserEndpointTests(DatabaseFixture fixture)
             },
         });
         var bus = new Mock<IMessageBus>();
+        bus.Setup(x => x.PublishAsync(It.IsAny<UserCreated>(), It.IsAny<DeliveryOptions>()))
+            .Returns(ValueTask.FromException(new InvalidOperationException("broker unavailable")));
         async Task<CurrentUserEndpoint.CurrentUserResponse> Get()
         {
             await using var db = fixture.CreateSession();
@@ -80,7 +82,7 @@ public sealed class CurrentUserEndpointTests(DatabaseFixture fixture)
             Details = new Dictionary<string, string> { ["email"] = identity.Email },
         }, session, bus.Object, default);
         Assert.Equal(profiles[0].Id, (await Get()).Id);
-        bus.Verify(x => x.PublishAsync(It.IsAny<UserCreated>(), It.IsAny<DeliveryOptions>()), Times.Once);
+        bus.Verify(x => x.PublishAsync(It.IsAny<UserCreated>(), It.IsAny<DeliveryOptions>()), Times.Never);
     }
 
 }

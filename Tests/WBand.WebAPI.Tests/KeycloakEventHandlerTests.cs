@@ -1,4 +1,4 @@
-using WBand.Modules.UserModule.Events;
+using Microsoft.EntityFrameworkCore;
 using WBand.WebAPI.Application;
 using WBand.WebAPI.Data;
 using WBand.WebAPI.Events;
@@ -12,7 +12,7 @@ namespace WBand.WebAPI.Tests;
 public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
 {
     [Fact]
-    public async Task Handle_WhenRegistered_CommitsUserThenPublishesUserCreated()
+    public async Task Handle_WhenRegistered_CommitsNormalizedProfile()
     {
         var message = CreateRegistration();
         await Handle(message);
@@ -21,9 +21,7 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
         Assert.NotNull(user);
         Assert.Equal(message.Details["email"].Trim().ToLowerInvariant(), user.Email);
         Assert.Equal(default, user.LastLoginAt);
-        var rows = await EventsFor(user.Id, db);
-        var row = Assert.Single(rows);
-        Assert.Equal(user.Id, Assert.IsType<UserCreated>(row).UserId);
+        Assert.Equal(1, await db.Users.CountAsync(x => x.KeycloakId == message.UserId));
     }
 
     [Fact]
@@ -37,7 +35,6 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
         await using var db = fixture.CreateSession();
         var user = (await FindUser(message.UserId, db))!;
         Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(login.Time), user.LastLoginAt);
-        Assert.Equal(2, (await EventsFor(user.Id, db)).Count);
     }
 
     [Fact]
@@ -51,7 +48,6 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
         await using var db = fixture.CreateSession();
         var user = (await FindUser(registration.UserId, db))!;
         Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(newer.Time), user.LastLoginAt);
-        Assert.Equal(2, (await EventsFor(user.Id, db)).Count);
     }
 
     [Fact]
@@ -74,25 +70,25 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task Handle_WhenRegistrationIsRedelivered_CreatesOneUserAndEvent()
+    public async Task Handle_WhenRegistrationIsRedelivered_CreatesOneUser()
     {
         var message = CreateRegistration();
         await Task.WhenAll(Handle(message), Handle(message));
         await using var db = fixture.CreateSession();
         var user = (await FindUser(message.UserId, db))!;
-        Assert.Single(await EventsFor(user.Id, db));
+        Assert.Equal(1, await db.Users.CountAsync(x => x.KeycloakId == message.UserId));
     }
 
     [Fact]
-    public async Task Handle_WhenPublicationFails_UserRemainsCommitted()
+    public async Task Handle_WhenPublicationIsUnavailable_CommitsWithoutPublishing()
     {
         var message = CreateRegistration();
         var bus = new Mock<IMessageBus>();
         bus.Setup(x => x.PublishAsync(It.IsAny<object>(), It.IsAny<DeliveryOptions>()))
             .Returns(ValueTask.FromException(new InvalidOperationException("broker unavailable")));
         await using var db = fixture.CreateSession();
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            KeycloakEventHandler.Handle(message, db, bus.Object, default));
+        await KeycloakEventHandler.Handle(message, db, bus.Object, default);
+        bus.Verify(x => x.PublishAsync(It.IsAny<object>(), It.IsAny<DeliveryOptions>()), Times.Never);
         await using var reader = fixture.CreateSession();
         Assert.NotNull(await FindUser(message.UserId, reader));
     }
@@ -105,14 +101,6 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
 
     private static Task<User?> FindUser(Guid id, DataContext db) =>
         db.SingleOrDefaultAsync<User>("select * from public.users where keycloak_id = @id", new { id });
-
-    private Task<IReadOnlyList<object>> EventsFor(Guid id, DataContext db) =>
-        Task.FromResult<IReadOnlyList<object>>(fixture.Publisher.Messages.Values.Where(message => message switch
-        {
-            UserCreated created => created.UserId == id,
-            UserLoggedIn login => login.UserId == id,
-            _ => false,
-        }).ToArray());
 
     private static KeycloakEvent CreateRegistration()
     {

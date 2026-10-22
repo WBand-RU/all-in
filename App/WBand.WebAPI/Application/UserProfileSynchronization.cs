@@ -1,4 +1,3 @@
-using WBand.Modules.UserModule.Events;
 using WBand.WebAPI.Data;
 using WBand.WebAPI.Services;
 using Wolverine;
@@ -42,7 +41,6 @@ public static class UserProfileSynchronization
         };
         await db.InsertAsync(user, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new UserCreated(user.Id, user.Email));
         return user;
     }
 }

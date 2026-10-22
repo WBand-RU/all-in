@@ -1,12 +1,13 @@
 # Сообщения MVP: аудит перед изменениями
 
-Статус: аудит выполнен, изменения доставки ещё не внесены. Рассматриваются
+Статус: аудит выполнен; публикации профилей удалены (9 целевых тестов прошли),
+остальные изменения доставки ещё не внесены. Рассматриваются
 только проекты текущего `WBand.slnx` и обработчики, подключённые AppHost/API.
 Исторические playback/stem-проекты не являются потребителями MVP.
 
 | Сообщения | Текущая публикация | Потребители MVP | Решение |
 | --- | --- | --- | --- |
-| UserCreated, UserLoggedIn | UserProfileSynchronization, KeycloakEventHandler; после commit | Нет | Удалить публикацию и внешние маршруты |
+| UserCreated, UserLoggedIn | UserProfileSynchronization, KeycloakEventHandler; после commit | Нет | Публикации удалены; внешние маршруты будут удалены в T06a.5 |
 | BandCreated, MemberInvited, MembershipChanged | BandEndpoints, InvitationEndpoints, MemberEndpoints; после commit | Нет | Удалить публикацию и внешние маршруты |
 | SongCreated, SongChanged, SongDeleted, SongRestored | SongEndpoints, SongHistoryEndpoints; после commit | Нет | Удалить публикацию и внешние маршруты |
 | SongPartitionsChanged, SongSectionsChanged, SongContentChanged | PartitionEndpoints, SongSectionEndpoints, SongContentEndpoints; после commit | Нет; PlaybackInvalidationHandlers находятся вне активного решения | Удалить публикацию и внешние маршруты |
