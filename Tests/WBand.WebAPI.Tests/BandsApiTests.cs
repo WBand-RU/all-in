@@ -59,6 +59,13 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         fixture.RejectPublications = true;
         try
         {
+            // Verify the fault remains active even without test event subscribers.
+            using (var scope = fixture.Services.CreateScope())
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                    await scope.ServiceProvider.GetRequiredService<IMessageBus>()
+                        .PublishAsync(new BandCreated(Guid.NewGuid(), ownerId, "Fault probe")));
+            }
             var band = await CreateBand(owner);
             await using var db = fixture.CreateContext();
             var stored = await db.SingleOrDefaultAsync<Band>(
@@ -100,7 +107,6 @@ public sealed class BandsApiTests(BandsApiFixture fixture)
         await using var db = fixture.CreateContext();
         Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.bands where created_by = @ownerId)", new { ownerId = ownerId }));
         Assert.False(await db.SingleOrDefaultAsync<bool>("select exists(select 1 from public.band_members where user_id = @ownerId)", new { ownerId = ownerId }));
-        Assert.False(fixture.Events.HasCreatedBy(ownerId));
     }
 
     [Theory]

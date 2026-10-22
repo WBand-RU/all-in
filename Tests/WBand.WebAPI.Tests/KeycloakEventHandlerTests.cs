@@ -96,7 +96,7 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
     private async Task Handle(KeycloakEvent message)
     {
         await using var db = fixture.CreateSession();
-        await KeycloakEventHandler.Handle(message, db, fixture.Publisher.Bus.Object, default);
+        await KeycloakEventHandler.Handle(message, db, Mock.Of<IMessageBus>(), default);
     }
 
     private static Task<User?> FindUser(Guid id, DataContext db) =>

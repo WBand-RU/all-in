@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
-using Moq;
-using Wolverine;
 using Testcontainers.PostgreSql;
 using WBand.WebAPI.Data;
 using Xunit;
@@ -20,7 +18,6 @@ public sealed class DatabaseFixture : IAsyncLifetime
         .Build();
     public string ConnectionString => postgres.GetConnectionString();
     public ServiceProvider Services { get; private set; } = null!;
-    public RecordingPublisher Publisher { get; } = new();
     public DataContext CreateSession() => new(new DbContextOptionsBuilder<DataContext>().UseNpgsql(ConnectionString).Options);
 
     public async Task InitializeAsync()
@@ -46,21 +43,4 @@ public sealed class DatabaseFixture : IAsyncLifetime
             await postgres.DisposeAsync();
         }
     }
-}
-
-public sealed class RecordingPublisher
-{
-    public System.Collections.Concurrent.ConcurrentDictionary<Guid, object> Messages { get; } = new();
-    public Mock<IMessageBus> Bus { get; } = new();
-    public RecordingPublisher()
-    {
-        Capture<WBand.Modules.UserModule.Events.UserCreated>();
-        Capture<WBand.Modules.UserModule.Events.UserLoggedIn>();
-        Capture<object>();
-    }
-
-    private void Capture<T>() where T : class =>
-        Bus.Setup(bus => bus.PublishAsync(It.IsAny<T>(), It.IsAny<DeliveryOptions>()))
-            .Callback<T, DeliveryOptions>((message, _) => Messages[Guid.NewGuid()] = message)
-            .Returns(ValueTask.CompletedTask);
 }

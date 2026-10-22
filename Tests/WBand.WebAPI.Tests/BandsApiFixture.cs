@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Collections.Concurrent;
 using System.Text.Encodings.Web;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +17,6 @@ using WBand.WebAPI.Data;
 using WBand.WebAPI.Endpoints.Bands;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Services.Implementations;
-using WBand.Modules.BandModule.Contracts;
 using Wolverine;
 using Wolverine.FluentValidation;
 using Wolverine.Http;
@@ -39,7 +37,6 @@ public sealed class BandsApiFixture : IAsyncLifetime
         .WithCommand("-c", "log_connections=on", "-c", "log_disconnections=on")
         .Build();
     private WebApplication app = null!;
-    public BandEventRecorder Events { get; } = new();
     public bool RejectPublications { get; set; }
 
     public string ConnectionString => postgres.GetConnectionString();
@@ -89,15 +86,15 @@ public sealed class BandsApiFixture : IAsyncLifetime
         builder.Services.AddWolverineHttp();
         builder.Services.AddProblemDetails();
         builder.Services.AddOpenApi();
-        builder.Services.AddSingleton(Events);
         builder.Services.AddDatabase(ConnectionString);
         builder.Services.AddEventModule(ConnectionString);
         builder.UseWolverine(options =>
         {
             options.MetadataRules.Add(new RejectingOutgoingRule(() => RejectPublications));
+            // Keep the failure path observable even without test event subscribers.
+            options.PublishAllMessages().ToLocalQueue("test-outgoing");
             options.Discovery.IncludeAssembly(typeof(CreateBandEndpoint).Assembly);
             options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
-            options.Discovery.IncludeAssembly(typeof(BandEventCaptureHandler).Assembly);
             options.UseFluentValidation();
         });
         app = builder.Build();
@@ -123,41 +120,6 @@ public sealed class BandsApiFixture : IAsyncLifetime
             await postgres.DisposeAsync();
         }
     }
-}
-
-public sealed class BandEventRecorder
-{
-    private readonly ConcurrentDictionary<Guid, TaskCompletionSource<BandCreated>> created = new();
-    public ConcurrentDictionary<Guid, object> Published { get; } = new();
-    public void Capture(object message)
-    {
-        Published[Guid.NewGuid()] = message;
-        if (message is BandCreated band) Record(band);
-    }
-
-    public void Record(BandCreated message) => Completion(message.BandId).TrySetResult(message);
-
-    public Task<BandCreated> WaitForCreated(Guid bandId) => Completion(bandId).Task.WaitAsync(TimeSpan.FromSeconds(10));
-
-    public bool HasCreatedBy(Guid ownerId) => created.Values.Any(x => x.Task.IsCompletedSuccessfully && x.Task.Result.OwnerId == ownerId);
-
-    private TaskCompletionSource<BandCreated> Completion(Guid bandId) =>
-        created.GetOrAdd(bandId, _ => new(TaskCreationOptions.RunContinuationsAsynchronously));
-}
-
-public static class BandEventCaptureHandler
-{
-    public static void Handle(WBand.Modules.SongModule.Contracts.SongCreated message, BandEventRecorder events) => events.Capture(message);
-    public static void Handle(WBand.Modules.SongModule.Contracts.SongChanged message, BandEventRecorder events) => events.Capture(message);
-    public static void Handle(WBand.Modules.SongModule.Contracts.SongDeleted message, BandEventRecorder events) => events.Capture(message);
-    public static void Handle(WBand.Modules.SongModule.Contracts.SongRestored message, BandEventRecorder events) => events.Capture(message);
-    public static void Handle(WBand.Modules.SongModule.Contracts.SongSectionsChanged message, BandEventRecorder events) => events.Capture(message);
-    public static void Handle(WBand.Modules.SongModule.Contracts.SongContentChanged message, BandEventRecorder events) => events.Capture(message);
-    public static void Handle(WBand.Modules.SongModule.Contracts.SongPartitionsChanged message, BandEventRecorder events) => events.Capture(message);
-
-    public static void Handle(BandCreated message, BandEventRecorder events) => events.Capture(message);
-    public static void Handle(MemberInvited message, BandEventRecorder events) => events.Capture(message);
-    public static void Handle(MembershipChanged message, BandEventRecorder events) => events.Capture(message);
 }
 
 public sealed class BandsTestAuthenticationHandler(

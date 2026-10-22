@@ -285,7 +285,7 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
     }
 
     [Fact]
-    public async Task CreateSong_WhenRevisionWriteFails_RollsBackSongWithoutPublishingEvent()
+    public async Task CreateSong_WhenRevisionWriteFails_RollsBackSongAndRevision()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var band = await CreateBand(owner);
@@ -302,11 +302,12 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
             create trigger test_revision_failure_{band.Id:N} before insert on public.song_revisions
                 for each row execute function fail_song_revision_{band.Id:N}();
             """);
+        var revisionCount = await db.SingleOrDefaultAsync<int>("select count(*)::int from public.song_revisions");
         try
         {
             Assert.Equal(HttpStatusCode.InternalServerError, (await owner.PostAsJsonAsync("/song-api/songs", new CreateSongRequest(band.Id, "Failed"))).StatusCode);
             Assert.Equal(0, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.songs where band_id = @id", new { id = band.Id }));
-            Assert.DoesNotContain(fixture.Events.Published.Values, message => message is SongCreated created && created.BandId == band.Id);
+            Assert.Equal(revisionCount, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.song_revisions"));
         }
         finally
         {

@@ -1,61 +1,41 @@
-# Сообщения MVP: аудит перед изменениями
+# Аудит сообщений MVP
 
-Статус: аудит выполнен; публикации профилей удалены (9 целевых тестов прошли),
-остальные изменения доставки ещё не внесены. Рассматриваются
-только проекты текущего `WBand.slnx` и обработчики, подключённые AppHost/API.
-Исторические playback/stem-проекты не являются потребителями MVP.
+T06a завершена. Рассмотрены проекты `WBand.slnx` и обработчики текущего
+AppHost/API. Исторические playback/stem-проекты не являются потребителями MVP.
 
-| Сообщения | Текущая публикация | Потребители MVP | Решение |
+| Сообщения | Прежнее место публикации | Потребители MVP | Текущее решение |
 | --- | --- | --- | --- |
-| UserCreated, UserLoggedIn | UserProfileSynchronization, KeycloakEventHandler; после commit | Нет | Публикации удалены; внешние маршруты будут удалены в T06a.5 |
-| BandCreated, MemberInvited, MembershipChanged | BandEndpoints, InvitationEndpoints, MemberEndpoints; после commit | Нет | Удалить публикацию и внешние маршруты |
-| SongCreated, SongChanged, SongDeleted, SongRestored | SongEndpoints, SongHistoryEndpoints; после commit | Нет | Удалить публикацию и внешние маршруты |
-| SongPartitionsChanged, SongSectionsChanged, SongContentChanged | PartitionEndpoints, SongSectionEndpoints, SongContentEndpoints; после commit | Нет; PlaybackInvalidationHandlers находятся вне активного решения | Удалить публикацию и внешние маршруты |
-| KeycloakEvent REGISTER/LOGIN | Внешний провайдер Keycloak → RabbitMQ | KeycloakEventHandler | Сохранить входящий маршрут и повторы |
-| CheckBandPermission, GetUserBandIds, GetSongReferences и адаптеры EventModule | Wolverine InvokeAsync, синхронные запросы | Band/Song integration handlers, EventIntegrationHandler | Сохранить синхронные контракты; outbox не нужен |
+| UserCreated, UserLoggedIn | UserProfileSynchronization, KeycloakEventHandler | Нет | Публикации и внешние маршруты удалены |
+| BandCreated, MemberInvited, MembershipChanged | BandEndpoints, InvitationEndpoints, MemberEndpoints | Нет | Публикации и внешние маршруты удалены |
+| SongCreated, SongChanged, SongDeleted, SongRestored | SongEndpoints, SongHistoryEndpoints | Нет | Публикации и внешние маршруты удалены |
+| SongPartitionsChanged, SongSectionsChanged, SongContentChanged | PartitionEndpoints, SongSectionEndpoints, SongContentEndpoints | Нет; PlaybackInvalidationHandlers вне активного решения | Публикации и внешние маршруты удалены |
+| KeycloakEvent REGISTER/LOGIN | Внешний провайдер Keycloak → RabbitMQ | KeycloakEventHandler | Сохранены именованный входящий broker, повторы и идемпотентная запись |
+| CheckBandPermission, GetUserBandIds, GetSongReferences и адаптеры EventModule | Синхронные Wolverine InvokeAsync | Band/Song integration handlers, EventIntegrationHandler | Сохранены синхронные контракты |
 
-Исходящие события сейчас подтверждаются брокером после commit EF Core.
-Недоступность брокера способна вернуть HTTP 500 для уже сохранённой операции.
-Такое сообщение об откате недопустимо. Обязательных исходящих асинхронных
-сценариев в текущем MVP не обнаружено: добавлять outbox для этих публикаций
-не требуется. Контракты можно сохранить до переноса модулей, но не отправлять
-сообщения без потребителя.
+Раньше подтверждение исходящей отправки ожидалось после commit EF Core.
+Отказ брокера возвращал ошибку для уже сохранённой операции. Обязательных
+исходящих асинхронных сценариев MVP нет, поэтому ненужные отправки удалены,
+а outbox не добавлен. Conventional routing для исходящих сообщений отключён.
+Контракты пока сохранены для дальнейшего переноса модулей.
 
-Входящие REGISTER/LOGIN используют транзакционную advisory-блокировку по subject,
-уникальность keycloak_id и проверку LastLoginAt: повтор REGISTER не создаёт строку,
-повтор/старый LOGIN не уменьшает дату входа. Отдельный inbox пока не нужен.
+REGISTER/LOGIN используют транзакционную advisory-блокировку по subject,
+уникальность keycloak_id и проверку LastLoginAt. Повтор REGISTER не создаёт
+строку, повтор/старый LOGIN не уменьшает дату входа. Отдельный inbox не нужен.
 EnsureProfile восстанавливает пропущенную регистрацию из проверенных claims.
-Дубли и нарушенный порядок проверяются существующими интеграционными тестами;
-их проверки данных нужно сохранить при удалении исходящих публикаций.
+`Services/KeycloakMessagesReader.cs` внутри проекта WebAPI — прежний
+незарегистрированный BackgroundService; активной доставки через него нет.
 
-Перед закрытием T06a нужны отрицательный сценарий недоступной публикации после
-commit (успешные band/song HTTP и сохранённые данные), повторная доставка
-REGISTER/LOGIN, отсутствие внешних маршрутов для перечисленных событий и
-полный Release-набор. Изменения разбиты в tasks/todo.md.
+Проверки:
 
-T06a.2a: публикация BandCreated удалена. HTTP-fixture использует MetadataRules
-Wolverine 6.49.0 (`IEnvelopeRule`), чтобы воспроизводить отказ исходящей отправки.
-До правки запрос создания группы возвращал 500 после commit; после правки
-успешно сохраняются группа и Owner. Все 20 BandsApiTests прошли.
+- Полный Release-набор: **103/103** (79 API/database, 24 auth/BFF).
+- Отказ исходящей отправки воспроизведён до исправления: HTTP 500 после commit.
+  После исправления проверены профили, группы, приглашения, членство, метаданные,
+  история, секции, партии, отдельные ячейки и атомарное сохранение партии.
+- HTTP-fixture задаёт явный тестовый адресат и IEnvelopeRule. Отдельная проба
+  подтверждает реальный отказ отправки: удаление подписчиков не ослабляет проверку.
+- При остановленном RabbitMQ через BFF созданы группа, песня, секция, партия и
+  текст; все записи и чтение вернули 200, текст совпал. Затем RabbitMQ запущен,
+  API и broker Healthy; в логе подтверждено восстановление соединения.
 
-T06a.2b: публикации MemberInvited/MembershipChanged удалены. Сценарий
-приглашение → принятие → выход → повторное вступление → удаление участника
-проходит при отказе всех исходящих отправок; данные и ограничения проверяются.
-Все 20 BandsApiTests прошли.
-
-T06a.3: публикации метаданных и жизненного цикла песни удалены. При отказе
-исходящей отправки создание, обновление, применение версии, удаление и
-восстановление завершаются успешно с пятью сохранёнными ревизиями.
-Все 19 SongsApiTests прошли, включая конфликты версий и откат записи ревизии.
-
-T06a.4: публикации секций, партий и ячеек удалены. Изменение осей, отдельных
-ячеек и целой партии проверяется при отказе исходящих отправок. Все 28 тестов
-песен/матрицы прошли, включая конфликты ревизий и атомарность записи партии.
-
-T06a.5a: исходящие доменные RabbitMQ-маршруты и conventional routing удалены.
-Остался именованный входящий broker Keycloak. В runtime при остановленном
-RabbitMQ через BFF созданы группа, песня, секция, партия и ячейка текста:
-все пять записей и последующее чтение вернули 200; сохранённый текст совпал.
-Брокер запущен обратно. Журнал: `/tmp/wband-t06a5-outage-current.json`.
-`Services/KeycloakMessagesReader.cs` — прежний незарегистрированный BackgroundService;
-он не участвует в активном runtime и не является обязательной доставкой MVP.
+Журналы этой сессии: `/tmp/wband-t06a5-final-tests.log`,
+`/tmp/wband-t06a5-outage-current.json`, `/tmp/wband-t06a5-api-recovery.log`.
