@@ -34,6 +34,7 @@
         <Project Path="Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
     </Folder>
     <Folder Name="/Tests/">
+        <Project Path="Tests/WBand.Authentication.Tests/WBand.Authentication.Tests.csproj" />
         <Project Path="Tests/WBand.WebAPI.Tests/WBand.WebAPI.Tests.csproj" />
     </Folder>
     <Folder Name="/Utils/">

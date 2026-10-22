@@ -1,8 +1,11 @@
+extern alias api;
+
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using Auth;
+using api::WBand.WebAPI.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using Shared.Services;
+using api::WBand.WebAPI.Services;
 using Xunit;
 
 namespace WBand.Authentication.Tests;
@@ -103,13 +106,12 @@ public sealed class ApiAuthenticationTests
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Configuration["Keycloak:Url"] = "https://identity.example";
-        builder.Configuration["Keycloak:Realm"] = "wband";
-        builder.Configuration["Keycloak:ClientId"] = "webapi";
-        builder.Configuration["Keycloak:SslRequired"] = "true";
-        builder.AddKeycloakAuthentication();
-        builder.Services.AddHttpContextAccessor();
-        builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+        builder.Configuration["KEYCLOAK_URI"] = "https://identity.example";
+        builder.Configuration["KEYCLOAK_REALM"] = "wband";
+        builder.Configuration["KEYCLOAK_CLIENT_ID"] = "webapi";
+        builder.Configuration["KEYCLOAK_CLIENT_SECRET"] = "test-secret";
+        builder.Configuration["KEYCLOAK_SSL_REQUIRED"] = "true";
+        builder.AddWBandApiAuthentication(builder.Configuration.Get<WebApiConfiguration>()!);
         builder.Services.PostConfigure<JwtBearerOptions>(
             JwtBearerDefaults.AuthenticationScheme,
             options =>
@@ -134,7 +136,7 @@ public sealed class ApiAuthenticationTests
                 return user.Email;
             }
         );
-        app.MapGet("/moderation", () => "ok").RequireAuthorization(Shared.Roles.Moderator);
+        app.MapGet("/moderation", () => "ok").RequireAuthorization(api::WBand.WebAPI.Shared.Roles.Moderator);
         app.MapGet("/health", () => "ok").AllowAnonymous();
         await app.StartAsync();
         return app;
