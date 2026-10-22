@@ -85,7 +85,7 @@
     - [ ] T08.4: добавить собственные BandDataContext, модели и mapping небольшими семействами (profiles/bands, membership/departures, invitations); сначала существующие таблицы public.
       - [x] T08.4a: зависимости persistence и скалярные модели User/Band.
       - [x] T08.4b: модели membership/departures и их enum.
-      - [ ] T08.4e: модели invitations/status.
+      - [x] T08.4e: модели invitations/status.
       - [ ] T08.4c: mappings profiles/bands, membership/departures, invitations отдельными семействами.
       - [ ] T08.4d: BandDataContext, поиск таблиц bands/public и регистрация; проверка модели и scoped lifetime.
 
