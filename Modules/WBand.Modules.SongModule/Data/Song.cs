@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WBand.WebAPI.Data;
+namespace WBand.Modules.SongModule.Data;
 
 /// <summary>The editorial status of a song.</summary>
 public enum SongStatus { Draft, Band, Catalog }

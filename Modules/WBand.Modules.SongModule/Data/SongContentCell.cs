@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WBand.WebAPI.Data;
+namespace WBand.Modules.SongModule.Data;
 
 /// <summary>Text at the intersection of one shared song section and one partition.</summary>
 public sealed class SongContentCell

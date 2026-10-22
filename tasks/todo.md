@@ -159,7 +159,7 @@
     - [x] T12.1b: реализация SongModule, ссылки persistence/common/Band.Contracts, публичный discovery; composition root и CI.
       - [x] T12.1b1: сборка реализации, зависимости, solution/Docker/project graph и Configure.
       - [x] T12.1b2: подключить discovery хоста/fixture; архитектурные проверки Contracts/реализации.
-    - [ ] T12.2a: перенести пять связанных моделей одним семейством и добавить импорты потребителей; без смены таблиц/DDL.
+    - [x] T12.2a: перенести пять связанных моделей одним семейством и добавить импорты потребителей; без смены таблиц/DDL.
     - [ ] T12.2b: перенести пять mapping-конфигураций; временный legacy-контекст использует ту же модель public до передачи владения.
     - [ ] T12.3: собственный SongDataContext, регистрация и проверки модели/транзакций на прежней схеме.
     - [ ] T12.4: переключить persistence потребителей семействами: общие helpers, metadata/history, partitions, sections/cells, public query; все writers сохраняют общий lock/transaction.

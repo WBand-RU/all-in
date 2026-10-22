@@ -45,6 +45,14 @@ public sealed class ModuleBoundaryTests
     }
 
     [Fact]
+    public void SongModels_WhenReferenced_AreOwnedBySongModule()
+    {
+        var owner = typeof(SongModule).Assembly;
+        foreach (var type in new[] { typeof(Song), typeof(SongSection), typeof(Partition), typeof(SongContentCell), typeof(SongRevision) })
+            Assert.Equal(owner, type.Assembly);
+    }
+
+    [Fact]
     public void SongModule_WhenReferenced_DoesNotDependOnHostOrOtherModuleImplementations()
     {
         Assert.DoesNotContain(typeof(SongModule).Assembly.GetReferencedAssemblies(), reference =>

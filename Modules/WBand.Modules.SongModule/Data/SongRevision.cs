@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WBand.WebAPI.Data;
+namespace WBand.Modules.SongModule.Data;
 
 /// <summary>An immutable snapshot of song metadata at a particular content version.</summary>
 public sealed class SongRevision

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WBand.WebAPI.Data;
+namespace WBand.Modules.SongModule.Data;
 
 /// <summary>
 /// A song-wide matrix column, such as lyrics, chords or musician notes.
