@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using FluentValidation;
@@ -94,6 +95,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
             // Keep the failure path observable even without test event subscribers.
             options.PublishAllMessages().ToLocalQueue("test-outgoing");
             options.Discovery.IncludeAssembly(typeof(CreateBandEndpoint).Assembly);
+            BandModule.Configure(options);
             options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
             options.UseFluentValidation();
         });

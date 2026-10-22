@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule;
 using FluentValidation;
 using JasperFx;
 using JasperFx.Core;
@@ -115,6 +116,7 @@ static WebApplicationBuilder AddWBandFoundation(
         options.EnvelopeIdGeneration = EnvelopeIdGeneration.GuidV7;
 
         options.Discovery.IncludeAssembly(typeof(Program).Assembly);
+        BandModule.Configure(options);
         options.Discovery.IncludeAssembly(typeof(EventModule).Assembly);
 
         ConfigureWolverine();
