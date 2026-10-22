@@ -78,6 +78,18 @@
   - Приёмка: Перенести пользователей/группы в EF-схему bands с сохранением ID и связей.
   - Проверка: Миграция копии public и прежние проверки профиля/создания группы.
   - Пути: BandModule/Data; WebAPI/Data/Migrations; Tests/WBand.WebAPI.Tests.
+  - Подзадачи перед изменениями:
+    - [x] T08.1: CI учитывает общую persistence-сборку; регрессионная проверка маршрутизации.
+    - [ ] T08.2: общая EF/SQL/transaction-обвязка без доменных моделей; project/container graph.
+    - [ ] T08.3: перевести DataContext на общую обвязку без изменения поведения; полный Release.
+    - [ ] T08.4: добавить собственные BandDataContext, модели и mapping небольшими семействами (profiles/bands, membership/departures, invitations); сначала существующие таблицы public.
+    - [ ] T08.5: переключить профиль/Keycloak и обработчики групп на BandDataContext; создание группы с Owner остаётся одной транзакцией.
+    - [ ] T08.6: заменить чтение членства из song persistence публичными Wolverine-запросами; проверить разрешения и повторы.
+    - [ ] T08.7: удалить band-модели из DataContext и передать migration ownership без DROP таблиц; обновить тестовые контексты и snapshot.
+    - [ ] T08.8: миграция users/bands в schema bands, общий search_path для временно оставшихся public-таблиц; membership/invitations меняют schema в T09/T10.
+    - [ ] T08.9: пустая БД и копия public сохраняют ID/FK/данные; повтор миграции, восстановление локальной копии, полный Release/Docker/runtime.
+  - Резервная копия до переноса: /tmp/wband-t08-backup/before-band-ownership.dump (локальная БД; файл вне git, права 0600).
+
 
 - [ ] **T09. Данные членства** — зависимости: T08.
   - Приёмка: Перенести членство/выходы, исключить параллельное владение таблицами двумя контекстами.

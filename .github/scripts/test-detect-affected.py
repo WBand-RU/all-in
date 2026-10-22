@@ -53,6 +53,10 @@ class DetectAffectedTests(unittest.TestCase):
         result = self.detect(["App/WBand.WebProxy/Program.cs"])
         self.assertEqual((result["proxy"], result["backend"], result["webapi"]), ("true", "true", "false"))
 
+    def test_shared_persistence_triggers_api_and_backend(self):
+        result = self.detect(["Common/WBand.Persistence/RelationalDataContext.cs"])
+        self.assertEqual((result["webapi"], result["backend"]), ("true", "true"))
+
     def test_auth_tests_trigger_backend_gate(self):
         self.assertEqual(self.detect(["Tests/WBand.Authentication.Tests/ProxyRoutingTests.cs"])["backend"], "true")
 
