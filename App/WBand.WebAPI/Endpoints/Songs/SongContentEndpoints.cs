@@ -1,3 +1,4 @@
+using Wolverine;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WBand.WebAPI.Application.Songs;
@@ -11,11 +12,11 @@ public static class GetSongContentEndpoint
 {
     [Authorize, Tags("SongContent"), ProducesResponseType<SongContentResponse>(200)]
     [WolverineGet("/song-api/songs/{songId}/content", OperationId = "GetSongContent")]
-    public static async Task<IResult> Get(Guid songId, ICurrentUser user, [FromServices] DataContext db, CancellationToken cancellationToken)
+    public static async Task<IResult> Get(Guid songId, ICurrentUser user, [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
     {
         var song = await SongAccess.Load(db, songId, cancellationToken);
         if (song is null) return Results.NotFound();
-        if (!await SongAccess.Check(db, song.BandId, user.Id, false, cancellationToken)) return Results.Forbid();
+        if (!await SongAccess.Check(db, bus, song.BandId, user.Id, false, cancellationToken)) return Results.Forbid();
         var sections = await db.QueryAsync<SongSection>(
             "select * from public.song_sections where song_id = @songId order by \"order\", created_at, id", new { songId }, cancellationToken);
         var partitions = await db.QueryAsync<Partition>(
@@ -32,12 +33,12 @@ public static class UpdateSongContentCellEndpoint
     [Authorize, Tags("SongContent"), ProducesResponseType<SongContentCellResponse>(200)]
     [WolverinePut("/song-api/songs/{songId}/sections/{sectionId}/partitions/{partitionId}", OperationId = "UpdateSongContentCell")]
     public static async Task<IResult> Put(Guid songId, Guid sectionId, Guid partitionId, UpdateSongContentCellRequest request,
-        ICurrentUser user, [FromServices] DataContext db, CancellationToken cancellationToken)
+        ICurrentUser user, [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
         if (song is null) return Results.NotFound();
-        if (!await SongAccess.Check(db, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
+        if (!await SongAccess.Check(db, bus, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
         var section = await db.FindAsync<SongSection>(sectionId, cancellationToken);
         var partition = await db.FindAsync<Partition>(partitionId, cancellationToken);
         if (section?.SongId != songId || partition?.SongId != songId) return Results.NotFound();
@@ -59,12 +60,12 @@ public static class UpdatePartitionContentEndpoint
     [Authorize, Tags("SongContent"), ProducesResponseType<SongContentCellResponse[]>(200)]
     [WolverinePut("/song-api/songs/{songId}/partitions/{partitionId}/content", OperationId = "UpdatePartitionContent")]
     public static async Task<IResult> Put(Guid songId, Guid partitionId, UpdatePartitionContentRequest request,
-        ICurrentUser user, [FromServices] DataContext db, CancellationToken cancellationToken)
+        ICurrentUser user, [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
         if (song is null) return Results.NotFound();
-        if (!await SongAccess.Check(db, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
+        if (!await SongAccess.Check(db, bus, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
         var partition = await db.FindAsync<Partition>(partitionId, cancellationToken);
         if (partition?.SongId != songId) return Results.NotFound();
         var sections = await db.QueryAsync<SongSection>("select * from public.song_sections where song_id = @songId", new { songId }, cancellationToken);

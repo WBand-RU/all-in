@@ -1,18 +1,11 @@
 using Wolverine;
 using WBand.Modules.BandModule.Contracts;
-using WBand.WebAPI.Application.Bands;
 using WBand.WebAPI.Data;
 
 namespace WBand.WebAPI.Application.Songs;
 
 internal static class SongAccess
 {
-    public static async Task<bool> Check(DataContext db, Guid bandId, Guid userId, bool edit, CancellationToken ct)
-    {
-        var member = await BandAccess.FindMembership(db, bandId, userId, ct);
-        return edit ? member?.Role is BandMemberRole.Owner or BandMemberRole.Admin : member is not null;
-    }
-
     public static async Task<bool> Check(DataContext db, IMessageBus bus, Guid bandId, Guid userId, bool edit, CancellationToken ct)
     {
         if (db.HasTransaction) await db.LockBandAsync(bandId, ct);

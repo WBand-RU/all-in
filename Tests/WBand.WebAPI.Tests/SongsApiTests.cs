@@ -15,6 +15,37 @@ namespace WBand.WebAPI.Tests;
 public sealed class SongsApiTests(BandsApiFixture fixture)
 {
     [Fact]
+    public async Task Versions_WhenContributorIsRemoved_KeepsEmailAndClearsCurrentRole()
+    {
+        using var owner = fixture.CreateClient(Guid.NewGuid());
+        var adminId = Guid.NewGuid();
+        var email = $"{adminId:N}@example.com";
+        using var admin = fixture.CreateClient(adminId, email);
+        var band = await CreateBand(owner);
+        var invitationResponse = await owner.PostAsJsonAsync($"/band-api/bands/{band.Id}/invitations",
+            new CreateInvitationRequest(email, BandMemberRole.Admin));
+        invitationResponse.EnsureSuccessStatusCode();
+        var invitation = (await invitationResponse.Content.ReadFromJsonAsync<ApiResponse<BandInvitation>>())!.Value;
+        (await admin.PutAsJsonAsync($"/band-api/user/invitations/{invitation.Id}", new RespondInvitationRequest(true))).EnsureSuccessStatusCode();
+        var song = await CreateSong(admin, band.Id);
+        (await owner.PutAsJsonAsync($"/song-api/songs/{song.Id}", Update(song) with { Title = "Owner update" })).EnsureSuccessStatusCode();
+        async Task<List<SongVersionResponse>> Versions() =>
+            (await owner.GetFromJsonAsync<ApiResponse<List<SongVersionResponse>>>($"/song-api/songs/{song.Id}/versions"))!.Value;
+        var versions = await Versions();
+        Assert.Equal(2, versions.Count);
+        Assert.Equal("Admin", Assert.Single(versions, version => version.CreatedBy == adminId).ChangedByRole);
+        await using var db = fixture.CreateBandContext();
+        var membership = (await db.SingleOrDefaultAsync<WBand.Modules.BandModule.Data.BandMember>(
+            "select * from band_members where band_id = @bandId and user_id = @adminId", new { bandId = band.Id, adminId }))!;
+        (await owner.DeleteAsync($"/band-api/bands/{band.Id}/members/{membership.Id}")).EnsureSuccessStatusCode();
+        versions = await Versions();
+        Assert.Equal(2, versions.Count);
+        var former = Assert.Single(versions, version => version.CreatedBy == adminId);
+        Assert.Equal(email, former.ChangedByEmail);
+        Assert.Null(former.ChangedByRole);
+    }
+
+    [Fact]
     public async Task Song_WhenPublicationIsUnavailable_PersistsMetadataAndHistory()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
