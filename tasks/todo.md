@@ -1,6 +1,6 @@
 # Задачи WBand MVP
 
-Статус: T01–T10 и T06a выполнены; остальные задачи открыты. Источник: [plan.md](plan.md), [требования](../docs/MVP_REQUIREMENTS.md).
+Статус: T01–T11 и T06a выполнены; остальные задачи открыты. Источник: [plan.md](plan.md), [требования](../docs/MVP_REQUIREMENTS.md).
 
 Каждая строка ниже — результат для одной задачи; пути ориентировочные. Перед началом фиксировать конкретный diff. Если ожидается больше примерно пяти исходных файлов или больше одной сессии, сначала разбить задачу на подзадачи с теми же критериями; не снижать проверку ради размера. Перенос обработчиков выполняется по семействам, а не одним массовым коммитом.
 
@@ -131,10 +131,11 @@
   - Проверка: Существующие приглашения, отзыв, конкурирующее принятие.
   - Пути: BandModule/Data; WebAPI/Data; Tests/WBand.WebAPI.Tests.
 
-- [ ] **T11. Обработчики групп** — зависимости: T10.
+- [x] **T11. Обработчики групп** — зависимости: T10.
   - Приёмка: Перенести HTTP/handlers по семействам в BandModule, оставить публичную регистрацию хоста.
   - Проверка: Прежние BandsApiTests, profile tests; маршруты и OpenAPI не теряются.
   - Пути: BandModule/Endpoints; BandModule/Application; WebAPI/Program.cs.
+  - Результат: все HTTP групп/членства/приглашений/профиля и Keycloak/query handlers принадлежат модулю; 129/129 Release, OpenAPI 31 paths/54 schemas без изменений, Docker/BFF и реальный LOGIN проверены.
   - Подзадачи перед изменениями:
     - [x] T11.1: нейтральная сборка общих контрактов, ссылки/solution/Docker и CI routing.
     - [x] T11.2a: общий ICurrentUser и platform roles без зависимости модуля от хоста.
@@ -147,7 +148,7 @@
     - [x] T11.6: Keycloak contract/handler, синхронизация и HTTP профиля отдельными семействами.
       - [x] T11.6a: raw Keycloak contract в Contracts, handler в module Application; брокер и profile tests используют новый тип.
       - [x] T11.6b: синхронизация и HTTP /api/user/me принадлежат модулю; прежние fallback/idempotency tests.
-    - [ ] T11.7: архитектурная проверка, OpenAPI parity, полный Release/Docker/runtime; хост не обращается к BandDataContext вне composition root.
+    - [x] T11.7: архитектурная проверка, OpenAPI parity, полный Release/Docker/runtime; хост не обращается к BandDataContext вне composition root.
 
 - [ ] **T12. Контракты и метаданные репертуара** — зависимости: T11.
   - Приёмка: Создать SongModule со своей EF-схемой songs; перенести метаданные без изменения ID.

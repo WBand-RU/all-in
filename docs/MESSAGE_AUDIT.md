@@ -39,3 +39,9 @@ EnsureProfile восстанавливает пропущенную регист
 
 Журналы этой сессии: `/tmp/wband-t06a5-final-tests.log`,
 `/tmp/wband-t06a5-outage-current.json`, `/tmp/wband-t06a5-api-recovery.log`.
+
+
+После T11 raw `KeycloakEvent` находится в `BandModule.Contracts`, а обработчик
+и профильная синхронизация — в `BandModule.Application`. Именованный broker
+и JSON wire format сохранены. Реальный LOGIN после перезапуска обновил профиль;
+идемпотентность и запрет ненужных публикаций по-прежнему проверяются тестами.

@@ -75,7 +75,7 @@ ESLint/typecheck и production Docker build прошли. Исходящие с�
 потребителей удалены, outbox/inbox не добавлены. При остановленном RabbitMQ
 запись группы/песни/матрицы и чтение прошли с 200; broker восстановлен.
 Подробности и доказательства: [MESSAGE_AUDIT](MESSAGE_AUDIT.md).
-Контрактная граница BandModule (T07) завершена; данные профилей и групп перенесены (T08–T10), далее обработчики T11.
+Контрактная граница BandModule (T07) завершена; данные и обработчики групп перенесены (T08–T11), далее SongModule (T12).
 
 ## T07: граница BandModule
 
@@ -84,7 +84,7 @@ ESLint/typecheck и production Docker build прошли. Исходящие с�
 Contracts; хост подключает обработчики через `BandModule.Configure`.
 Проверка прав теперь принадлежит модулю и запрашивает `GetBandMemberInfo` через
 Wolverine. Данные чтения принадлежат BandDataContext (T08–T10);
-перенос остальных HTTP/обработчиков выполняет T11. Persistence-модели не включены в
+перенос остальных HTTP/обработчиков завершён в T11. Persistence-модели не включены в
 межмодульные контракты. Потребители модулей должны ссылаться на Contracts,
 а composition root — на реализацию.
 
@@ -101,7 +101,7 @@ Wolverine. Данные чтения принадлежат BandDataContext (T08
 | --- | --- | --- |
 | Локальный запуск | `App/WBand.AppHost` | Aspire MVP: PostgreSQL, RabbitMQ, Redis, Keycloak, API, BFF, Next.js |
 | Вход и сессии | `App/WBand.WebProxy` | BFF, OIDC, серверная сессия, CSRF, маршрутизация API |
-| Пользователи и группы | `Modules/WBand.Modules.BandModule` | Собственные EF-модель, схема bands и миграции; HTTP пока в хосте до T11 |
+| Пользователи и группы | `Modules/WBand.Modules.BandModule` | Собственные EF-модель, схема bands, миграции, HTTP/validators, Keycloak и query handlers |
 | Песни | `App/WBand.WebAPI` | EF Core/PostgreSQL, Wolverine HTTP и публичные запросы групп |
 | Содержимое песни | `App/WBand.WebAPI/Endpoints/Songs` | Общие секции, партии, ячейки текста с ревизиями, атомарное сохранение партии |
 | События | `Modules/WBand.Modules.EventModule` | Отдельный контекст EF Core и схема `events`, Wolverine-контракты интеграции |
@@ -214,3 +214,38 @@ Debug build без предупреждений/ошибок, Docker API соб�
 `/tmp/wband-t08-restore-evidence.json`, `/tmp/wband-t08-live-evidence.json`,
 `/tmp/wband-t08-api-image.log`, `/tmp/wband-t08-container-runtime.json`.
 Предупреждения NuGet о Pkcs/Xml 10.0.12 остаются открытыми до приёмки выпуска.
+
+
+### T11: обработчики и HTTP принадлежат BandModule
+
+Группы, членство, приглашения, `/api/user/me`, синхронизация профиля,
+Keycloak REGISTER/LOGIN и все публичные запросы групп исполняются из модульной
+сборки. `BandModule.Configure` регистрирует discovery HTTP/handlers;
+`AddBandModule` — persistence и неизменяемые singleton validators. Хост хранит
+composition root, адаптер проверенной identity и песни до T12–T17.
+В хосте больше нет внедрения `BandDataContext` в обработчики, методы или поля.
+
+`Common/WBand.Contracts` содержит только общий `ICurrentUser`, platform roles,
+`ApiResponse` и `ApiCodes`, без зависимостей от ASP.NET Core, EF Core и модулей.
+Сборка BandModule не ссылается на хост или реализации других модулей.
+Raw Keycloak DTO принадлежит `BandModule.Contracts`, JSON-поля сохранены.
+Опубликованные OpenAPI tags закреплены явно, чтобы перенос namespace не менял
+группировку клиентов; [механизм Tags в Wolverine](https://wolverinefx.io/guide/http/metadata).
+
+Проверено: **129/129 Release** (105 API/database/architecture, 24 auth/BFF),
+12 CI-routing тестов, Debug build без предупреждений/ошибок, Docker build.
+Все 31 определения маршрутов/операций и 54 схемы OpenAPI идентичны исходным
+и в fixture, и после Aspire restart. Генерация клиентов не требовалась.
+
+Через контейнеры BFF/API проверены профиль, отказ валидации 400, группа с одним
+Owner, приглашение и отзыв, песня, событие и чтение программы. После нового
+входа реальное событие Keycloak LOGIN обновило `last_login_at` существующего
+профиля: HTTP fallback эту дату не меняет. Оба API-процесса использовали новый
+модульный обработчик. Временные контейнеры/env удалены; основной Aspire healthy,
+браузерная сессия и профиль — 200.
+
+Локальные доказательства: `/tmp/wband-t11-final-tests.log`,
+`/tmp/wband-t11-openapi-before.json`, `/tmp/wband-t11-openapi-after.json`,
+`/tmp/wband-t11-openapi-runtime.json`, `/tmp/wband-t11-api-image.log`,
+`/tmp/wband-t11-container-runtime.json`, `/tmp/wband-t11-keycloak-evidence.json`.
+Предупреждения NuGet о Pkcs/Xml из прежнего состояния остаются до приёмки выпуска.
