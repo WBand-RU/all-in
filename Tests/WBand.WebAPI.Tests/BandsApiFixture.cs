@@ -1,3 +1,4 @@
+using BandDataContext = WBand.Modules.BandModule.Data.BandDataContext;
 using WBand.Modules.BandModule;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -45,6 +46,8 @@ public sealed class BandsApiFixture : IAsyncLifetime
 
     public DataContext CreateContext() => new(new DbContextOptionsBuilder<DataContext>().UseNpgsql(ConnectionString).Options);
 
+    public BandDataContext CreateBandContext() => new(Services.GetRequiredService<DbContextOptions<BandDataContext>>());
+
     public HttpClient CreateClient(Guid? userId = null, string email = "owner@example.com")
     {
         var client = app.GetTestClient();
@@ -88,6 +91,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
         builder.Services.AddProblemDetails();
         builder.Services.AddOpenApi();
         builder.Services.AddDatabase(ConnectionString);
+        builder.Services.AddBandModule(ConnectionString);
         builder.Services.AddEventModule(ConnectionString);
         builder.UseWolverine(options =>
         {

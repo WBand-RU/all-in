@@ -1,3 +1,5 @@
+using WBand.Modules.BandModule;
+using BandDataContext = WBand.Modules.BandModule.Data.BandDataContext;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
@@ -20,12 +22,15 @@ public sealed class DatabaseFixture : IAsyncLifetime
     public ServiceProvider Services { get; private set; } = null!;
     public DataContext CreateSession() => new(new DbContextOptionsBuilder<DataContext>().UseNpgsql(ConnectionString).Options);
 
+    public BandDataContext CreateBandSession() => new(Services.GetRequiredService<DbContextOptions<BandDataContext>>());
+
     public async Task InitializeAsync()
     {
         await postgres.StartAsync();
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddDatabase(ConnectionString);
+        services.AddBandModule(ConnectionString);
         Services = services.BuildServiceProvider();
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
