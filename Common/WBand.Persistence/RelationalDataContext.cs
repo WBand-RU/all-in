@@ -76,6 +76,7 @@ public abstract class RelationalDataContext(DbContextOptions options) : DbContex
     {
         type = Nullable.GetUnderlyingType(type) ?? type;
         if (type == typeof(Guid)) return NpgsqlTypes.NpgsqlDbType.Uuid;
+        if (type == typeof(Guid[])) return NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Uuid;
         if (type == typeof(string)) return NpgsqlTypes.NpgsqlDbType.Text;
         if (type == typeof(int) || type.IsEnum) return NpgsqlTypes.NpgsqlDbType.Integer;
         if (type == typeof(long)) return NpgsqlTypes.NpgsqlDbType.Bigint;
