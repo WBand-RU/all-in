@@ -12,3 +12,8 @@
 **/logs
 *.zip
 Services
+
+**/.next
+**/.env*
+graphify-out
+songs

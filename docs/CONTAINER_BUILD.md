@@ -6,6 +6,8 @@
 docker build -f App/WBand.WebAPI/Dockerfile -t wband-webapi:local .
 docker build -f App/WBand.WebProxy/Dockerfile -t wband-proxy:local \
   --secret id=nuget_config,src="$HOME/.nuget/NuGet/NuGet.Config" .
+docker build -f App/web/Dockerfile -t wband-web:local \
+  --build-arg BFF_ORIGIN=http://proxy:8080 .
 ```
 
 BFF использует приватный пакет `IGORock.AuthorizedProxy`. Конфигурация NuGet
@@ -29,3 +31,17 @@ BFF требует `WEB_COMMA_SPLIT_ADDRESSES`, `API_COMMA_SPLIT_ADDRESSES` и
 абсолютные симлинки из каталога Aspire нужно заменить относительными при копировании.
 Проверка TLS не отключалась.
 
+Веб использует Bun 1.4.0 для lockfile v2, Node.js 24 и Next.js standalone.
+В финальный образ включены `server.js`, `public` и `.next/static`;
+зависимости сборки не переносятся целиком.
+
+Внешняя точка входа — BFF: он направляет страницы в web, API-запросы — в API.
+`BFF_ORIGIN` в web задаёт внутренний адрес BFF для проверки сессии на сервере.
+Значение по умолчанию — `http://proxy:8080`; при других именах сервисов
+передать нужное значение и при сборке (`--build-arg`), и при запуске (`-e`).
+Next.js фиксирует rewrites при сборке, поэтому runtime-переменная сама по себе
+не меняет адрес этих маршрутов. Для локальной проверки с BFF на хосте
+использовался `http://localhost:4000` и сеть host.
+
+Источник поведения standalone: [Next.js output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output)
+и документация установленного пакета `next/dist/docs`.
