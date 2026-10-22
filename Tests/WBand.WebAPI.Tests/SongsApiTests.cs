@@ -66,13 +66,13 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
             (await owner.DeleteAsync($"/song-api/songs/{song.Id}")).EnsureSuccessStatusCode();
             Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/song-api/songs/{song.Id}")).StatusCode);
             (await owner.PostAsync($"/song-api/songs/{song.Id}/restore", null)).EnsureSuccessStatusCode();
-            await using var db = fixture.CreateContext();
+            await using var db = fixture.CreateSongContext();
             var stored = (await db.FindAsync<Song>(song.Id))!;
             Assert.Equal(song.Title, stored.Title);
             Assert.Equal(5, stored.ContentVersion);
             Assert.Null(stored.DeletedAt);
             Assert.Equal(5, await db.SingleOrDefaultAsync<int>(
-                "select count(*)::int from public.song_revisions where song_id = @id", new { id = song.Id }));
+                "select count(*)::int from song_revisions where song_id = @id", new { id = song.Id }));
         }
         finally
         {
@@ -90,12 +90,12 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         Assert.Equal("Amazing Grace", song.Title);
         Assert.Equal(["John Newton", "Anna"], song.Authors);
         Assert.Equal(1, song.ContentVersion);
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateSongContext();
         var stored = await db.FindAsync<Song>(song.Id);
         Assert.NotNull(stored);
         Assert.Equal(ownerId, stored.CreatedBy);
         Assert.Equal(song.Authors, stored.Authors);
-        var revision = Assert.Single(await db.QueryAsync<SongRevision>("select * from public.song_revisions where song_id = @id", new { id = song.Id }));
+        var revision = Assert.Single(await db.QueryAsync<SongRevision>("select * from song_revisions where song_id = @id", new { id = song.Id }));
         Assert.Equal(song.Title, revision.Title);
         Assert.Equal(song.Authors, revision.Authors);
         var references = await WBand.WebAPI.Application.Songs.GetSongReferencesHandler.Handle(new GetSongReferences([song.Id]), db, default);
@@ -205,9 +205,9 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
             owner.PutAsJsonAsync($"/song-api/songs/{song.Id}", Update(song) with { Title = "Second" }));
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.OK);
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.Conflict);
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateSongContext();
         Assert.Equal(2, (await db.FindAsync<Song>(song.Id))!.ContentVersion);
-        Assert.Equal(2, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.song_revisions where song_id = @id", new { id = song.Id }));
+        Assert.Equal(2, await db.SingleOrDefaultAsync<int>("select count(*)::int from song_revisions where song_id = @id", new { id = song.Id }));
     }
 
     [Fact]
@@ -226,7 +226,7 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         Assert.Equal([verse.Id, chorus.Id], sections.Select(x => x.Id));
         Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/song-api/partitions/{verse.Id}")).StatusCode);
         Assert.Equal(chorus.Id, Assert.Single((await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!).Id);
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateSongContext();
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
             owner.PutAsJsonAsync($"/song-api/partitions/{section.Id}", first with { Name = "Second" }));
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.OK);
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.Conflict);
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateSongContext();
         Assert.Equal(2, (await db.FindAsync<Partition>(section.Id))!.Revision);
     }
 
@@ -290,9 +290,9 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         restore.EnsureSuccessStatusCode();
         Assert.Equal(3, (await restore.Content.ReadFromJsonAsync<ApiResponse<SongResponse>>())!.Value.ContentVersion);
         Assert.Equal(section.Id, Assert.Single((await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!).Id);
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateSongContext();
         await owner.DeleteAsync($"/song-api/songs/{song.Id}");
-        await db.ExecuteAsync("update public.songs set deleted_at = now() - interval '31 days' where id = @id", new { id = song.Id });
+        await db.ExecuteAsync("update songs set deleted_at = now() - interval '31 days' where id = @id", new { id = song.Id });
         Assert.Equal(HttpStatusCode.NotFound, (await owner.PostAsync($"/song-api/songs/{song.Id}/restore", null)).StatusCode);
     }
 
@@ -323,29 +323,29 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var band = await CreateBand(owner);
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateSongContext();
         // A per-band trigger fails after the song insert, exercising the real request transaction.
         await db.ExecuteAsync($"""
             create function fail_song_revision_{band.Id:N}() returns trigger language plpgsql as $$
             begin
-                if exists(select 1 from public.songs where id = new.song_id and band_id = '{band.Id}') then
+                if exists(select 1 from songs where id = new.song_id and band_id = '{band.Id}') then
                     raise exception 'Injected revision write failure';
                 end if;
                 return new;
             end $$;
-            create trigger test_revision_failure_{band.Id:N} before insert on public.song_revisions
+            create trigger test_revision_failure_{band.Id:N} before insert on song_revisions
                 for each row execute function fail_song_revision_{band.Id:N}();
             """);
-        var revisionCount = await db.SingleOrDefaultAsync<int>("select count(*)::int from public.song_revisions");
+        var revisionCount = await db.SingleOrDefaultAsync<int>("select count(*)::int from song_revisions");
         try
         {
             Assert.Equal(HttpStatusCode.InternalServerError, (await owner.PostAsJsonAsync("/song-api/songs", new CreateSongRequest(band.Id, "Failed"))).StatusCode);
-            Assert.Equal(0, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.songs where band_id = @id", new { id = band.Id }));
-            Assert.Equal(revisionCount, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.song_revisions"));
+            Assert.Equal(0, await db.SingleOrDefaultAsync<int>("select count(*)::int from songs where band_id = @id", new { id = band.Id }));
+            Assert.Equal(revisionCount, await db.SingleOrDefaultAsync<int>("select count(*)::int from song_revisions"));
         }
         finally
         {
-            await db.ExecuteAsync($"drop trigger test_revision_failure_{band.Id:N} on public.song_revisions; drop function fail_song_revision_{band.Id:N}()");
+            await db.ExecuteAsync($"drop trigger test_revision_failure_{band.Id:N} on song_revisions; drop function fail_song_revision_{band.Id:N}()");
         }
     }
 

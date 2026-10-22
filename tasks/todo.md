@@ -165,12 +165,12 @@
       - [x] T12.3a: контекст с пятью собственными моделями, SQL mapping и lock; unit-проверки границ/составных FK/transaction guard.
       - [x] T12.3b: scoped регистрация, design-time factory, composition root/fixtures; immutable options и lifetime.
       - [x] T12.3c: интеграционная запись матрицы/ревизии и общая блокировка с BandModule.
-    - [ ] T12.4: переключить persistence потребителей семействами: общие helpers, metadata/history, partitions, sections/cells, public query; все writers сохраняют общий lock/transaction.
+    - [x] T12.4: переключить persistence потребителей семействами: общие helpers, metadata/history, partitions, sections/cells, public query; все writers сохраняют общий lock/transaction.
       - [x] T12.4a: временно принимать RelationalDataContext в трёх общих helpers, сохранив virtual mapping и контракт блокировки для обоих контекстов.
       - [x] T12.4b: metadata/history используют SongDataContext и unqualified SQL.
       - [x] T12.4c: partitions используют SongDataContext и прежнюю атомарную запись.
       - [x] T12.4d: sections/cells используют SongDataContext; проверка ревизий/общей транзакции.
-      - [ ] T12.4e: public reference query и строгие SongDataContext-параметры helpers; временный bridge удалён, полный Release.
+      - [x] T12.4e: public reference query и строгие SongDataContext-параметры helpers; временный bridge удалён, полный Release.
     - [ ] T12.5: передать migration ownership без DROP; legacy-контекст только для исторических миграций, тесты используют владельца.
     - [ ] T12.6: initial migration в songs для пяти таблиц, сохранение внешних FK и отказ при смешанной схеме.
     - [ ] T12.7: public→songs/пустая БД/повтор/откат/backup, ID и данные, полный Release/Docker/runtime; отдельная приёмка матрицы и прежних ревизий в T13/T14.

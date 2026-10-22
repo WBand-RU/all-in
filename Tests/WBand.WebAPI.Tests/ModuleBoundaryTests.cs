@@ -104,6 +104,17 @@ public sealed class ModuleBoundaryTests
         Assert.DoesNotContain(types.SelectMany(type => type.GetFields(flags)), field => field.FieldType == storage);
     }
 
+    [Fact]
+    public void ApplicationHandlers_WhenSongPersistenceIsHandedOver_DoNotInjectTheLegacyContext()
+    {
+        var legacy = typeof(WBand.WebAPI.Data.DataContext);
+        var handlers = legacy.Assembly.GetTypes().Where(type =>
+            type.Namespace?.StartsWith("WBand.WebAPI.Application", StringComparison.Ordinal) == true
+            || type.Namespace?.StartsWith("WBand.WebAPI.Endpoints", StringComparison.Ordinal) == true);
+        Assert.DoesNotContain(handlers.SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            .SelectMany(method => method.GetParameters()), parameter => parameter.ParameterType == legacy);
+    }
+
     private static IEnumerable<string> BandRoutes(Assembly assembly) => assembly.GetTypes()
         .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
         .SelectMany(method => method.GetCustomAttributesData())

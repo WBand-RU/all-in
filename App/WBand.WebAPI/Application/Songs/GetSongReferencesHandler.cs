@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WBand.Modules.SongModule.Contracts;
-using WBand.WebAPI.Data;
+using DataContext = WBand.Modules.SongModule.Data.SongDataContext;
 
 namespace WBand.WebAPI.Application.Songs;
 
