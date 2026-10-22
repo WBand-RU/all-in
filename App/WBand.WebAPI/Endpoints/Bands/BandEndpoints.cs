@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using WBand.WebAPI.Shared;
 using WBand.WebAPI.Services;
-using WBand.WebAPI.Application.Bands;
 using Wolverine.Http;
 
 namespace WBand.WebAPI.Endpoints.Bands;
@@ -33,7 +32,7 @@ public static class CreateBandEndpoint
     public static async Task<ApiResponse<Band>> Post(
         CreateBandRequest request,
         ICurrentUser currentUser,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken cancellationToken
     )
     {
@@ -69,11 +68,11 @@ public static class ListBandsEndpoint
     [WolverineGet("/band-api/bands", OperationId = "GetListOfBands")]
     public static async Task<ApiResponse<IReadOnlyList<Band>>> Get(
         ICurrentUser currentUser,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken cancellationToken
     )
     {
-        var bands = await db.QueryAsync<Band>("select b.* from public.bands b where exists (select 1 from public.band_members m where m.band_id = b.id and m.user_id = @id)", new { id = currentUser.Id }, cancellationToken);
+        var bands = await db.QueryAsync<Band>("select b.* from bands b where exists (select 1 from band_members m where m.band_id = b.id and m.user_id = @id)", new { id = currentUser.Id }, cancellationToken);
         return ApiResponse<IReadOnlyList<Band>>.Success(bands);
     }
 }
@@ -86,7 +85,7 @@ public static class GetBandEndpoint
     public static async Task<IResult> Get(
         Guid bandId,
         ICurrentUser currentUser,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken cancellationToken
     )
     {
@@ -111,7 +110,7 @@ public static class UpdateBandEndpoint
         Guid bandId,
         UpdateBandRequest request,
         ICurrentUser currentUser,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken cancellationToken
     )
     {
@@ -138,7 +137,7 @@ public static class DeleteBandEndpoint
     public static async Task<IResult> Delete(
         Guid bandId,
         ICurrentUser currentUser,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         CancellationToken cancellationToken
     )
     {
