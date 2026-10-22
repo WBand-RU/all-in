@@ -1,5 +1,8 @@
 # План развития WBand
 
+> Актуальный план согласованного MVP: [tasks/plan.md](tasks/plan.md),
+> задачи: [tasks/todo.md](tasks/todo.md). Этот документ сохранён как исторический.
+
 > Снимок актуального кода и проверок: [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md).
 > Хранение: **EF Core + PostgreSQL; Marten не используем**.
 > Ниже сохранены исторические статусы прежней реализации на Marten;
