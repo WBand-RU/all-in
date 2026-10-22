@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace WBand.WebAPI.Data.Configurations;
+namespace WBand.Modules.SongModule.Data.Configurations;
 
 /// <summary>Maps SongRevision to PostgreSQL with explicit keys, columns and relationships.</summary>
 public sealed class SongRevisionConfiguration : IEntityTypeConfiguration<SongRevision>

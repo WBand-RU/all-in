@@ -160,8 +160,11 @@
       - [x] T12.1b1: сборка реализации, зависимости, solution/Docker/project graph и Configure.
       - [x] T12.1b2: подключить discovery хоста/fixture; архитектурные проверки Contracts/реализации.
     - [x] T12.2a: перенести пять связанных моделей одним семейством и добавить импорты потребителей; без смены таблиц/DDL.
-    - [ ] T12.2b: перенести пять mapping-конфигураций; временный legacy-контекст использует ту же модель public до передачи владения.
+    - [x] T12.2b: перенести пять mapping-конфигураций; временный legacy-контекст использует ту же модель public до передачи владения.
     - [ ] T12.3: собственный SongDataContext, регистрация и проверки модели/транзакций на прежней схеме.
+      - [ ] T12.3a: контекст с пятью собственными моделями, SQL mapping и lock; unit-проверки границ/составных FK/transaction guard.
+      - [ ] T12.3b: scoped регистрация, design-time factory, composition root/fixtures; immutable options и lifetime.
+      - [ ] T12.3c: интеграционная запись матрицы/ревизии и общая блокировка с BandModule.
     - [ ] T12.4: переключить persistence потребителей семействами: общие helpers, metadata/history, partitions, sections/cells, public query; все writers сохраняют общий lock/transaction.
     - [ ] T12.5: передать migration ownership без DROP; legacy-контекст только для исторических миграций, тесты используют владельца.
     - [ ] T12.6: initial migration в songs для пяти таблиц, сохранение внешних FK и отказ при смешанной схеме.

@@ -14,6 +14,6 @@ public sealed partial class DataContext(DbContextOptions<DataContext> options) :
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(DataContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Song).Assembly);
     }
 }

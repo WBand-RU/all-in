@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace WBand.WebAPI.Data.Configurations;
+namespace WBand.Modules.SongModule.Data.Configurations;
 
 /// <summary>Enforces one cell per section/partition pair and prevents cross-song references.</summary>
 public sealed class SongContentCellConfiguration : IEntityTypeConfiguration<SongContentCell>
