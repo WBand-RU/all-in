@@ -2,12 +2,11 @@ using WBand.Modules.BandModule.Application;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using WBand.Modules.BandModule.Data;
-using WBand.WebAPI.Endpoints;
+using WBand.Modules.BandModule.Endpoints;
 using WBand.WebAPI.Services.Implementations;
 using Xunit;
 using Moq;
 using Wolverine;
-using WBand.WebAPI.Application;
 using WBand.Modules.BandModule.Contracts;
 using WBand.Modules.UserModule.Events;
 

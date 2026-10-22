@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
-using WBand.WebAPI.Application;
+using WBand.Modules.BandModule.Application;
 using Wolverine;
 using WBand.Modules.BandModule.Data;
-using WBand.WebAPI.Services;
+using WBand.Contracts;
 using Wolverine.Http;
 
-namespace WBand.WebAPI.Endpoints;
+namespace WBand.Modules.BandModule.Endpoints;
 
 public static class CurrentUserEndpoint
 {

@@ -1,8 +1,8 @@
 using WBand.Modules.BandModule.Data;
-using WBand.WebAPI.Services;
+using WBand.Contracts;
 using Wolverine;
 
-namespace WBand.WebAPI.Application;
+namespace WBand.Modules.BandModule.Application;
 
 /// <summary>Restores missing local profiles from the authenticated identity.</summary>
 public static class UserProfileSynchronization
