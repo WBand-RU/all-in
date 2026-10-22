@@ -2,7 +2,7 @@ using Wolverine;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WBand.WebAPI.Application.Songs;
-using WBand.WebAPI.Data;
+using DataContext = WBand.Modules.SongModule.Data.SongDataContext;
 using WBand.WebAPI.Services;
 using Wolverine.Http;
 
@@ -18,7 +18,7 @@ public static class ListSongPartitionsEndpoint
         if (song is null) return Results.NotFound();
         if (!await SongAccess.Check(db, bus, song.BandId, user.Id, false, cancellationToken)) return Results.Forbid();
         var partitions = await db.QueryAsync<Partition>(
-            "select * from public.song_partitions where song_id = @songId order by \"order\", created_at, id", new { songId }, cancellationToken);
+            "select * from song_partitions where song_id = @songId order by \"order\", created_at, id", new { songId }, cancellationToken);
         return Results.Ok(partitions.Select(PartitionResponse.From).ToArray());
     }
 }
