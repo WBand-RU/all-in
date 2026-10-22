@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using WBand.Persistence;
 
 namespace WBand.WebAPI.Data;
 
 /// <summary>Persists Web API users, memberships and song content.</summary>
-public sealed partial class DataContext(DbContextOptions<DataContext> options) : DbContext(options)
+public sealed partial class DataContext(DbContextOptions<DataContext> options) : RelationalDataContext(options)
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Band> Bands => Set<Band>();
