@@ -1,10 +1,10 @@
-using WBand.WebAPI.Data;
+using WBand.Persistence;
 
 namespace WBand.WebAPI.Application.Songs;
 
 internal static class SongVersioning
 {
-    public static Task SaveRevision(DataContext db, Song song, Guid userId, DateTimeOffset now, CancellationToken ct) =>
+    public static Task SaveRevision(RelationalDataContext db, Song song, Guid userId, DateTimeOffset now, CancellationToken ct) =>
         db.InsertAsync(new SongRevision
         {
             Id = Guid.CreateVersion7(), SongId = song.Id, ContentVersion = song.ContentVersion,

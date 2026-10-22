@@ -1,28 +1,28 @@
 using Wolverine;
 using WBand.Modules.BandModule.Contracts;
-using WBand.WebAPI.Data;
+using WBand.Persistence;
 
 namespace WBand.WebAPI.Application.Songs;
 
 internal static class SongAccess
 {
-    public static async Task<bool> Check(DataContext db, IMessageBus bus, Guid bandId, Guid userId, bool edit, CancellationToken ct)
+    public static async Task<bool> Check(RelationalDataContext db, IMessageBus bus, Guid bandId, Guid userId, bool edit, CancellationToken ct)
     {
-        if (db.HasTransaction) await db.LockBandAsync(bandId, ct);
+        if (db.HasTransaction) await db.LockResourceAsync(BandMutationLock.ResourceName(bandId), ct);
         return await bus.InvokeAsync<bool>(new CheckBandPermission(bandId, userId,
             edit ? BandPermission.EditContent : BandPermission.View), ct);
     }
 
     // All song writers take the band lock before the song lock, including partition writers.
     // This also serializes edits against membership removal and band deletion.
-    public static async Task<Song?> Load(DataContext db, Guid songId, CancellationToken ct, bool includeDeleted = false)
+    public static async Task<Song?> Load(RelationalDataContext db, Guid songId, CancellationToken ct, bool includeDeleted = false)
     {
         var song = await db.FindAsync<Song>(songId, ct);
         if (song is null) return null;
         if (db.HasTransaction)
         {
-            await db.LockBandAsync(song.BandId, ct);
-            song = await db.SingleOrDefaultAsync<Song>("select * from public.songs where id = @songId for update", new { songId }, ct);
+            await db.LockResourceAsync(BandMutationLock.ResourceName(song.BandId), ct);
+            song = await db.SingleOrDefaultAsync<Song>("select * from songs where id = @songId for update", new { songId }, ct);
         }
         return song is null || (!includeDeleted && song.IsDeleted) ? null : song;
     }
