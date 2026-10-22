@@ -15,7 +15,9 @@ public sealed class DatabaseCollection : ICollectionFixture<DatabaseFixture>
 
 public sealed class DatabaseFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:18.3").Build();
+    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:18.3")
+        .WithCommand("-c", "log_connections=on", "-c", "log_disconnections=on")
+        .Build();
     public string ConnectionString => postgres.GetConnectionString();
     public ServiceProvider Services { get; private set; } = null!;
     public RecordingPublisher Publisher { get; } = new();
@@ -35,7 +37,14 @@ public sealed class DatabaseFixture : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await Services.DisposeAsync();
-        await postgres.DisposeAsync();
+        try
+        {
+            await PostgresDiagnostics.SaveLogs(postgres);
+        }
+        finally
+        {
+            await postgres.DisposeAsync();
+        }
     }
 }
 

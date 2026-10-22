@@ -35,7 +35,9 @@ public sealed class WebApiCollection : ICollectionFixture<BandsApiFixture>
 
 public sealed class BandsApiFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:18.3").Build();
+    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:18.3")
+        .WithCommand("-c", "log_connections=on", "-c", "log_disconnections=on")
+        .Build();
     private WebApplication app = null!;
     public BandEventRecorder Events { get; } = new();
 
@@ -110,7 +112,14 @@ public sealed class BandsApiFixture : IAsyncLifetime
     {
         if (app is not null)
             await app.DisposeAsync();
-        await postgres.DisposeAsync();
+        try
+        {
+            await PostgresDiagnostics.SaveLogs(postgres);
+        }
+        finally
+        {
+            await postgres.DisposeAsync();
+        }
     }
 }
 
