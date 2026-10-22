@@ -249,3 +249,39 @@ Owner, приглашение и отзыв, песня, событие и чт�
 `/tmp/wband-t11-openapi-runtime.json`, `/tmp/wband-t11-api-image.log`,
 `/tmp/wband-t11-container-runtime.json`, `/tmp/wband-t11-keycloak-evidence.json`.
 Предупреждения NuGet о Pkcs/Xml из прежнего состояния остаются до приёмки выпуска.
+
+
+### T12: промежуточный результат — модель и потребители SongModule
+
+`SongModule.Contracts` — отдельная сборка прежних сообщений/DTO без изменения
+namespace и wire format. Реализация SongModule ссылается только на общие
+контракты/persistence и BandModule.Contracts; discovery подключён в хосте и fixture.
+Модели Song, SongSection, Partition, SongContentCell, SongRevision и их EF mappings
+принадлежат модульной сборке, без дублирующих типов в хосте.
+
+Собственный scoped `SongDataContext` имеет singleton immutable options,
+search_path `songs,public`, будущую историю `songs.__song_migrations` и
+общую с BandModule транзакционную advisory-блокировку. Метаданные, история,
+партии, секции/ячейки, helpers и запрос ссылок используют только этот контекст.
+Временный bridge через RelationalDataContext удалён. Архитектурная проверка
+запрещает внедрение legacy-контекста в application/HTTP handlers.
+
+**T12 ещё не завершена:** таблицы остаются в `public`; legacy DataContext пока
+содержит ту же модель только для прежних миграций и оставшихся тестовых чтений.
+Далее T12.5 — пустая ownership-миграция без DROP и обновление тестовых контекстов;
+T12.6–7 — schema songs, миграционные проверки/backup/Docker/runtime.
+Матрица и прежние metadata-only ревизии сохраняют отдельные критерии T13/T14.
+Основной запущенный Aspire пока остаётся на проверенной версии T11; обновление
+локальной БД и runtime-проверка T12 ещё не выполнялись.
+
+Проверено: **139/139 Release** (115 API/database/architecture, 24 auth/BFF),
+13 CI-routing тестов; OpenAPI совпадает с исходным T11 — 31 path и 54 схемы.
+Own-context integration сохраняет пустые ячейки, повторные названия частей,
+пробелы/переносы/скобки текста, metadata history и ID. Составной FK отвергает
+ссылку на часть другой песни с rollback; Song/Band contexts взаимно блокируют
+одну группу до завершения транзакции. Перенос CLR namespace/mappings сам по себе
+не создаёт pending schema changes у legacy-контекста.
+
+Доказательства: `/tmp/wband-t12-owned-mappings.log`,
+`/tmp/wband-t12-song-data.log`, `/tmp/wband-t12-owned-consumers.log`,
+`/tmp/wband-t12-openapi-after.json`. Прежние NuGet advisories остаются открытыми.
