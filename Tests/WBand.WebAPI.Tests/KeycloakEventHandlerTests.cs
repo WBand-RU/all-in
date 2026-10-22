@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WBand.WebAPI.Application;
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using WBand.WebAPI.Events;
 using Xunit;
 using Moq;
@@ -16,7 +16,7 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
     {
         var message = CreateRegistration();
         await Handle(message);
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         var user = await FindUser(message.UserId, db);
         Assert.NotNull(user);
         Assert.Equal(message.Details["email"].Trim().ToLowerInvariant(), user.Email);
@@ -32,7 +32,7 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
         var login = message with { Type = "LOGIN", Time = message.Time + 1000, Details = new Dictionary<string, string>() };
         await Handle(login);
         await Handle(login);
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         var user = (await FindUser(message.UserId, db))!;
         Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(login.Time), user.LastLoginAt);
     }
@@ -45,7 +45,7 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
         var newer = registration with { Type = "LOGIN", Time = registration.Time + 2000 };
         await Handle(newer);
         await Handle(newer with { Time = registration.Time + 1000 });
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         var user = (await FindUser(registration.UserId, db))!;
         Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(newer.Time), user.LastLoginAt);
     }
@@ -55,7 +55,7 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
     {
         var message = CreateRegistration() with { Details = new Dictionary<string, string>() };
         await Assert.ThrowsAsync<InvalidOperationException>(() => Handle(message));
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         Assert.Null(await FindUser(message.UserId, db));
     }
 
@@ -65,7 +65,7 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
         var message = CreateRegistration() with { Type = "LOGIN", Details = new Dictionary<string, string>() };
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() => Handle(message));
         Assert.Contains("registered", error.Message);
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         Assert.Null(await FindUser(message.UserId, db));
     }
 
@@ -74,7 +74,7 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
     {
         var message = CreateRegistration();
         await Task.WhenAll(Handle(message), Handle(message));
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         var user = (await FindUser(message.UserId, db))!;
         Assert.Equal(1, await db.Users.CountAsync(x => x.KeycloakId == message.UserId));
     }
@@ -86,21 +86,21 @@ public sealed class KeycloakEventHandlerTests(DatabaseFixture fixture)
         var bus = new Mock<IMessageBus>();
         bus.Setup(x => x.PublishAsync(It.IsAny<object>(), It.IsAny<DeliveryOptions>()))
             .Returns(ValueTask.FromException(new InvalidOperationException("broker unavailable")));
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         await KeycloakEventHandler.Handle(message, db, bus.Object, default);
         bus.Verify(x => x.PublishAsync(It.IsAny<object>(), It.IsAny<DeliveryOptions>()), Times.Never);
-        await using var reader = fixture.CreateSession();
+        await using var reader = fixture.CreateBandSession();
         Assert.NotNull(await FindUser(message.UserId, reader));
     }
 
     private async Task Handle(KeycloakEvent message)
     {
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         await KeycloakEventHandler.Handle(message, db, Mock.Of<IMessageBus>(), default);
     }
 
-    private static Task<User?> FindUser(Guid id, DataContext db) =>
-        db.SingleOrDefaultAsync<User>("select * from public.users where keycloak_id = @id", new { id });
+    private static Task<User?> FindUser(Guid id, BandDataContext db) =>
+        db.SingleOrDefaultAsync<User>("select * from users where keycloak_id = @id", new { id });
 
     private static KeycloakEvent CreateRegistration()
     {

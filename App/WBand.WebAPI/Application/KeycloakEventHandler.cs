@@ -1,5 +1,5 @@
 using Wolverine;
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using WBand.WebAPI.Events;
 
 namespace WBand.WebAPI.Application;
@@ -14,7 +14,7 @@ public static class KeycloakEventHandler
     /// </summary>
     public static async Task Handle(
         KeycloakEvent message,
-        DataContext db,
+        BandDataContext db,
         IMessageBus bus,
         CancellationToken cancellationToken
     )
@@ -40,7 +40,7 @@ public static class KeycloakEventHandler
             new { subject = message.UserId.ToString() }, cancellationToken);
         var occurredAt = DateTimeOffset.FromUnixTimeMilliseconds(message.Time);
         var user = await db.SingleOrDefaultAsync<User>(
-            "select * from public.users where keycloak_id = @id", new { id = message.UserId }, cancellationToken);
+            "select * from users where keycloak_id = @id", new { id = message.UserId }, cancellationToken);
         if (message.Type == "REGISTER")
         {
             if (user is not null) return;

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using WBand.WebAPI.Application;
 using Wolverine;
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using WBand.WebAPI.Services;
 using Wolverine.Http;
 
@@ -20,7 +20,7 @@ public static class CurrentUserEndpoint
     [WolverineGet("/api/user/me")]
     public static async Task<CurrentUserResponse> Get(
         ICurrentUser currentUser,
-        [Microsoft.AspNetCore.Mvc.FromServices] DataContext db,
+        [Microsoft.AspNetCore.Mvc.FromServices] BandDataContext db,
         IMessageBus bus,
         CancellationToken cancellationToken
     )

@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using WBand.WebAPI.Endpoints;
 using WBand.WebAPI.Services.Implementations;
 using Xunit;
@@ -18,7 +18,7 @@ public sealed class CurrentUserEndpointTests(DatabaseFixture fixture)
     [Fact]
     public async Task Get_WhenSubjectMatchesKeycloakId_ReturnsStoredProfileUsingEfCore()
     {
-        await using var db = fixture.CreateSession();
+        await using var db = fixture.CreateBandSession();
         var subject = Guid.NewGuid();
         var user = new User
         {
@@ -64,7 +64,7 @@ public sealed class CurrentUserEndpointTests(DatabaseFixture fixture)
             .Returns(ValueTask.FromException(new InvalidOperationException("broker unavailable")));
         async Task<CurrentUserEndpoint.CurrentUserResponse> Get()
         {
-            await using var db = fixture.CreateSession();
+            await using var db = fixture.CreateBandSession();
             return await CurrentUserEndpoint.Get(identity, db, bus.Object, default);
         }
         var profiles = await Task.WhenAll(Get(), Get(), Get());
@@ -75,7 +75,7 @@ public sealed class CurrentUserEndpointTests(DatabaseFixture fixture)
             Assert.Equal("Anna Ivanova", profile.DisplayName);
         });
         // A delayed registration must preserve the restored profile and its local identifier.
-        await using var session = fixture.CreateSession();
+        await using var session = fixture.CreateBandSession();
         await KeycloakEventHandler.Handle(new KeycloakEvent
         {
             Type = "REGISTER", UserId = subject, Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),

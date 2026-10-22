@@ -1,4 +1,4 @@
-using WBand.WebAPI.Data;
+using WBand.Modules.BandModule.Data;
 using WBand.WebAPI.Services;
 using Wolverine;
 
@@ -9,11 +9,11 @@ public static class UserProfileSynchronization
 {
     /// <summary>Returns the existing profile or creates it once if registration delivery was missed.</summary>
     public static async Task<User> EnsureProfile(
-        ICurrentUser identity, DataContext db, IMessageBus bus, CancellationToken cancellationToken)
+        ICurrentUser identity, BandDataContext db, IMessageBus bus, CancellationToken cancellationToken)
     {
         var subject = identity.Id;
         var user = await db.SingleOrDefaultAsync<User>(
-            "select * from public.users where keycloak_id = @id", new { id = subject }, cancellationToken);
+            "select * from users where keycloak_id = @id", new { id = subject }, cancellationToken);
         if (user is not null) return user;
 
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
@@ -21,7 +21,7 @@ public static class UserProfileSynchronization
         await db.ExecuteAsync("select pg_advisory_xact_lock(hashtextextended(@subject, 0))",
             new { subject = subject.ToString() }, cancellationToken);
         user = await db.SingleOrDefaultAsync<User>(
-            "select * from public.users where keycloak_id = @id", new { id = subject }, cancellationToken);
+            "select * from users where keycloak_id = @id", new { id = subject }, cancellationToken);
         if (user is not null) return user;
 
         var email = identity.Email;
