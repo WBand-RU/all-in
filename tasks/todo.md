@@ -139,7 +139,7 @@
     - [x] T11.1: нейтральная сборка общих контрактов, ссылки/solution/Docker и CI routing.
     - [x] T11.2a: общий ICurrentUser и platform roles без зависимости модуля от хоста.
     - [x] T11.2b: общие HTTP-обёртки ApiResponse/ApiCodes без изменения wire format.
-    - [ ] T11.3: запросы членства/групп в module Application; discovery и архитектурные тесты.
+    - [x] T11.3: запросы членства/групп в module Application; discovery и архитектурные тесты.
     - [ ] T11.4: HTTP групп, публичная регистрация Wolverine HTTP/validators; сохранить discovery песен хоста.
     - [ ] T11.5: HTTP членства и приглашений отдельными семействами.
     - [ ] T11.6: Keycloak contract/handler, синхронизация и HTTP профиля отдельными семействами.

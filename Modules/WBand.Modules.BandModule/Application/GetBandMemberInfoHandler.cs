@@ -1,17 +1,18 @@
 using WBand.Modules.BandModule.Data;
-using ModuleBandAccess = WBand.Modules.BandModule.Data.BandAccess;
 using WBand.Modules.BandModule.Contracts;
 
-namespace WBand.WebAPI.Application.Bands;
+namespace WBand.Modules.BandModule.Application;
 
+/// <summary>Answers the public band query using module-owned storage.</summary>
 public static class GetBandMemberInfoHandler
 {
+    /// <summary>Reads data visible through the query contract.</summary>
     public static async Task<BandMemberInfo> Handle(
         GetBandMemberInfo query,
         BandDataContext db,
         CancellationToken cancellationToken)
     {
-        var member = await ModuleBandAccess.FindMembership(db, query.BandId, query.UserId, cancellationToken);
+        var member = await BandAccess.FindMembership(db, query.BandId, query.UserId, cancellationToken);
 
         return member is null
             ? BandMemberInfo.NotFound(query.UserId)

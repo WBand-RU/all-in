@@ -1,7 +1,6 @@
 using System.Reflection;
 using WBand.Modules.BandModule;
 using WBand.Modules.BandModule.Contracts;
-using WBand.WebAPI.Endpoints.Bands;
 using Xunit;
 
 namespace WBand.WebAPI.Tests;
@@ -31,11 +30,15 @@ public sealed class ModuleBoundaryTests
             Assert.Equal("WBand.Modules.BandModule.Contracts", type.Namespace));
     }
 
-    [Fact]
-    public void BandPermissionQuery_WhenHandled_IsOwnedByBandModule()
+    [Theory]
+    [InlineData(typeof(CheckBandPermission))]
+    [InlineData(typeof(GetBandMemberInfo))]
+    [InlineData(typeof(GetUserBandIds))]
+    [InlineData(typeof(GetBandContributorInfo))]
+    public void BandQuery_WhenHandled_IsOwnedByBandModule(Type query)
     {
-        Assert.Single(HandlersFor(typeof(BandModule).Assembly, typeof(CheckBandPermission)));
-        Assert.Empty(HandlersFor(typeof(CreateBandEndpoint).Assembly, typeof(CheckBandPermission)));
+        Assert.Single(HandlersFor(typeof(BandModule).Assembly, query));
+        Assert.Empty(HandlersFor(typeof(WBand.WebAPI.Data.DataContext).Assembly, query));
     }
 
     [Fact]
