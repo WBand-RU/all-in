@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="../../Modules/WBand.Modules.SongModule/Contracts/WBand.Modules.SongModule.Contracts.csproj" />
         <ProjectReference Include="../../Common/WBand.Contracts/WBand.Contracts.csproj" />
         <ProjectReference Include="../../Common/WBand.Persistence/WBand.Persistence.csproj" />
         <ProjectReference Include="../../Modules/WBand.Modules.EventModule/WBand.Modules.EventModule.csproj" />
