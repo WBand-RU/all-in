@@ -46,11 +46,26 @@ actual_dst = str(ipaddress.ip_network(
 `/tmp/wband-t01-fixed-tests.log`, `/tmp/wband-t01-rules-after.log`,
 `/tmp/wband-tests-postgres-<container-id>.log`.
 
+## T02–T03: запуск и аутентификация
+
+Два последовательных запуска Aspire после удаления неиспользуемой зависимости
+от RustFS: все активные ресурсы Healthy; генератор API-клиента не запускался.
+RustFS исключён из MVP, тома и существующий persistent-контейнер не удалялись.
+Браузерная регистрация через BFF завершилась открытием `/app`; после второго
+запуска `/auth/me` вернул 200. Журналы: `/tmp/wband-t02-*-clean-*.json`,
+`/tmp/wband-t02-wait-clean-*.log`.
+
+В решение возвращены 24 актуальных auth/BFF-теста: JWT issuer/audience/expiry,
+обязательные claims, session, CSRF, logout, маршрутизация и подмена клиентского
+Bearer серверным. Настройка API вынесена без изменения правил в общий с тестами
+метод регистрации. Весь Release-набор: 101/101. NuGet сообщает advisory для
+транзитивных Pkcs/Xml 10.0.12 в тестовом проекте; обновление ещё не выполнено.
+
 ## Карта приложения
 
 | Область | Реализация | Состояние подключения |
 | --- | --- | --- |
-| Локальный запуск | `App/WBand.AppHost` | Aspire: PostgreSQL, RabbitMQ, Redis, RustFS, Keycloak, API, BFF, Next.js |
+| Локальный запуск | `App/WBand.AppHost` | Aspire MVP: PostgreSQL, RabbitMQ, Redis, Keycloak, API, BFF, Next.js |
 | Вход и сессии | `App/WBand.WebProxy` | BFF, OIDC, серверная сессия, CSRF, маршрутизация API |
 | Пользователи, группы, песни | `App/WBand.WebAPI` | EF Core/PostgreSQL, Wolverine HTTP и сообщения |
 | Содержимое песни | `App/WBand.WebAPI/Endpoints/Songs` | Общие секции, партии, ячейки текста с ревизиями, атомарное сохранение партии |

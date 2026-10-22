@@ -45,12 +45,6 @@ var cache = builder
     .WithDataVolume("wband-redis")
     .WithLifetime(ContainerLifetime.Persistent);
 
-var rustfsServer = builder
-    .AddRustFs("rustfs")
-    .WithDataVolume("wband-rustfs")
-    .WithLifetime(ContainerLifetime.Persistent);
-var rustfs = rustfsServer.AddBucket("wband-bucket");
-
 var keycloakUsername = builder.AddParameter("keycloak-username", "admin");
 var keycloakPassword = builder.AddParameter("keycloak-password", "qweQWE123!@#", secret: true);
 var bffClientSecret = builder.AddParameter(
@@ -109,8 +103,6 @@ var webapi = builder
     .WaitFor(rabbitmqServer)
     .WithReference(cache)
     .WaitFor(cache)
-    .WithReference(rustfs)
-    .WaitFor(rustfs)
     .WithReference(keycloak)
     .WaitFor(keycloak)
     .WithEnvironment("KEYCLOAK_URI", keycloakEndpoint)
@@ -135,29 +127,7 @@ var webapi = builder
     .WithEnvironment("RABBITMQ_VIRTUAL_HOST", "/")
     .WithEnvironment("RABBITMQ_SSL_ENABLED", "false")
     .WithEnvironment("KEYCLOAK_EVENTS_EXCHANGE", "amq.topic")
-    .WithEnvironment("KEYCLOAK_EVENTS_QUEUE", "wband-user-module-keycloak-events")
-    .WithEnvironment("S3_HOST", rustfs.Resource.Parent.PrimaryEndpoint)
-    .WithEnvironment("S3_BUCKET", "wband-bucket")
-    .WithEnvironment("S3_ACCESS_KEY", rustfs.Resource.Parent.AccessKey)
-    .WithEnvironment("S3_SECRET_KEY", rustfs.Resource.Parent.SecretKey);
-
-// builder
-//     .AddProject<Projects.WBand_MixerWorker>("mixer-worker")
-//     .WithReference(postgresDatabase)
-//     .WaitFor(postgresDatabase)
-//     .WithReference(rustfs)
-//     .WaitFor(rustfs)
-//     .WithEnvironment(
-//         "MARTEN_DATABASE_CONNECTION_STRING",
-//         postgresDatabase.Resource.ConnectionStringExpression
-//     )
-//     .WithEnvironment("MARTEN_DATABASE_SCHEMA_NAME", "marten")
-//     .WithEnvironment("S3_UPLOAD_EXPIRATION_SECONDS", "900")
-//     .WithEnvironment("S3_DOWNLOAD_EXPIRATION_SECONDS", "604800")
-//     .WithEnvironment("S3_HOST", rustfs.Resource.Parent.PrimaryEndpoint)
-//     .WithEnvironment("S3_BUCKET", "wband-bucket")
-//     .WithEnvironment("S3_ACCESS_KEY", rustfs.Resource.Parent.AccessKey)
-//     .WithEnvironment("S3_SECRET_KEY", rustfs.Resource.Parent.SecretKey);
+    .WithEnvironment("KEYCLOAK_EVENTS_QUEUE", "wband-user-module-keycloak-events");
 
 #pragma warning disable ASPIREJAVASCRIPT001
 var web = builder.AddNextJsApp("web", "../web", "dev").WithBun().WithExternalHttpEndpoints();
@@ -204,14 +174,5 @@ if (builder.Configuration.GetValue<bool>("GenerateApiClients"))
         .WaitFor(webapi)
         .WaitFor(proxy);
 }
-
-// Signed uploads and downloads go from the browser directly to the S3 endpoint.
-// Use browser origins: Aspire rewrites endpoint hosts inside containers to aspire.dev.internal.
-rustfsServer.WithEnvironment(
-    "RUSTFS_CORS_ALLOWED_ORIGINS",
-    ReferenceExpression.Create(
-        $"http://localhost:{proxy.GetEndpoint("http").Property(EndpointProperty.Port)},http://localhost:{web.GetEndpoint("http").Property(EndpointProperty.Port)}"
-    )
-);
 
 builder.Build().Run();
