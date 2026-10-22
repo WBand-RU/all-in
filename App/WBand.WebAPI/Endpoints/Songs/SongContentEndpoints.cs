@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WBand.Modules.SongModule.Contracts;
 using WBand.WebAPI.Application.Songs;
 using WBand.WebAPI.Data;
 using WBand.WebAPI.Services;
-using Wolverine;
 using Wolverine.Http;
 
 namespace WBand.WebAPI.Endpoints.Songs;
@@ -34,7 +32,7 @@ public static class UpdateSongContentCellEndpoint
     [Authorize, Tags("SongContent"), ProducesResponseType<SongContentCellResponse>(200)]
     [WolverinePut("/song-api/songs/{songId}/sections/{sectionId}/partitions/{partitionId}", OperationId = "UpdateSongContentCell")]
     public static async Task<IResult> Put(Guid songId, Guid sectionId, Guid partitionId, UpdateSongContentCellRequest request,
-        ICurrentUser user, [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        ICurrentUser user, [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
@@ -52,7 +50,6 @@ public static class UpdateSongContentCellEndpoint
             return Results.Conflict(new { code = "song_cell_version_conflict", currentRevision = revision });
         cell = await SongContentWriter.Save(db, cell, songId, sectionId, partitionId, request.Content, user.Id, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongContentChanged(songId, song.BandId, sectionId, partitionId, cell.Revision));
         return Results.Ok(SongContentCellResponse.From(cell));
     }
 }
@@ -62,7 +59,7 @@ public static class UpdatePartitionContentEndpoint
     [Authorize, Tags("SongContent"), ProducesResponseType<SongContentCellResponse[]>(200)]
     [WolverinePut("/song-api/songs/{songId}/partitions/{partitionId}/content", OperationId = "UpdatePartitionContent")]
     public static async Task<IResult> Put(Guid songId, Guid partitionId, UpdatePartitionContentRequest request,
-        ICurrentUser user, [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        ICurrentUser user, [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
@@ -85,8 +82,6 @@ public static class UpdatePartitionContentEndpoint
             saved.Add(await SongContentWriter.Save(db, existing.GetValueOrDefault(draft.SectionId), songId, draft.SectionId,
                 partitionId, draft.Content, user.Id, cancellationToken));
         await transaction.CommitAsync(cancellationToken);
-        foreach (var cell in saved)
-            await bus.PublishAsync(new SongContentChanged(songId, song.BandId, cell.SectionId, partitionId, cell.Revision));
         return Results.Ok(saved.Select(SongContentCellResponse.From).ToArray());
     }
 }

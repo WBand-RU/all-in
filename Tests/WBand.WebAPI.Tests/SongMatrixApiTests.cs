@@ -12,41 +12,52 @@ namespace WBand.WebAPI.Tests;
 public sealed class SongMatrixApiTests(BandsApiFixture fixture)
 {
     [Fact]
-    public async Task Matrix_WhenAxesChange_SharesSectionsAcrossAllPartitionsAndKeepsIndependentCells()
+    public async Task Matrix_WhenPublicationUnavailable_SharesStructureAndKeepsIndependentCells()
     {
-        using var owner = fixture.CreateClient(Guid.NewGuid());
-        var song = await CreateSong(owner);
-        var lyrics = await Create<PartitionResponse>(owner, $"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Слова", 0));
-        var drums = await Create<PartitionResponse>(owner, $"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Заметки барабанщика", 1));
-        var verse = await Create<SongSectionResponse>(owner, $"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Куплет", 0));
-        var chorus = await Create<SongSectionResponse>(owner, $"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Припев", 1));
-        const string text = "  [Am]Строка\n  вторая [G]  ";
-        var verseLyrics = await SaveCell(owner, song.Id, verse.Id, lyrics.Id, text, 0);
-        await SaveCell(owner, song.Id, verse.Id, drums.Id, "Сбивка", 0);
-        await SaveCell(owner, song.Id, chorus.Id, lyrics.Id, "Припев", 0);
-        var matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
-        Assert.Equal([verse.Id, chorus.Id], matrix.Sections.Select(x => x.Id));
-        Assert.Equal([lyrics.Id, drums.Id], matrix.Partitions.Select(x => x.Id));
-        Assert.Equal(3, matrix.Cells.Count);
-        Assert.DoesNotContain(matrix.Cells, x => x.SectionId == chorus.Id && x.PartitionId == drums.Id);
-        Assert.Equal(text, Assert.Single(matrix.Cells, x => x.SectionId == verse.Id && x.PartitionId == lyrics.Id).Content);
-        Assert.Equal(1, verseLyrics.Revision);
+        fixture.RejectPublications = true;
+        try
+        {
+            using var owner = fixture.CreateClient(Guid.NewGuid());
+            var song = await CreateSong(owner);
+            var lyrics = await Create<PartitionResponse>(owner, $"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Слова", 0));
+            var drums = await Create<PartitionResponse>(owner, $"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Заметки барабанщика", 1));
+            (await owner.PutAsJsonAsync($"/song-api/partitions/{drums.Id}",
+                new UpdatePartitionRequest("Заметки", 3, drums.Revision))).EnsureSuccessStatusCode();
+            var verse = await Create<SongSectionResponse>(owner, $"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Куплет", 0));
+            var chorus = await Create<SongSectionResponse>(owner, $"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Припев", 1));
+            const string text = "  [Am]Строка\n  вторая [G]  ";
+            var verseLyrics = await SaveCell(owner, song.Id, verse.Id, lyrics.Id, text, 0);
+            await SaveCell(owner, song.Id, verse.Id, drums.Id, "Сбивка", 0);
+            await SaveCell(owner, song.Id, chorus.Id, lyrics.Id, "Припев", 0);
+            var matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
+            Assert.Equal([verse.Id, chorus.Id], matrix.Sections.Select(x => x.Id));
+            Assert.Equal([lyrics.Id, drums.Id], matrix.Partitions.Select(x => x.Id));
+            Assert.Equal("Заметки", matrix.Partitions[1].Name);
+            Assert.Equal(3, matrix.Cells.Count);
+            Assert.DoesNotContain(matrix.Cells, x => x.SectionId == chorus.Id && x.PartitionId == drums.Id);
+            Assert.Equal(text, Assert.Single(matrix.Cells, x => x.SectionId == verse.Id && x.PartitionId == lyrics.Id).Content);
+            Assert.Equal(1, verseLyrics.Revision);
 
-        (await owner.PutAsJsonAsync($"/song-api/sections/{verse.Id}", new UpdateSongSectionRequest("Куплет 1", 5, verse.Revision))).EnsureSuccessStatusCode();
-        matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
-        Assert.Equal([chorus.Id, verse.Id], matrix.Sections.Select(x => x.Id));
-        Assert.Equal("Куплет 1", matrix.Sections[1].Name);
-        Assert.Equal(2, matrix.Cells.Count(x => x.SectionId == verse.Id));
-        (await owner.DeleteAsync($"/song-api/sections/{verse.Id}")).EnsureSuccessStatusCode();
-        matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
-        Assert.Equal(chorus.Id, Assert.Single(matrix.Sections).Id);
-        Assert.Equal(2, matrix.Partitions.Count);
-        Assert.Equal(chorus.Id, Assert.Single(matrix.Cells).SectionId);
-        (await owner.DeleteAsync($"/song-api/partitions/{lyrics.Id}")).EnsureSuccessStatusCode();
-        matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
-        Assert.Single(matrix.Sections);
-        Assert.Equal(drums.Id, Assert.Single(matrix.Partitions).Id);
-        Assert.Empty(matrix.Cells);
+            (await owner.PutAsJsonAsync($"/song-api/sections/{verse.Id}", new UpdateSongSectionRequest("Куплет 1", 5, verse.Revision))).EnsureSuccessStatusCode();
+            matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
+            Assert.Equal([chorus.Id, verse.Id], matrix.Sections.Select(x => x.Id));
+            Assert.Equal("Куплет 1", matrix.Sections[1].Name);
+            Assert.Equal(2, matrix.Cells.Count(x => x.SectionId == verse.Id));
+            (await owner.DeleteAsync($"/song-api/sections/{verse.Id}")).EnsureSuccessStatusCode();
+            matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
+            Assert.Equal(chorus.Id, Assert.Single(matrix.Sections).Id);
+            Assert.Equal(2, matrix.Partitions.Count);
+            Assert.Equal(chorus.Id, Assert.Single(matrix.Cells).SectionId);
+            (await owner.DeleteAsync($"/song-api/partitions/{lyrics.Id}")).EnsureSuccessStatusCode();
+            matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
+            Assert.Single(matrix.Sections);
+            Assert.Equal(drums.Id, Assert.Single(matrix.Partitions).Id);
+            Assert.Empty(matrix.Cells);
+        }
+        finally
+        {
+            fixture.RejectPublications = false;
+        }
     }
 
     [Theory]
@@ -103,27 +114,35 @@ public sealed class SongMatrixApiTests(BandsApiFixture fixture)
     [Fact]
     public async Task SavePartition_WhenSeveralSectionsChange_SavesThemTogetherAndLeavesOtherPartitionsAlone()
     {
-        using var owner = fixture.CreateClient(Guid.NewGuid());
-        var song = await CreateSong(owner);
-        var part = await Create<PartitionResponse>(owner, $"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Слова", 0));
-        var other = await Create<PartitionResponse>(owner, $"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Аккорды", 1));
-        var verse = await Create<SongSectionResponse>(owner, $"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Куплет", 0));
-        var chorus = await Create<SongSectionResponse>(owner, $"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Припев", 1));
-        await SaveCell(owner, song.Id, verse.Id, other.Id, "[Am]", 0);
-        var response = await owner.PutAsJsonAsync(PartitionUrl(song.Id, part.Id), new UpdatePartitionContentRequest([
-            new(verse.Id, "  [Am]Куплет\n", 0), new(chorus.Id, "Припев  ", 0)]));
-        response.EnsureSuccessStatusCode();
-        var saved = (await response.Content.ReadFromJsonAsync<SongContentCellResponse[]>())!;
-        Assert.Equal(2, saved.Length);
-        Assert.All(saved, x => Assert.Equal(1, x.Revision));
-        var matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
-        Assert.Equal("  [Am]Куплет\n", Assert.Single(matrix.Cells, x => x.PartitionId == part.Id && x.SectionId == verse.Id).Content);
-        Assert.Equal("[Am]", Assert.Single(matrix.Cells, x => x.PartitionId == other.Id).Content);
-        await SaveCell(owner, song.Id, chorus.Id, part.Id, "Отдельное сохранение", 1);
-        response = await owner.PutAsJsonAsync(PartitionUrl(song.Id, part.Id), new UpdatePartitionContentRequest([new(verse.Id, "Новый куплет", 1)]));
-        response.EnsureSuccessStatusCode();
-        matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
-        Assert.Equal("Отдельное сохранение", Assert.Single(matrix.Cells, x => x.PartitionId == part.Id && x.SectionId == chorus.Id).Content);
+        fixture.RejectPublications = true;
+        try
+        {
+            using var owner = fixture.CreateClient(Guid.NewGuid());
+            var song = await CreateSong(owner);
+            var part = await Create<PartitionResponse>(owner, $"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Слова", 0));
+            var other = await Create<PartitionResponse>(owner, $"/song-api/songs/{song.Id}/partitions", new CreatePartitionRequest("Аккорды", 1));
+            var verse = await Create<SongSectionResponse>(owner, $"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Куплет", 0));
+            var chorus = await Create<SongSectionResponse>(owner, $"/song-api/songs/{song.Id}/sections", new CreateSongSectionRequest("Припев", 1));
+            await SaveCell(owner, song.Id, verse.Id, other.Id, "[Am]", 0);
+            var response = await owner.PutAsJsonAsync(PartitionUrl(song.Id, part.Id), new UpdatePartitionContentRequest([
+                new(verse.Id, "  [Am]Куплет\n", 0), new(chorus.Id, "Припев  ", 0)]));
+            response.EnsureSuccessStatusCode();
+            var saved = (await response.Content.ReadFromJsonAsync<SongContentCellResponse[]>())!;
+            Assert.Equal(2, saved.Length);
+            Assert.All(saved, x => Assert.Equal(1, x.Revision));
+            var matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
+            Assert.Equal("  [Am]Куплет\n", Assert.Single(matrix.Cells, x => x.PartitionId == part.Id && x.SectionId == verse.Id).Content);
+            Assert.Equal("[Am]", Assert.Single(matrix.Cells, x => x.PartitionId == other.Id).Content);
+            await SaveCell(owner, song.Id, chorus.Id, part.Id, "Отдельное сохранение", 1);
+            response = await owner.PutAsJsonAsync(PartitionUrl(song.Id, part.Id), new UpdatePartitionContentRequest([new(verse.Id, "Новый куплет", 1)]));
+            response.EnsureSuccessStatusCode();
+            matrix = (await owner.GetFromJsonAsync<SongContentResponse>($"/song-api/songs/{song.Id}/content"))!;
+            Assert.Equal("Отдельное сохранение", Assert.Single(matrix.Cells, x => x.PartitionId == part.Id && x.SectionId == chorus.Id).Content);
+        }
+        finally
+        {
+            fixture.RejectPublications = false;
+        }
     }
 
     [Fact]

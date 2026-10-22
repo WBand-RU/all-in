@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WBand.Modules.SongModule.Contracts;
 using WBand.WebAPI.Application.Songs;
 using WBand.WebAPI.Data;
-using Wolverine;
 using WBand.WebAPI.Services;
 using Wolverine.Http;
 
@@ -29,7 +27,7 @@ public static class CreatePartitionEndpoint
     [Authorize, Tags("SongPartitions"), ProducesResponseType<PartitionResponse>(200)]
     [WolverinePost("/song-api/songs/{songId}/partitions", OperationId = "CreatePartition")]
     public static async Task<IResult> Post(Guid songId, CreatePartitionRequest request, ICurrentUser user,
-        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
@@ -42,7 +40,6 @@ public static class CreatePartitionEndpoint
         };
         await db.InsertAsync(partition, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongPartitionsChanged(songId, song.BandId));
         return Results.Ok(PartitionResponse.From(partition));
     }
 }
@@ -52,7 +49,7 @@ public static class UpdatePartitionEndpoint
     [Authorize, Tags("SongPartitions"), ProducesResponseType<PartitionResponse>(200)]
     [WolverinePut("/song-api/partitions/{partitionId}", OperationId = "UpdatePartition")]
     public static async Task<IResult> Put(Guid partitionId, UpdatePartitionRequest request, ICurrentUser user,
-        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var partition = await db.FindAsync<Partition>(partitionId, cancellationToken);
@@ -71,7 +68,6 @@ public static class UpdatePartitionEndpoint
         partition.UpdatedBy = user.Id;
         await db.UpdateAsync(partition, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongPartitionsChanged(song.Id, song.BandId));
         return Results.Ok(PartitionResponse.From(partition));
     }
 }
@@ -81,7 +77,7 @@ public static class DeletePartitionEndpoint
     [Authorize, Tags("SongPartitions"), ProducesResponseType(204)]
     [WolverineDelete("/song-api/partitions/{partitionId}", OperationId = "DeletePartition")]
     public static async Task<IResult> Delete(Guid partitionId, ICurrentUser user,
-        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var partition = await db.FindAsync<Partition>(partitionId, cancellationToken);
@@ -91,7 +87,6 @@ public static class DeletePartitionEndpoint
         if (!await SongAccess.Check(db, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
         if (await db.DeleteAsync<Partition>(partitionId, cancellationToken) == 0) return Results.NotFound();
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongPartitionsChanged(song.Id, song.BandId));
         return Results.NoContent();
     }
 }

@@ -193,7 +193,6 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/song-api/partitions/{verse.Id}")).StatusCode);
         Assert.Equal(chorus.Id, Assert.Single((await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!).Id);
         await using var db = fixture.CreateContext();
-        Assert.Equal(4, await EventCount(song.Id, "song-partitions-changed.v1", 4));
     }
 
     [Fact]
@@ -227,7 +226,6 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         Assert.Single(results, x => x.StatusCode == HttpStatusCode.Conflict);
         await using var db = fixture.CreateContext();
         Assert.Equal(2, (await db.FindAsync<Partition>(section.Id))!.Revision);
-        Assert.Equal(2, await EventCount(song.Id, "song-partitions-changed.v1", 2));
     }
 
     [Fact]
@@ -364,25 +362,4 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
 
     private static UpdateSongRequest Update(SongResponse song) => new(song.Title, song.Authors, null, song.Key, song.Bpm, song.Status, song.ContentVersion);
 
-    private async Task<int> EventCount(Guid songId, string type, int expected = 1)
-    {
-        // Local Wolverine subscribers run asynchronously after direct publication.
-        var deadline = DateTime.UtcNow.AddSeconds(10);
-        int count;
-        do
-        {
-            count = fixture.Events.Published.Values.Count(message => (type, message) switch
-            {
-                ("song-created.v1", SongCreated created) => created.SongId == songId,
-                ("song-changed.v1", SongChanged changed) => changed.SongId == songId,
-                ("song-deleted.v1", SongDeleted deleted) => deleted.SongId == songId,
-                ("song-restored.v1", SongRestored restored) => restored.SongId == songId,
-                ("song-partitions-changed.v1", SongPartitionsChanged sections) => sections.SongId == songId,
-                _ => false,
-            });
-            if (count >= expected) return count;
-            await Task.Delay(20);
-        } while (DateTime.UtcNow < deadline);
-        return count;
-    }
 }
