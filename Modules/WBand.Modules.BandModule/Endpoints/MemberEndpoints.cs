@@ -2,11 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using WBand.Modules.BandModule.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using WBand.WebAPI.Shared;
-using WBand.WebAPI.Services;
+using WBand.Contracts;
 using Wolverine.Http;
 
-namespace WBand.WebAPI.Endpoints.Bands;
+namespace WBand.Modules.BandModule.Endpoints;
 
 /// <summary>Changes a non-owner membership role.</summary>
 public sealed record UpdateMemberRoleRequest(BandMemberRole NewRole);

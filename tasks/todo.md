@@ -142,7 +142,7 @@
     - [x] T11.3: запросы членства/групп в module Application; discovery и архитектурные тесты.
     - [x] T11.4: HTTP групп, публичная регистрация Wolverine HTTP/validators; сохранить discovery песен хоста.
     - [ ] T11.5: HTTP членства и приглашений отдельными семействами.
-      - [ ] T11.5a: HTTP членства в module Endpoints; проверки прав/владельца/выходов.
+      - [x] T11.5a: HTTP членства в module Endpoints; проверки прав/владельца/выходов.
       - [ ] T11.5b: HTTP приглашений/validator; удалить прежний namespace из тестов, проверить TTL/параллельное принятие.
     - [ ] T11.6: Keycloak contract/handler, синхронизация и HTTP профиля отдельными семействами.
     - [ ] T11.7: архитектурная проверка, OpenAPI parity, полный Release/Docker/runtime; хост не обращается к BandDataContext вне composition root.
