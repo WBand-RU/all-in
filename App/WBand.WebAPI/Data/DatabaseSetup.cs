@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule;
 using Microsoft.EntityFrameworkCore;
 
 namespace WBand.WebAPI.Data;
@@ -30,5 +31,6 @@ public static class DatabaseSetup
             new DbContextOptionsBuilder<DataContext>().UseNpgsql(connectionString).Options
         );
         await db.Database.MigrateAsync(cancellationToken);
+        await BandModule.ApplyMigrationsAsync(connectionString, cancellationToken);
     }
 }

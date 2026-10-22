@@ -8,6 +8,7 @@
         <Compile Remove="Contracts/**/*.cs" />
         <ProjectReference Include="Contracts/WBand.Modules.BandModule.Contracts.csproj" />
         <PackageReference Include="WolverineFx" Version="6.49.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3" PrivateAssets="all" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
         <ProjectReference Include="../../Common/WBand.Persistence/WBand.Persistence.csproj" />
     </ItemGroup>

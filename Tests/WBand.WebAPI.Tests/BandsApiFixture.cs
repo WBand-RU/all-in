@@ -54,9 +54,9 @@ public sealed class BandsApiFixture : IAsyncLifetime
         if (userId is not null)
         {
             // Authenticated clients represent registered users in the local database.
-            using var db = CreateContext();
+            using var db = CreateBandContext();
             db.Database.ExecuteSqlRaw("""
-                insert into public.users (id, keycloak_id, email, first_name, last_name, created_at, updated_at, last_login_at)
+                insert into bands.users (id, keycloak_id, email, first_name, last_name, created_at, updated_at, last_login_at)
                 values (@id, @subject, @email, '', '', clock_timestamp(), clock_timestamp(), @lastLogin)
                 on conflict (keycloak_id) do nothing
                 """, new NpgsqlParameter("id", Guid.CreateVersion7()), new NpgsqlParameter("subject", userId.Value), new NpgsqlParameter("email", $"{userId.Value:N}@example.com"), new NpgsqlParameter("lastLogin", default(DateTimeOffset)));
@@ -72,7 +72,7 @@ public sealed class BandsApiFixture : IAsyncLifetime
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
         await DatabaseSetup.ApplyMigrations(ConnectionString, default);
         await using (var db = CreateContext())
-            await db.ExecuteAsync("ALTER TABLE public.bands ADD CONSTRAINT test_commit_failure CHECK (name <> 'fail_commit')");
+            await db.ExecuteAsync("ALTER TABLE bands.bands ADD CONSTRAINT test_commit_failure CHECK (name <> 'fail_commit')");
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
