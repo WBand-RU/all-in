@@ -17,7 +17,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Hosting;
 using Testcontainers.PostgreSql;
 using WBand.WebAPI.Data;
-using WBand.WebAPI.Endpoints.Bands;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Services.Implementations;
 using Wolverine;

@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Http.Json;
 using WBand.Modules.EventModule.Endpoints;
 using WBand.WebAPI.Data;
-using WBand.WebAPI.Endpoints.Bands;
 using WBand.WebAPI.Endpoints.Songs;
 using WBand.WebAPI.Shared;
 using Xunit;

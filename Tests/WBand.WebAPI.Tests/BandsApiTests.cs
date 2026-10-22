@@ -2,7 +2,6 @@ using WBand.Modules.BandModule.Endpoints;
 using System.Net;
 using System.Net.Http.Json;
 using WBand.Modules.BandModule.Data;
-using WBand.WebAPI.Endpoints.Bands;
 using WBand.WebAPI.Shared;
 using WBand.Modules.BandModule.Contracts;
 using Microsoft.Extensions.DependencyInjection;
