@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="../../Common/WBand.Contracts/WBand.Contracts.csproj" />
         <Compile Remove="Contracts/**/*.cs" />
         <ProjectReference Include="Contracts/WBand.Modules.BandModule.Contracts.csproj" />
         <PackageReference Include="WolverineFx" Version="6.49.0" />

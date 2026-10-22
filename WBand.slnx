@@ -33,6 +33,7 @@
         <Project Path="Modules/WBand.Modules.EventModule/WBand.Modules.EventModule.csproj" />
     </Folder>
     <Folder Name="/Common/">
+        <Project Path="Common/WBand.Contracts/WBand.Contracts.csproj" />
         <Project Path="Common/WBand.Persistence/WBand.Persistence.csproj" />
         <Project Path="Common/WBand.ServiceDefaults/WBand.ServiceDefaults.csproj" />
     </Folder>

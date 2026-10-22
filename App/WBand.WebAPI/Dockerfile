@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS restore
 WORKDIR /src
+COPY ["Common/WBand.Contracts/WBand.Contracts.csproj", "Common/WBand.Contracts/"]
 COPY ["Common/WBand.Persistence/WBand.Persistence.csproj", "Common/WBand.Persistence/"]
 COPY ["Modules/WBand.Modules.EventModule/WBand.Modules.EventModule.csproj", "Modules/WBand.Modules.EventModule/"]
 COPY ["Modules/WBand.Modules.BandModule/Contracts/WBand.Modules.BandModule.Contracts.csproj", "Modules/WBand.Modules.BandModule/Contracts/"]
@@ -9,6 +10,7 @@ COPY ["App/WBand.WebAPI/WBand.WebAPI.csproj", "App/WBand.WebAPI/"]
 RUN dotnet restore "App/WBand.WebAPI/WBand.WebAPI.csproj"
 
 FROM restore AS publish
+COPY Common/WBand.Contracts/ Common/WBand.Contracts/
 COPY Common/WBand.Persistence/ Common/WBand.Persistence/
 COPY Modules/WBand.Modules.EventModule/ Modules/WBand.Modules.EventModule/
 COPY Modules/WBand.Modules.BandModule/ Modules/WBand.Modules.BandModule/
