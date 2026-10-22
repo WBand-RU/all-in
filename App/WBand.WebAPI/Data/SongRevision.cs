@@ -20,7 +20,4 @@ public sealed class SongRevision
     [JsonIgnore]
     public Song Song { get; set; } = null!;
 
-    /// <summary>User who created the revision.</summary>
-    [JsonIgnore]
-    public User CreatedByUser { get; set; } = null!;
 }

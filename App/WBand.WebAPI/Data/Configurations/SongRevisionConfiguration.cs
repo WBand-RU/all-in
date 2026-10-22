@@ -23,8 +23,6 @@ public sealed class SongRevisionConfiguration : IEntityTypeConfiguration<SongRev
         builder.Property(x => x.CreatedBy).HasColumnName("created_by");
         builder.HasIndex(x => new { x.SongId, x.ContentVersion }).IsUnique();
         builder.Property(x => x.Authors).HasColumnType("text[]");
-        builder.HasOne(x => x.CreatedByUser).WithMany(x => x.CreatedSongRevisions).HasForeignKey(x => x.CreatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Song).WithMany(x => x.Revisions).HasForeignKey(x => x.SongId).OnDelete(DeleteBehavior.Cascade);
     }
 }

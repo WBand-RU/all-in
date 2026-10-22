@@ -22,10 +22,6 @@ public sealed class SongSectionConfiguration : IEntityTypeConfiguration<SongSect
         builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
         builder.HasIndex(x => new { x.SongId, x.Order });
         builder.HasAlternateKey(x => new { x.SongId, x.Id });
-        builder.HasOne(x => x.CreatedByUser).WithMany(x => x.CreatedSongSections).HasForeignKey(x => x.CreatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(x => x.UpdatedByUser).WithMany(x => x.UpdatedSongSections).HasForeignKey(x => x.UpdatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Song).WithMany(x => x.Sections).HasForeignKey(x => x.SongId).OnDelete(DeleteBehavior.Cascade);
     }
 }

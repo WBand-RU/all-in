@@ -27,9 +27,5 @@ public sealed class SongContentCellConfiguration : IEntityTypeConfiguration<Song
         builder.HasOne(x => x.Partition).WithMany(x => x.Cells)
             .HasForeignKey(x => new { x.SongId, x.PartitionId }).HasPrincipalKey(x => new { x.SongId, x.Id })
             .OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(x => x.UpdatedBy)
-            .HasPrincipalKey(x => x.KeycloakId).OnDelete(DeleteBehavior.Restrict);
     }
 }

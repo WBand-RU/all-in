@@ -25,11 +25,4 @@ public sealed class SongSection
     [JsonIgnore]
     public Song Song { get; set; } = null!;
 
-    /// <summary>User who created the section.</summary>
-    [JsonIgnore]
-    public User CreatedByUser { get; set; } = null!;
-
-    /// <summary>User who last updated the section, when recorded.</summary>
-    [JsonIgnore]
-    public User? UpdatedByUser { get; set; }
 }
