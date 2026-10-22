@@ -169,7 +169,7 @@
       - [x] T12.4a: временно принимать RelationalDataContext в трёх общих helpers, сохранив virtual mapping и контракт блокировки для обоих контекстов.
       - [x] T12.4b: metadata/history используют SongDataContext и unqualified SQL.
       - [x] T12.4c: partitions используют SongDataContext и прежнюю атомарную запись.
-      - [ ] T12.4d: sections/cells используют SongDataContext; проверка ревизий/общей транзакции.
+      - [x] T12.4d: sections/cells используют SongDataContext; проверка ревизий/общей транзакции.
       - [ ] T12.4e: public reference query и строгие SongDataContext-параметры helpers; временный bridge удалён, полный Release.
     - [ ] T12.5: передать migration ownership без DROP; legacy-контекст только для исторических миграций, тесты используют владельца.
     - [ ] T12.6: initial migration в songs для пяти таблиц, сохранение внешних FK и отказ при смешанной схеме.

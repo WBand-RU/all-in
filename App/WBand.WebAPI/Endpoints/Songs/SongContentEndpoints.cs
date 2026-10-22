@@ -2,7 +2,7 @@ using Wolverine;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WBand.WebAPI.Application.Songs;
-using WBand.WebAPI.Data;
+using DataContext = WBand.Modules.SongModule.Data.SongDataContext;
 using WBand.WebAPI.Services;
 using Wolverine.Http;
 
@@ -18,11 +18,11 @@ public static class GetSongContentEndpoint
         if (song is null) return Results.NotFound();
         if (!await SongAccess.Check(db, bus, song.BandId, user.Id, false, cancellationToken)) return Results.Forbid();
         var sections = await db.QueryAsync<SongSection>(
-            "select * from public.song_sections where song_id = @songId order by \"order\", created_at, id", new { songId }, cancellationToken);
+            "select * from song_sections where song_id = @songId order by \"order\", created_at, id", new { songId }, cancellationToken);
         var partitions = await db.QueryAsync<Partition>(
-            "select * from public.song_partitions where song_id = @songId order by \"order\", created_at, id", new { songId }, cancellationToken);
+            "select * from song_partitions where song_id = @songId order by \"order\", created_at, id", new { songId }, cancellationToken);
         var cells = await db.QueryAsync<SongContentCell>(
-            "select * from public.song_content_cells where song_id = @songId", new { songId }, cancellationToken);
+            "select * from song_content_cells where song_id = @songId", new { songId }, cancellationToken);
         return Results.Ok(new SongContentResponse(sections.Select(SongSectionResponse.From).ToArray(),
             partitions.Select(PartitionResponse.From).ToArray(), cells.Select(SongContentCellResponse.From).ToArray()));
     }
@@ -44,7 +44,7 @@ public static class UpdateSongContentCellEndpoint
         if (section?.SongId != songId || partition?.SongId != songId) return Results.NotFound();
         // The song lock serializes first writes as well as updates, preventing duplicate cells.
         var cell = await db.SingleOrDefaultAsync<SongContentCell>(
-            "select * from public.song_content_cells where section_id = @sectionId and partition_id = @partitionId",
+            "select * from song_content_cells where section_id = @sectionId and partition_id = @partitionId",
             new { sectionId, partitionId }, cancellationToken);
         var revision = cell?.Revision ?? 0;
         if (revision != request.ExpectedRevision)
@@ -68,11 +68,11 @@ public static class UpdatePartitionContentEndpoint
         if (!await SongAccess.Check(db, bus, song.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
         var partition = await db.FindAsync<Partition>(partitionId, cancellationToken);
         if (partition?.SongId != songId) return Results.NotFound();
-        var sections = await db.QueryAsync<SongSection>("select * from public.song_sections where song_id = @songId", new { songId }, cancellationToken);
+        var sections = await db.QueryAsync<SongSection>("select * from song_sections where song_id = @songId", new { songId }, cancellationToken);
         var sectionIds = sections.Select(x => x.Id).ToHashSet();
         if (request.Cells.Any(x => !sectionIds.Contains(x.SectionId))) return Results.NotFound();
         var existing = (await db.QueryAsync<SongContentCell>(
-            "select * from public.song_content_cells where song_id = @songId and partition_id = @partitionId",
+            "select * from song_content_cells where song_id = @songId and partition_id = @partitionId",
             new { songId, partitionId }, cancellationToken)).ToDictionary(x => x.SectionId);
         var conflicts = request.Cells.Where(x => x.ExpectedRevision != (existing.GetValueOrDefault(x.SectionId)?.Revision ?? 0))
             .Select(x => x.SectionId).ToArray();
