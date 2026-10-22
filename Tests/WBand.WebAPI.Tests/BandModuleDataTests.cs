@@ -1,3 +1,5 @@
+using WBand.Modules.BandModule.Contracts;
+using WBand.Persistence;
 using Microsoft.EntityFrameworkCore;
 using WBand.Modules.BandModule.Data;
 using Xunit;
@@ -61,6 +63,28 @@ public sealed class BandModuleDataTests(DatabaseFixture fixture)
         await using var reader = fixture.CreateBandSession();
         Assert.Null(await reader.FindAsync<User>(owner.Id));
         Assert.Null(await reader.FindAsync<Band>(band.Id));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BandMutation_WhenAnotherContextOwnsLock_WaitsUntilTransactionEnds(bool ownerIsBandContext)
+    {
+        await using var api = fixture.CreateSession();
+        await using var bands = fixture.CreateBandSession();
+        await using var owner = ownerIsBandContext
+            ? await bands.BeginTransactionAsync() : await api.BeginTransactionAsync();
+        await using var contenderTransaction = ownerIsBandContext
+            ? await api.BeginTransactionAsync() : await bands.BeginTransactionAsync();
+        var bandId = Guid.NewGuid();
+        if (ownerIsBandContext) await bands.LockBandAsync(bandId, default);
+        else await api.LockBandAsync(bandId, default);
+        RelationalDataContext contender = ownerIsBandContext ? api : bands;
+        const string tryLock = "select pg_try_advisory_xact_lock(hashtextextended(@resource, 0))";
+        var parameters = new { resource = BandMutationLock.ResourceName(bandId) };
+        Assert.False(await contender.SingleOrDefaultAsync<bool>(tryLock, parameters));
+        await owner.RollbackAsync();
+        Assert.True(await contender.SingleOrDefaultAsync<bool>(tryLock, parameters));
     }
 
     private static User Profile()

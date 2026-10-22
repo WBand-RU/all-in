@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule.Contracts;
 using Microsoft.EntityFrameworkCore;
 using WBand.Persistence;
 
@@ -34,7 +35,7 @@ public sealed class BandDataContext(DbContextOptions<BandDataContext> options) :
     /// <summary>Serializes membership changes within an explicit transaction.</summary>
     public async Task LockBandAsync(Guid bandId, CancellationToken ct)
     {
-        RequireTransaction();
+        await LockResourceAsync(BandMutationLock.ResourceName(bandId), ct);
         await Bands.FromSqlInterpolated($"select * from bands where id = {bandId} for update")
             .AsNoTracking().ToListAsync(ct);
     }

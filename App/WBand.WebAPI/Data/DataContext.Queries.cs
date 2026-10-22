@@ -1,3 +1,4 @@
+using WBand.Modules.BandModule.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace WBand.WebAPI.Data;
@@ -26,12 +27,8 @@ public sealed partial class DataContext
         return (IReadOnlyList<T>)rows;
     }
 
-    /// <summary>Serializes membership changes and invitation acceptance for a band.</summary>
-    public async Task LockBandAsync(Guid bandId, CancellationToken ct)
-    {
-        RequireTransaction();
-        await Bands.FromSqlInterpolated($"select * from public.bands where id = {bandId} for update")
-            .AsNoTracking().ToListAsync(ct);
-    }
+    /// <summary>Coordinates mutations within a band without reading another module's tables.</summary>
+    public Task LockBandAsync(Guid bandId, CancellationToken ct) =>
+        LockResourceAsync(BandMutationLock.ResourceName(bandId), ct);
 
 }

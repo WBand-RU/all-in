@@ -13,6 +13,14 @@ public abstract class RelationalDataContext(DbContextOptions options) : DbContex
     /// <summary>Starts a transaction that rolls back on disposal unless committed.</summary>
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default) => Database.BeginTransactionAsync(ct);
 
+    /// <summary>Holds a PostgreSQL resource lock until the current transaction ends.</summary>
+    public Task LockResourceAsync(string resource, CancellationToken ct = default)
+    {
+        RequireTransaction();
+        ArgumentException.ThrowIfNullOrWhiteSpace(resource);
+        return ExecuteAsync("select pg_advisory_xact_lock(hashtextextended(@resource, 0))", new { resource }, ct);
+    }
+
     /// <summary>Executes parameterized SQL using the context's connection and transaction.</summary>
     public Task<int> ExecuteAsync(string sql, object? parameters = null, CancellationToken ct = default) =>
         Database.ExecuteSqlRawAsync(sql, Parameters(parameters), ct);
