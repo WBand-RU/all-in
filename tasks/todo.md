@@ -137,7 +137,7 @@
   - Пути: BandModule/Endpoints; BandModule/Application; WebAPI/Program.cs.
   - Подзадачи перед изменениями:
     - [x] T11.1: нейтральная сборка общих контрактов, ссылки/solution/Docker и CI routing.
-    - [ ] T11.2a: общий ICurrentUser и platform roles без зависимости модуля от хоста.
+    - [x] T11.2a: общий ICurrentUser и platform roles без зависимости модуля от хоста.
     - [ ] T11.2b: общие HTTP-обёртки ApiResponse/ApiCodes без изменения wire format.
     - [ ] T11.3: запросы членства/групп в module Application; discovery и архитектурные тесты.
     - [ ] T11.4: HTTP групп, публичная регистрация Wolverine HTTP/validators; сохранить discovery песен хоста.

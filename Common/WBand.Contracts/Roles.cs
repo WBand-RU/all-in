@@ -1,4 +1,4 @@
-namespace WBand.WebAPI.Shared;
+namespace WBand.Contracts;
 
 public static class Roles
 {

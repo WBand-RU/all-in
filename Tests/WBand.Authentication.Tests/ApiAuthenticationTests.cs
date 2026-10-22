@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using api::WBand.WebAPI.Services;
+using WBand.Contracts;
 using Xunit;
 
 namespace WBand.Authentication.Tests;
@@ -136,7 +136,7 @@ public sealed class ApiAuthenticationTests
                 return user.Email;
             }
         );
-        app.MapGet("/moderation", () => "ok").RequireAuthorization(api::WBand.WebAPI.Shared.Roles.Moderator);
+        app.MapGet("/moderation", () => "ok").RequireAuthorization(Roles.Moderator);
         app.MapGet("/health", () => "ok").AllowAnonymous();
         await app.StartAsync();
         return app;

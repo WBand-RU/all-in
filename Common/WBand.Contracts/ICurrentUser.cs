@@ -1,4 +1,4 @@
-namespace WBand.WebAPI.Services;
+namespace WBand.Contracts;
 
 public interface ICurrentUser
 {

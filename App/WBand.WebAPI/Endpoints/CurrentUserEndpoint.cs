@@ -28,14 +28,14 @@ public static class CurrentUserEndpoint
         var user = await UserProfileSynchronization.EnsureProfile(currentUser, db, bus, cancellationToken);
 
         var roles = new List<string>();
-        if (currentUser.IsInRole(Shared.Roles.SuperAdmin))
+        if (currentUser.IsInRole(Roles.SuperAdmin))
         {
-            roles.Add(Shared.Roles.SuperAdmin);
+            roles.Add(Roles.SuperAdmin);
         }
 
-        if (currentUser.IsInRole(Shared.Roles.Moderator))
+        if (currentUser.IsInRole(Roles.Moderator))
         {
-            roles.Add(Shared.Roles.Moderator);
+            roles.Add(Roles.Moderator);
         }
 
         string displayName = user.Email;
