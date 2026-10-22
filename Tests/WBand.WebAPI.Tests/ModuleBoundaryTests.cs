@@ -9,6 +9,17 @@ namespace WBand.WebAPI.Tests;
 public sealed class ModuleBoundaryTests
 {
     [Fact]
+    public void SharedContracts_WhenReferenced_DoNotDependOnTheHostOrPersistence()
+    {
+        var assembly = typeof(ICurrentUser).Assembly;
+        Assert.Equal("WBand.Contracts", assembly.GetName().Name);
+        Assert.DoesNotContain(assembly.GetReferencedAssemblies(), reference =>
+            reference.Name!.StartsWith("WBand.", StringComparison.Ordinal)
+            || reference.Name.StartsWith("Microsoft.EntityFrameworkCore", StringComparison.Ordinal)
+            || reference.Name.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void BandContracts_WhenReferenced_DoNotExposeHostOrPersistenceDependencies()
     {
         var contracts = typeof(CheckBandPermission).Assembly;
