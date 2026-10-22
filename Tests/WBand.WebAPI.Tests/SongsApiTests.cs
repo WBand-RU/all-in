@@ -14,7 +14,40 @@ namespace WBand.WebAPI.Tests;
 public sealed class SongsApiTests(BandsApiFixture fixture)
 {
     [Fact]
-    public async Task CreateSong_WhenOwnerCreates_SavesMetadataAndRevisionThenPublishesEvent()
+    public async Task Song_WhenPublicationIsUnavailable_PersistsMetadataAndHistory()
+    {
+        using var owner = fixture.CreateClient(Guid.NewGuid());
+        var band = await CreateBand(owner);
+        fixture.RejectPublications = true;
+        try
+        {
+            var song = await CreateSong(owner, band.Id);
+            (await owner.PutAsJsonAsync($"/song-api/songs/{song.Id}",
+                Update(song) with { Title = "Updated" })).EnsureSuccessStatusCode();
+            var restoredVersion = await owner.PostAsync($"/song-api/songs/{song.Id}/versions/1/restore", null);
+            restoredVersion.EnsureSuccessStatusCode();
+            var restored = (await restoredVersion.Content.ReadFromJsonAsync<ApiResponse<SongResponse>>())!.Value;
+            Assert.Equal(song.Title, restored.Title);
+            Assert.Equal(3, restored.ContentVersion);
+            (await owner.DeleteAsync($"/song-api/songs/{song.Id}")).EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/song-api/songs/{song.Id}")).StatusCode);
+            (await owner.PostAsync($"/song-api/songs/{song.Id}/restore", null)).EnsureSuccessStatusCode();
+            await using var db = fixture.CreateContext();
+            var stored = (await db.FindAsync<Song>(song.Id))!;
+            Assert.Equal(song.Title, stored.Title);
+            Assert.Equal(5, stored.ContentVersion);
+            Assert.Null(stored.DeletedAt);
+            Assert.Equal(5, await db.SingleOrDefaultAsync<int>(
+                "select count(*)::int from public.song_revisions where song_id = @id", new { id = song.Id }));
+        }
+        finally
+        {
+            fixture.RejectPublications = false;
+        }
+    }
+
+    [Fact]
+    public async Task CreateSong_WhenOwnerCreates_SavesMetadataAndRevision()
     {
         var ownerId = Guid.NewGuid();
         using var owner = fixture.CreateClient(ownerId);
@@ -31,7 +64,6 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         var revision = Assert.Single(await db.QueryAsync<SongRevision>("select * from public.song_revisions where song_id = @id", new { id = song.Id }));
         Assert.Equal(song.Title, revision.Title);
         Assert.Equal(song.Authors, revision.Authors);
-        Assert.Equal(1, await EventCount(song.Id, "song-created.v1"));
         var references = await WBand.WebAPI.Application.Songs.GetSongReferencesHandler.Handle(new GetSongReferences([song.Id]), db, default);
         Assert.Equal(song.Id, Assert.Single(references).SongId);
     }
@@ -142,7 +174,6 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         await using var db = fixture.CreateContext();
         Assert.Equal(2, (await db.FindAsync<Song>(song.Id))!.ContentVersion);
         Assert.Equal(2, await db.SingleOrDefaultAsync<int>("select count(*)::int from public.song_revisions where song_id = @id", new { id = song.Id }));
-        Assert.Equal(1, await EventCount(song.Id, "song-changed.v1"));
     }
 
     [Fact]
@@ -210,7 +241,7 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
     }
 
     [Fact]
-    public async Task DeletedSong_WhenRestored_RetainsPartitionsAndRecordsLifecycleEvents()
+    public async Task DeletedSong_WhenRestored_RetainsPartitionsAndRecordsVersions()
     {
         using var owner = fixture.CreateClient(Guid.NewGuid());
         var band = await CreateBand(owner);
@@ -228,8 +259,6 @@ public sealed class SongsApiTests(BandsApiFixture fixture)
         Assert.Equal(3, (await restore.Content.ReadFromJsonAsync<ApiResponse<SongResponse>>())!.Value.ContentVersion);
         Assert.Equal(section.Id, Assert.Single((await owner.GetFromJsonAsync<PartitionResponse[]>($"/song-api/songs/{song.Id}/partitions"))!).Id);
         await using var db = fixture.CreateContext();
-        Assert.Equal(1, await EventCount(song.Id, "song-deleted.v1"));
-        Assert.Equal(1, await EventCount(song.Id, "song-restored.v1"));
         await owner.DeleteAsync($"/song-api/songs/{song.Id}");
         await db.ExecuteAsync("update public.songs set deleted_at = now() - interval '31 days' where id = @id", new { id = song.Id });
         Assert.Equal(HttpStatusCode.NotFound, (await owner.PostAsync($"/song-api/songs/{song.Id}/restore", null)).StatusCode);

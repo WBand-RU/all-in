@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WBand.Modules.SongModule.Contracts;
 using WBand.WebAPI.Application.Songs;
 using WBand.WebAPI.Data;
-using Wolverine;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Shared;
 using Wolverine.Http;
@@ -68,7 +66,7 @@ public static class RestoreSongVersionEndpoint
     [Authorize, Tags("SongHistory"), ProducesResponseType<ApiResponse<SongResponse>>(200)]
     [WolverinePost("/song-api/songs/{songId}/versions/{contentVersion}/restore", OperationId = "RestoreSongVersion")]
     public static async Task<IResult> Post(Guid songId, long contentVersion, ICurrentUser user,
-        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
@@ -82,7 +80,6 @@ public static class RestoreSongVersionEndpoint
         await db.UpdateAsync(song, cancellationToken);
         await SongVersioning.SaveRevision(db, song, user.Id, song.UpdatedAt!.Value, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongChanged(song.Id, song.BandId, song.ContentVersion));
         return Results.Ok(ApiResponse<SongResponse>.Success(SongResponse.From(song)));
     }
 }
@@ -104,7 +101,7 @@ public static class RestoreDeletedSongEndpoint
     [Authorize, Tags("SongHistory"), ProducesResponseType<ApiResponse<SongResponse>>(200)]
     [WolverinePost("/song-api/songs/{songId}/restore", OperationId = "RestoreDeletedSong")]
     public static async Task<IResult> Post(Guid songId, ICurrentUser user,
-        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken, includeDeleted: true);
@@ -116,7 +113,6 @@ public static class RestoreDeletedSongEndpoint
         await db.UpdateAsync(song, cancellationToken);
         await SongVersioning.SaveRevision(db, song, user.Id, song.UpdatedAt!.Value, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongRestored(song.Id, song.BandId, song.ContentVersion));
         return Results.Ok(ApiResponse<SongResponse>.Success(SongResponse.From(song)));
     }
 }

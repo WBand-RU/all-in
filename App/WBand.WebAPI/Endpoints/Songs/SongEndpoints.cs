@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WBand.Modules.SongModule.Contracts;
 using WBand.WebAPI.Application.Songs;
 using WBand.WebAPI.Data;
-using Wolverine;
 using WBand.WebAPI.Services;
 using WBand.WebAPI.Shared;
 using Wolverine.Http;
@@ -15,7 +13,7 @@ public static class CreateSongEndpoint
     [Authorize, Tags("Songs"), ProducesResponseType<ApiResponse<SongResponse>>(200)]
     [WolverinePost("/song-api/songs", OperationId = "CreateSong")]
     public static async Task<IResult> Post(CreateSongRequest request, ICurrentUser user,
-        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         if (!await SongAccess.Check(db, request.BandId, user.Id, true, cancellationToken)) return Results.Forbid();
@@ -28,7 +26,6 @@ public static class CreateSongEndpoint
         await db.InsertAsync(song, cancellationToken);
         await SongVersioning.SaveRevision(db, song, user.Id, song.CreatedAt, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongCreated(song.Id, song.BandId, song.ContentVersion));
         return Results.Ok(ApiResponse<SongResponse>.Success(SongResponse.From(song)));
     }
 }
@@ -75,7 +72,7 @@ public static class UpdateSongEndpoint
     [Authorize, Tags("Songs"), ProducesResponseType<ApiResponse<SongResponse>>(200)]
     [WolverinePut("/song-api/songs/{songId}", OperationId = "UpdateSong")]
     public static async Task<IResult> Put(Guid songId, UpdateSongRequest request, ICurrentUser user,
-        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
@@ -92,7 +89,6 @@ public static class UpdateSongEndpoint
         await db.UpdateAsync(song, cancellationToken);
         await SongVersioning.SaveRevision(db, song, user.Id, song.UpdatedAt!.Value, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongChanged(song.Id, song.BandId, song.ContentVersion));
         return Results.Ok(ApiResponse<SongResponse>.Success(SongResponse.From(song)));
     }
 }
@@ -102,7 +98,7 @@ public static class DeleteSongEndpoint
     [Authorize, Tags("Songs"), ProducesResponseType<ApiResponse>(200)]
     [WolverineDelete("/song-api/songs/{songId}", OperationId = "DeleteSong")]
     public static async Task<IResult> Delete(Guid songId, ICurrentUser user,
-        [FromServices] DataContext db, [FromServices] IMessageBus bus, CancellationToken cancellationToken)
+        [FromServices] DataContext db, CancellationToken cancellationToken)
     {
         await using var transaction = await db.BeginTransactionAsync(cancellationToken);
         var song = await SongAccess.Load(db, songId, cancellationToken);
@@ -114,7 +110,6 @@ public static class DeleteSongEndpoint
         await db.UpdateAsync(song, cancellationToken);
         await SongVersioning.SaveRevision(db, song, user.Id, song.UpdatedAt!.Value, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await bus.PublishAsync(new SongDeleted(song.Id, song.BandId, song.ContentVersion));
         return Results.Ok(ApiResponse.Success());
     }
 }
