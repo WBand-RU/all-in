@@ -4,9 +4,6 @@ using JasperFx.Core;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
-using WBand.Modules.BandModule.Contracts;
-using WBand.Modules.SongModule.Contracts;
-using WBand.Modules.UserModule.Events;
 using WBand.WebAPI.Configuration;
 using WBand.WebAPI.Data;
 using WBand.WebAPI.Events;
@@ -114,42 +111,7 @@ static WebApplicationBuilder AddWBandFoundation(
             .Policies.OnAnyException()
             .RetryWithCooldown(50.Milliseconds(), 100.Milliseconds(), 250.Milliseconds());
 
-        options
-            .UseRabbitMq(factory =>
-            {
-                factory.HostName = configuration.RABBITMQ_HOST;
-                factory.Port = int.Parse(configuration.RABBITMQ_PORT);
-                factory.UserName = configuration.RABBITMQ_USERNAME;
-                factory.Password = configuration.RABBITMQ_PASSWORD;
-                factory.VirtualHost = configuration.RABBITMQ_VIRTUAL_HOST;
-            })
-            .ConfigureChannelCreation(channel =>
-            {
-                channel.PublisherConfirmationsEnabled = true;
-                channel.PublisherConfirmationTrackingEnabled = true;
-            })
-            .AutoProvision()
-            .UseConventionalRouting();
-
-        // Publish directly after committing EF Core transactions. Inline sends await broker confirms.
-        options.PublishMessage<UserCreated>().ToRabbitExchange("user-created").SendInline();
-        options.PublishMessage<UserLoggedIn>().ToRabbitExchange("user-logged-in").SendInline();
-        options.PublishMessage<BandCreated>().ToRabbitExchange("band-created").SendInline();
-        options.PublishMessage<MemberInvited>().ToRabbitExchange("member-invited").SendInline();
-        options
-            .PublishMessage<MembershipChanged>()
-            .ToRabbitExchange("membership-changed")
-            .SendInline();
-        options.PublishMessage<SongCreated>().ToRabbitExchange("song-created").SendInline();
-        options.PublishMessage<SongChanged>().ToRabbitExchange("song-changed").SendInline();
-        options.PublishMessage<SongDeleted>().ToRabbitExchange("song-deleted").SendInline();
-        options.PublishMessage<SongRestored>().ToRabbitExchange("song-restored").SendInline();
-        options
-            .PublishMessage<SongPartitionsChanged>()
-            .ToRabbitExchange("song-partitions-changed")
-            .SendInline();
-        options.PublishMessage<SongSectionsChanged>().ToRabbitExchange("song-sections-changed").SendInline();
-        options.PublishMessage<SongContentChanged>().ToRabbitExchange("song-content-changed").SendInline();
+        // MVP domain writes are synchronous. Only the Keycloak incoming broker is configured.
         options.EnvelopeIdGeneration = EnvelopeIdGeneration.GuidV7;
 
         options.Discovery.IncludeAssembly(typeof(Program).Assembly);
